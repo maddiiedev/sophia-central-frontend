@@ -42,8 +42,10 @@ export function ProfileOnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (!institutionId || !isLecturer) { setCourses([]); return; }
-    academicApi.courses(institutionId).then((data) => setCourses(Array.isArray(data) ? data : [])).catch(() => setCourses([]));
+    if (!institutionId || institutionId === '__manual__' || !isLecturer) { setCourses([]); return; }
+    let active = true;
+    academicApi.courses(institutionId).then((data) => { if (active) setCourses(Array.isArray(data) ? data : []); }).catch(() => { if (active) setCourses([]); });
+    return () => { active = false; };
   }, [institutionId, isLecturer]);
 
   const institutionName = useManualInstitution ? institutionManual.trim() : selectedInstitution?.name ?? '';
