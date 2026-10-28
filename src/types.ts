@@ -53,5 +53,11 @@ export interface ModerationItem {
   uploadedBy?: string;
   summary?: string;
   status?: string;
+  fileUrl?: string;
+  level?: string;
+  topic?: string;
+  tags?: string[];
+  createdAt?: string;
+  isVerified?: boolean;
   [key: string]: unknown;
 }
