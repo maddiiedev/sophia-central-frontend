@@ -22,7 +22,7 @@ export function BrandLogo({
   const logo = (
     <img
       src={logoSrc}
-      alt="Sophia Central"
+      alt="Sophis Central"
       className={
         variant === 'full'
           ? 'block h-auto max-h-14 w-auto max-w-full object-contain'
@@ -44,7 +44,7 @@ export function BrandLogo({
     return (
       <Link
         to="/"
-        aria-label="Sophia Central home"
+        aria-label="Sophis Central home"
         className="inline-flex max-w-full"
       >
         {content}

@@ -30,8 +30,8 @@ export function AITutorPage() {
     } catch (error) {
       setAnswer(
         error instanceof Error
-          ? `Unable to get a response from Sophia AI: ${error.message}`
-          : 'Unable to get a response from Sophia AI. Please try again.',
+          ? `Unable to get a response from Sophis AI: ${error.message}`
+          : 'Unable to get a response from Sophis AI. Please try again.',
       );
     } finally {
       setIsLoading(false);
@@ -40,7 +40,7 @@ export function AITutorPage() {
 
   return (
     <div className="space-y-6">
-      <SectionTitle eyebrow="AI tutor" title="Ask Sophia" />
+      <SectionTitle eyebrow="AI tutor" title="Ask Sophis" />
 
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <OverviewCard title="Study support" action="Always on">
@@ -67,7 +67,7 @@ export function AITutorPage() {
             <textarea
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Ask Sophia a study question..."
+              placeholder="Ask Sophis a study question..."
               className="min-h-28 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-white outline-none focus:border-violet-400"
             />
           </label>
@@ -79,7 +79,7 @@ export function AITutorPage() {
             className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 px-4 py-2.5 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             <SendHorizonal size={16} />
-            {isLoading ? 'Thinking...' : 'Ask Sophia'}
+            {isLoading ? 'Thinking...' : 'Ask Sophis'}
           </button>
 
           {answer ? (

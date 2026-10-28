@@ -38,13 +38,13 @@ export const aiService = {
     if (response.error) {
       throw new Error(
         response.error === 'Insufficient Wisdom Points'
-          ? `You need ${response.required ?? 2} Wisdom Points to use Sophia AI. Your current balance is ${response.balance ?? 0}.`
+          ? `You need ${response.required ?? 2} Wisdom Points to use Sophis AI. Your current balance is ${response.balance ?? 0}.`
           : response.error,
       );
     }
 
     if (!response.assistantMessage) {
-      throw new Error('Sophia AI returned an empty response.');
+      throw new Error('Sophis AI returned an empty response.');
     }
 
     return {

@@ -37,7 +37,7 @@ export function WalletPage() {
       <OverviewCard title="Referral program" action="Invite others">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-xl font-semibold text-white">SOPHIAAIM</div>
+            <div className="text-xl font-semibold text-white">SOPHISAIM</div>
             <div className="text-sm text-slate-400">Your referral code</div>
           </div>
           <button className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-slate-100">

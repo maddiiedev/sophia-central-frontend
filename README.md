@@ -101,11 +101,11 @@ Configure the values appropriate to your environment in `.env`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:4000
-VITE_APP_NAME=Sophia Central
+VITE_APP_NAME=Sophis Central
 VITE_USE_MOCK_DATA=false
 ```
 
-- `VITE_API_BASE_URL`: base URL for the Sophia Central backend API.
+- `VITE_API_BASE_URL`: base URL for the Sophis Central backend API.
 - `VITE_APP_NAME`: display name used by the application.
 - `VITE_USE_MOCK_DATA`: set to `true` only for deliberate local prototyping/offline development. Keep `false` when validating real backend integration.
 

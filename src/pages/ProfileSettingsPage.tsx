@@ -59,7 +59,7 @@ export function ProfileSettingsPage() {
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">Account & Settings</p>
       <h2 className="mt-2 text-3xl font-bold text-white">Your profile</h2>
-      <p className="mt-2 text-slate-400">Edit your academic profile. Changes are saved to your Sophia Central account.</p>
+      <p className="mt-2 text-slate-400">Edit your academic profile. Changes are saved to your Sophis Central account.</p>
     </div>
     <section className="glass-panel p-5 sm:p-7">
       <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
