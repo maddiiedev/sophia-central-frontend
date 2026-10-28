@@ -66,7 +66,7 @@ export const authService = {
       return { accessToken: token, user };
     }
 
-    return apiRequest<{ accessToken: string; user: User }>('/auth/register', {
+    return apiRequest<{ accessToken: string; user: User }>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -127,14 +127,27 @@ export const resourceService = {
 };
 
 export const aiService = {
-  async ask(payload: { question: string; resourceId?: string }) {
+  async ask(payload: { question: string; sessionId?: string; resourceId?: string }) {
     if (appConfig.useMockData) {
       return {
-        answer: 'Here is a strong revision plan: review key definitions, solve 10 focused practice questions, and revisit weak topics with lecture notes before your next study block.',
+        sessionId: payload.sessionId ?? 'demo-session',
+        userMessage: payload.question,
+        assistantMessage: 'Here is a strong revision plan: review key definitions, solve 10 focused practice questions, and revisit weak topics with lecture notes before your next study block.',
+        pointsUsed: 0,
+        balanceRemaining: 0,
       };
     }
 
-    return apiRequest<{ answer: string }>('/ai/ask', {
+    return apiRequest<{
+      sessionId: string;
+      userMessage: string;
+      assistantMessage: string;
+      pointsUsed: number;
+      balanceRemaining: number;
+      error?: string;
+      required?: number;
+      balance?: number;
+    }>('/ai/chat', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
