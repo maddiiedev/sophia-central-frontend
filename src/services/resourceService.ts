@@ -55,7 +55,7 @@ export const authService = {
         ...roleUsers[role],
         ...payload,
         id: String(Date.now()),
-        name: `${payload.firstName || roleUsers[role].name.split(' ')[0] || 'Sophia'} ${payload.lastName || roleUsers[role].name.split(' ')[1] || 'Student'}`,
+        name: `${payload.firstName || roleUsers[role].name.split(' ')[0] || 'Sophis'} ${payload.lastName || roleUsers[role].name.split(' ')[1] || 'Student'}`,
         role,
         avatar: (payload.firstName || 'S').slice(0, 2).toUpperCase(),
       } as User;
