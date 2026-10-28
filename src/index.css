@@ -61,17 +61,23 @@ body {
   }
 
   button, a, input, select, textarea {
-    outline-color: var(--sc-royal);
+    outline-color: var(--sc-indigo);
   }
 }
 
 @layer components {
+  /* Primary section treatment: solid Indigo Blue, per the current brand direction. */
   .brand-gradient {
-    background: linear-gradient(135deg, #004BEC 0%, #2C36D9 72%, #6121D0 100%);
+    background: #2C36D9;
+  }
+
+  /* Vibrant Purple is reserved for prominent actions and subsequent-page sections. */
+  .brand-purple-section {
+    background: #6121D0;
   }
 
   .brand-button {
-    @apply inline-flex items-center justify-center rounded-xl bg-[#004BEC] text-white transition;
+    @apply inline-flex items-center justify-center rounded-xl bg-[#6121D0] text-white transition;
   }
 
   .brand-button:hover:not(:disabled) {
@@ -81,7 +87,7 @@ body {
   .brand-button:focus-visible,
   .brand-input:focus-visible,
   .brand-control:focus-visible {
-    box-shadow: 0 0 0 3px rgba(0, 75, 236, 0.18);
+    box-shadow: 0 0 0 3px rgba(44, 54, 217, 0.22);
   }
 
   .brand-input {
@@ -90,7 +96,7 @@ body {
   }
 
   .brand-input:focus {
-    border-color: #004BEC;
+    border-color: #2C36D9;
   }
 
   .brand-card {
@@ -107,7 +113,7 @@ body {
     @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold;
     border-color: #C7D2FE;
     background: #F3F6FC;
-    color: #091F5B;
+    color: #2C36D9;
   }
 
   .grid-pattern {
@@ -136,7 +142,7 @@ body {
   .app-shell .text-violet-300 { color: #6121D0 !important; }
   .app-shell .bg-violet-500\/15,
   .app-shell .bg-violet-500\/10 { background-color: #F3F6FC !important; }
-  .app-shell .ring-violet-500\/30 { --tw-ring-color: rgba(0, 75, 236, 0.25) !important; }
+  .app-shell .ring-violet-500\/30 { --tw-ring-color: rgba(44, 54, 217, 0.25) !important; }
   .app-shell .hover\:bg-slate-900:hover { background-color: #F3F6FC !important; }
   .app-shell .hover\:text-white:hover { color: #091F5B !important; }
 }
