@@ -6,12 +6,20 @@
   font-family: Inter, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #6c24b3;
-  background-color: #071e54;
+  color: #1F2937;
+  background: #FFFFFF;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --sc-navy: #091F5B;
+  --sc-royal: #004BEC;
+  --sc-indigo: #2C36D9;
+  --sc-purple: #6121D0;
+  --sc-white: #FFFFFF;
+  --sc-border: #E5E7EB;
+  --sc-muted: #1F2937;
+  --sc-soft: #F3F6FC;
 }
 
 html {
@@ -22,10 +30,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(124, 58, 237, 0.15), transparent 30%),
-    linear-gradient(180deg, #071e54, #6c24b3 35%, #071e54 100%);
-  color: #6c24b3;
+  background: #FFFFFF;
+  color: #1F2937;
 }
 
 * {
@@ -36,46 +42,101 @@ body {
   min-height: 100vh;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); opacity: 0.8; }
-  50% { transform: translateY(-10px); opacity: 1; }
-}
-
 @keyframes fadeUp {
-  0% { opacity: 0; transform: translateY(10px); }
+  0% { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
 .page-shell {
-  animation: fadeUp 0.45s ease-out;
-}
-
-.hero-orb {
-  animation: float 10s ease-in-out infinite;
+  animation: fadeUp 0.35s ease-out;
 }
 
 @layer base {
   h1, h2, h3, h4, h5, h6 {
-    @apply text-slate-50;
+    color: var(--sc-navy);
   }
 
   p {
-    @apply text-slate-300;
+    color: var(--sc-muted);
+  }
+
+  button, a, input, select, textarea {
+    outline-color: var(--sc-royal);
   }
 }
 
 @layer components {
+  .brand-gradient {
+    background: linear-gradient(135deg, #004BEC 0%, #2C36D9 72%, #6121D0 100%);
+  }
+
+  .brand-button {
+    @apply inline-flex items-center justify-center rounded-xl bg-[#004BEC] text-white transition;
+  }
+
+  .brand-button:hover:not(:disabled) {
+    background: #2C36D9;
+  }
+
+  .brand-button:focus-visible,
+  .brand-input:focus-visible,
+  .brand-control:focus-visible {
+    box-shadow: 0 0 0 3px rgba(0, 75, 236, 0.18);
+  }
+
+  .brand-input {
+    @apply w-full rounded-xl border bg-white px-3 py-2.5 text-[#1F2937] placeholder:text-slate-500 outline-none;
+    border-color: #D7DEEA;
+  }
+
+  .brand-input:focus {
+    border-color: #004BEC;
+  }
+
+  .brand-card {
+    @apply rounded-2xl border bg-white;
+    border-color: #E5E7EB;
+  }
+
   .glass-panel {
-    @apply rounded-2xl border border-slate-800/80 bg-slate-900/80 shadow-glow backdrop-blur;
+    @apply rounded-2xl border bg-white shadow-sm;
+    border-color: #E5E7EB;
   }
 
   .label-pill {
-    @apply inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-xs font-medium text-violet-200;
+    @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold;
+    border-color: #C7D2FE;
+    background: #F3F6FC;
+    color: #091F5B;
   }
 
   .grid-pattern {
-    background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(9, 31, 91, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(9, 31, 91, 0.05) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+
+  /* Compatibility layer for legacy dark utility classes. The brand guide is light-first. */
+  .app-shell.bg-slate-950,
+  .app-shell .bg-slate-950 { background-color: #FFFFFF !important; }
+  .app-shell .bg-slate-900,
+  .app-shell .bg-slate-900\/80,
+  .app-shell .bg-slate-950\/80,
+  .app-shell .bg-slate-950\/95 { background-color: #FFFFFF !important; }
+  .app-shell .border-slate-800,
+  .app-shell .border-slate-700 { border-color: #E5E7EB !important; }
+  .app-shell .text-white { color: #091F5B !important; }
+  .app-shell .text-slate-100,
+  .app-shell .text-slate-200 { color: #1F2937 !important; }
+  .app-shell .text-slate-300,
+  .app-shell .text-slate-400,
+  .app-shell .text-slate-500 { color: #4B5563 !important; }
+  .app-shell .text-violet-100,
+  .app-shell .text-violet-200,
+  .app-shell .text-violet-300 { color: #6121D0 !important; }
+  .app-shell .bg-violet-500\/15,
+  .app-shell .bg-violet-500\/10 { background-color: #F3F6FC !important; }
+  .app-shell .ring-violet-500\/30 { --tw-ring-color: rgba(0, 75, 236, 0.25) !important; }
+  .app-shell .hover\:bg-slate-900:hover { background-color: #F3F6FC !important; }
+  .app-shell .hover\:text-white:hover { color: #091F5B !important; }
 }
