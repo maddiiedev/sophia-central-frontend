@@ -1,25 +1,29 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-type ThemeMode = 'light';
-
-type ThemeContextValue = {
-  theme: ThemeMode;
-  toggleTheme: () => void;
-};
-
+type ThemeMode = 'light' | 'dark';
+type ThemeContextValue = { theme: ThemeMode; toggleTheme: () => void };
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    try {
+      return localStorage.getItem('sophia-theme') === 'dark' ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
   useEffect(() => {
-    document.documentElement.dataset.theme = 'light';
-    localStorage.setItem('sophia-theme', 'light');
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    try { localStorage.setItem('sophia-theme', theme); } catch { /* preference remains active for this session */ }
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => current === 'light' ? 'dark' : 'light');
   }, []);
 
-  const value = useMemo<ThemeContextValue>(() => ({
-    theme: 'light',
-    toggleTheme: () => undefined,
-  }), []);
-
+  const value = useMemo<ThemeContextValue>(() => ({ theme, toggleTheme }), [theme, toggleTheme]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

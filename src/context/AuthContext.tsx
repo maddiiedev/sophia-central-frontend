@@ -25,11 +25,40 @@ function optionalUrl(value: unknown): string | undefined {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const initializeCsrf = useCallback(async () => { const response = await authApi.csrf(); setCsrfToken(response.csrfToken); }, []);
+  const initializeCsrf = useCallback(async () => {
+    const response = await authApi.csrf();
+    setCsrfToken(response.csrfToken);
+  }, []);
   const clearSession = useCallback(() => { setUser(null); setCsrfToken(null); }, []);
-  const refreshSession = useCallback(async () => { const response = await authApi.me(); setUser(response.user); }, []);
-  useEffect(() => { const bootstrap = async () => { try { await initializeCsrf(); await refreshSession(); } catch { clearSession(); } finally { setIsLoading(false); } }; void bootstrap(); }, [clearSession, initializeCsrf, refreshSession]);
-  const login = useCallback(async (email: string, password: string, _role?: UserRole) => { await initializeCsrf(); const response = await authApi.login({ email, password }); setUser(response.user); const refreshed = await authApi.csrf(); setCsrfToken(refreshed.csrfToken); }, [initializeCsrf]);
+  const refreshSession = useCallback(async () => {
+    const response = await authApi.me();
+    setUser(response.user);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const bootstrap = async () => {
+      // CSRF refresh is non-blocking on page load; session state is the only gate for protected routes.
+      void initializeCsrf().catch(() => setCsrfToken(null));
+      try {
+        await refreshSession();
+      } catch {
+        clearSession();
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+    void bootstrap();
+    return () => { active = false; };
+  }, [clearSession, initializeCsrf, refreshSession]);
+
+  const login = useCallback(async (email: string, password: string, _role?: UserRole) => {
+    await initializeCsrf();
+    const response = await authApi.login({ email, password });
+    setUser(response.user);
+    void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
+  }, [initializeCsrf]);
+
   const register = useCallback(async (payload: RegisterPayload) => {
     await initializeCsrf();
     const socialLinks = payload.socialLinks as { linkedin?: string; instagram?: string; twitter?: string } | undefined;
@@ -39,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firstName: payload.firstName,
       lastName: payload.lastName,
       role: payload.role,
-      institution: optionalUrl(payload.institution) ?? (typeof payload.institution === 'string' ? payload.institution.trim() || undefined : undefined),
+      institution: typeof payload.institution === 'string' ? payload.institution.trim() || undefined : undefined,
       faculty: typeof payload.faculty === 'string' ? payload.faculty.trim() || undefined : undefined,
       department: typeof payload.department === 'string' ? payload.department.trim() || undefined : undefined,
       socialHandle: typeof payload.handle === 'string' ? payload.handle.trim() || undefined : undefined,
@@ -50,11 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } : undefined,
     });
     setUser(response.user);
-    const refreshed = await authApi.csrf();
-    setCsrfToken(refreshed.csrfToken);
+    void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
   }, [initializeCsrf]);
-  const completeOnboarding = useCallback(async (payload: OnboardingPayload) => { const response = await academicApi.completeOnboarding(payload); setUser(response.user); }, []);
-  const logout = useCallback(async () => { try { await authApi.logout(); } finally { clearSession(); } }, [clearSession]);
+
+  const completeOnboarding = useCallback(async (payload: OnboardingPayload) => {
+    const response = await academicApi.completeOnboarding(payload);
+    setUser(response.user);
+  }, []);
+  const logout = useCallback(async () => {
+    try { await authApi.logout(); } finally { clearSession(); }
+  }, [clearSession]);
   const value = useMemo<AuthContextValue>(() => ({ user, isAuthenticated: Boolean(user), isLoading, login, register, completeOnboarding, logout, refreshSession }), [user, isLoading, login, register, completeOnboarding, logout, refreshSession]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

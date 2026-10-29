@@ -6,15 +6,21 @@ type ApiResource = Resource & { uploaderId?: string };
 function mapResource(resource: ApiResource): Resource {
   return {
     ...resource,
-    // The backend names this foreign key uploaderId; lecturer dashboards use uploadedBy.
     uploadedBy: resource.uploadedBy ?? resource.uploaderId,
-    moderationStatus: resource.moderationStatus ?? 'pending',
+    moderationStatus: resource.moderationStatus ?? (resource.isVerified ? 'approved' : 'pending'),
   };
 }
 
 export const resourcesApi = {
+  // The server scopes this list to approved resources for students and lecturers.
   list: async (token?: string | null) => {
     const resources = await apiRequest<ApiResource[]>('/resources', { method: 'GET' }, token ?? null);
+    return resources.map(mapResource);
+  },
+
+  // Lecturer-only history endpoint: pending, approved and rejected resources owned by this lecturer.
+  mine: async (token?: string | null) => {
+    const resources = await apiRequest<ApiResource[]>('/resources/mine', { method: 'GET' }, token ?? null);
     return resources.map(mapResource);
   },
 

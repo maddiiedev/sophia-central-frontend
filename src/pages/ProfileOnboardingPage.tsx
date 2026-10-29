@@ -9,7 +9,10 @@ const fieldClass = 'w-full rounded-xl border border-[#DCE4EF] bg-white px-4 py-3
 
 export function ProfileOnboardingPage() {
   const navigate = useNavigate();
-  const { user, completeOnboarding } = useAuth();
+  const { user, completeOnboarding, logout } = useAuth();
+  const leaveSetup = async () => {
+    try { await logout(); } finally { navigate('/', { replace: true }); }
+  };
   const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [step, setStep] = useState<Step>(1);
@@ -48,7 +51,7 @@ export function ProfileOnboardingPage() {
   if (!user) return null;
   const stepLabel = isLecturer ? 'Lecturer' : 'Student';
   return <main className="min-h-screen bg-white px-4 py-8 text-[#091F5B] sm:px-6 lg:py-12"><div className="mx-auto w-full max-w-4xl">
-    <div className="mb-7 rounded-3xl bg-[#2C36D9] p-6 text-white shadow-sm sm:p-8"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/80">Sophis Central · Academic setup</p><h1 className="mt-2 text-3xl font-bold sm:text-4xl">{isLecturer ? 'Set up your lecturer profile' : 'Set up your student profile'}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/90">Complete your academic path before entering your dashboard.</p></div><div className="rounded-full bg-[#6121D0] px-4 py-2 text-xs font-semibold text-white">{stepLabel}</div></div></div>
+    <div className="mb-7 rounded-3xl bg-[#2C36D9] p-6 text-white shadow-sm sm:p-8"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/80">Sophis Central · Academic setup</p><h1 className="mt-2 text-3xl font-bold sm:text-4xl">{isLecturer ? 'Set up your lecturer profile' : 'Set up your student profile'}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/90">Complete your academic path before entering your dashboard.</p></div><div className="flex flex-wrap items-center gap-2"><div className="rounded-full bg-[#6121D0] px-4 py-2 text-xs font-semibold text-white">{stepLabel}</div><button type="button" onClick={() => void leaveSetup()} disabled={saving} className="rounded-xl border border-white/40 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-50">Leave setup · Sign out</button></div></div></div>
     <div className="mb-6 flex gap-2" aria-label="Onboarding progress">{Array.from({ length: totalSteps }, (_, index) => index + 1).map((item) => <div key={item} className={`h-1.5 flex-1 rounded-full ${item <= step ? 'bg-[#6121D0]' : 'bg-[#E8EDF5]'}`} />)}</div>
     <section className="rounded-3xl border border-[#DCE4EF] bg-white p-5 shadow-sm sm:p-8">
       {loading ? <p className="text-[#5C6982]">Loading institutions…</p> : error && !institutions.length ? <p className="text-rose-600">{error}</p> : <>

@@ -146,3 +146,132 @@ body {
   .app-shell .hover\:bg-slate-900:hover { background-color: #F3F6FC !important; }
   .app-shell .hover\:text-white:hover { color: #091F5B !important; }
 }
+
+
+/* User-selectable dark appearance. Brand purple/indigo actions remain vibrant; text and surfaces adapt. */
+html[data-theme='dark'] body {
+  background: #0B1120;
+  color: #E2E8F0;
+}
+html[data-theme='dark'] .app-shell {
+  background: #0B1120 !important;
+  color: #E2E8F0 !important;
+}
+html[data-theme='dark'] .app-shell main,
+html[data-theme='dark'] .app-shell header,
+html[data-theme='dark'] .app-shell .page-shell,
+html[data-theme='dark'] .app-shell aside {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+html[data-theme='dark'] .app-shell [class~="bg-white"],
+html[data-theme='dark'] .app-shell [class~="bg-white/95"],
+html[data-theme='dark'] .app-shell [class~="bg-[#F8FAFD]"],
+html[data-theme='dark'] .app-shell [class~="bg-[#F3F6FC]"],
+html[data-theme='dark'] .app-shell [class~="bg-[#F3F0FF]"] {
+  background-color: #172033 !important;
+}
+html[data-theme='dark'] .app-shell [class~="border-[#DCE4EF]"],
+html[data-theme='dark'] .app-shell [class~="border-[#D7DEEA]"],
+html[data-theme='dark'] .app-shell [class~="border-[#E5E7EB]"],
+html[data-theme='dark'] .app-shell [class~="border-slate-800"],
+html[data-theme='dark'] .app-shell [class~="border-slate-700"] {
+  border-color: #334155 !important;
+}
+html[data-theme='dark'] .app-shell [class~="text-[#091F5B]"],
+html[data-theme='dark'] .app-shell [class~="text-[#1F2937]"] {
+  color: #F1F5F9 !important;
+}
+html[data-theme='dark'] .app-shell [class~="text-[#4B5563]"],
+html[data-theme='dark'] .app-shell [class~="text-[#5C6982]"],
+html[data-theme='dark'] .app-shell [class~="text-[#71809A]"],
+html[data-theme='dark'] .app-shell [class~="text-slate-300"],
+html[data-theme='dark'] .app-shell [class~="text-slate-400"],
+html[data-theme='dark'] .app-shell [class~="text-slate-500"] {
+  color: #CBD5E1 !important;
+}
+html[data-theme='dark'] .app-shell [class~="text-white"] {
+  color: #FFFFFF !important;
+}
+html[data-theme='dark'] .app-shell [class~="text-violet-100"],
+html[data-theme='dark'] .app-shell [class~="text-violet-200"],
+html[data-theme='dark'] .app-shell [class~="text-violet-300"] {
+  color: #C4B5FD !important;
+}
+html[data-theme='dark'] .app-shell input,
+html[data-theme='dark'] .app-shell select,
+html[data-theme='dark'] .app-shell textarea,
+html[data-theme='dark'] .app-shell [class~="brand-input"] {
+  background-color: #0B1120 !important;
+  border-color: #475569 !important;
+  color: #F1F5F9 !important;
+}
+html[data-theme='dark'] .app-shell input::placeholder,
+html[data-theme='dark'] .app-shell textarea::placeholder {
+  color: #94A3B8 !important;
+}
+html[data-theme='dark'] .app-shell [class~="hover:bg-[#F3F6FC]"]:hover,
+html[data-theme='dark'] .app-shell [class~="hover:bg-[#F8F5FF]"]:hover {
+  background-color: #26314A !important;
+}
+
+html[data-theme='dark'] .app-shell .glass-panel,
+html[data-theme='dark'] .app-shell .brand-card {
+  background-color: #172033 !important;
+  border-color: #334155 !important;
+}
+html[data-theme='dark'] .app-shell [class~="hover:bg-[#F3F6FC]"]:hover,
+html[data-theme='dark'] .app-shell [class~="hover:bg-white"]:hover {
+  background-color: #26314A !important;
+}
+
+
+/* Catch legacy opacity-suffixed slate utilities too, so every app-shell section stays light-first and readable. */
+.app-shell [class*="bg-slate-950"],
+.app-shell [class*="bg-slate-900"] {
+  background-color: #FFFFFF !important;
+}
+.app-shell [class*="border-slate-800"],
+.app-shell [class*="border-slate-700"] {
+  border-color: #E5E7EB !important;
+}
+.app-shell [class*="bg-violet-600"] {
+  background-color: #6121D0 !important;
+}
+.app-shell [class*="hover:bg-violet-500"]:hover {
+  background-color: #2C36D9 !important;
+}
+.app-shell [class*="hover:border-violet-"]:hover {
+  border-color: #6121D0 !important;
+}
+
+html[data-theme='dark'] .app-shell [class*="bg-slate-950"],
+html[data-theme='dark'] .app-shell [class*="bg-slate-900"] {
+  background-color: #172033 !important;
+}
+html[data-theme='dark'] .app-shell [class*="border-slate-800"],
+html[data-theme='dark'] .app-shell [class*="border-slate-700"] {
+  border-color: #334155 !important;
+}
+
+/* Preserve white labels on purple/indigo controls while converting legacy card text to navy. */
+.app-shell [class*="bg-violet-"] [class~="text-white"],
+.app-shell [class*="bg-indigo-"] [class~="text-white"],
+.app-shell [class*="bg-[#6121D0]"] [class~="text-white"],
+.app-shell [class*="bg-[#2C36D9]"] [class~="text-white"],
+.app-shell [class*="bg-violet-"][class~="text-white"],
+.app-shell [class*="bg-indigo-"][class~="text-white"],
+.app-shell [class*="bg-[#6121D0]"][class~="text-white"],
+.app-shell [class*="bg-[#2C36D9]"][class~="text-white"] {
+  color: #FFFFFF !important;
+}
+html[data-theme='dark'] .app-shell [class*="bg-violet-"] [class~="text-white"],
+html[data-theme='dark'] .app-shell [class*="bg-indigo-"] [class~="text-white"],
+html[data-theme='dark'] .app-shell [class*="bg-[#6121D0]"] [class~="text-white"],
+html[data-theme='dark'] .app-shell [class*="bg-[#2C36D9]"] [class~="text-white"],
+html[data-theme='dark'] .app-shell [class*="bg-violet-"][class~="text-white"],
+html[data-theme='dark'] .app-shell [class*="bg-indigo-"][class~="text-white"],
+html[data-theme='dark'] .app-shell [class*="bg-[#6121D0]"][class~="text-white"],
+html[data-theme='dark'] .app-shell [class*="bg-[#2C36D9]"][class~="text-white"] {
+  color: #FFFFFF !important;
+}

@@ -21,7 +21,19 @@ export async function apiRequest<T>(endpoint: string, options: ApiRequestOptions
     ...headers,
   };
 
-  const response = await fetch(buildUrl(endpoint), { ...rest, credentials: 'include', headers: requestHeaders });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(endpoint), { ...rest, signal: rest.signal ?? controller.signal, credentials: 'include', headers: requestHeaders });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('The server took too long to respond. Please retry in a moment.');
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
   if (!response.ok) {
     let message = `Request failed with status ${response.status}`;
     try {

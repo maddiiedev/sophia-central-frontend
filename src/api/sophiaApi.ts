@@ -61,6 +61,7 @@ export const sophiaApi = {
   resources: resourcesApi,
   moderation: {
     list: moderationApi.queue,
+    history: moderationApi.history,
     review: moderationApi.review,
   },
 };

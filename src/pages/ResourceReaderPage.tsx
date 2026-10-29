@@ -22,8 +22,7 @@ export function ResourceReaderPage() {
     let active = true;
     const load = async () => {
       try {
-        setLoading(true);
-        setError('');
+        setLoading(true); setError('');
         const result = await resourcesApi.byId(id);
         if (active) {
           setResource(result as ResourceWithFile);
@@ -31,38 +30,30 @@ export function ResourceReaderPage() {
         }
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Unable to open this resource.');
-      } finally {
-        if (active) setLoading(false);
-      }
+      } finally { if (active) setLoading(false); }
     };
     if (isAuthenticated && id) void load();
     return () => { active = false; };
   }, [id, isAuthenticated, user]);
 
-  if (loading) return <LoadingState message="Opening resource..." />;
+  if (loading) return <LoadingState message="Opening approved resource..." />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
-  if (!resource) return <div className="rounded-2xl border border-slate-800 p-6 text-slate-300">Resource not found. <Link to="/library" className="text-violet-300 underline">Return to library</Link></div>;
+  if (!resource) return <div className="rounded-2xl border border-[#DCE4EF] bg-white p-6 text-[#091F5B]">Resource not found. <Link to="/library" className="font-semibold text-[#6121D0] underline">Return to library</Link></div>;
 
   const fileUrl = resource.fileUrl || resource.file_url || resource.contentUrl || resource.content_url || resource.url;
   const status = resource.moderationStatus || (resource.isVerified ? 'approved' : 'pending');
 
   return <div className="mx-auto max-w-4xl space-y-5">
-    <Link to="/library" className="inline-flex items-center gap-2 text-sm text-violet-200 hover:text-white"><ArrowLeft size={16} /> Back to academic & research materials</Link>
-    <article className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/70">
-      <div className="border-b border-slate-800 bg-slate-950/60 p-6 sm:p-8">
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full bg-violet-500/15 px-3 py-1 uppercase tracking-wide text-violet-200">{resource.type.replace(/_/g, ' ')}</span>
-          <span className={`rounded-full px-3 py-1 capitalize ${status === 'approved' ? 'bg-emerald-500/10 text-emerald-300' : status === 'rejected' ? 'bg-rose-500/10 text-rose-300' : 'bg-amber-500/10 text-amber-200'}`}>{status}</span>
-        </div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div><h2 className="text-2xl font-semibold text-white sm:text-3xl">{resource.title}</h2><p className="mt-3 text-sm text-slate-400">{[resource.course, resource.topic, resource.level, resource.institution].filter(Boolean).join(' · ')}</p></div>
-          {user?.role === 'student' && <button type="button" onClick={() => { if (!user) return; const next = !saved; setResourceSaved(user.id, id, next); setSaved(next); }} className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${saved ? 'border-violet-400 bg-violet-500/15 text-violet-100' : 'border-slate-700 text-slate-200 hover:border-violet-400'}`}><Bookmark size={16} fill={saved ? 'currentColor' : 'none'} /> {saved ? 'Saved' : 'Save resource'}</button>}
-        </div>
+    <Link to="/library" className="inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0] transition hover:text-[#2C36D9]"><ArrowLeft size={16} /> Back to approved library</Link>
+    <article className="overflow-hidden rounded-3xl border border-[#DCE4EF] bg-white shadow-sm">
+      <div className="border-b border-[#DCE4EF] bg-[#F8FAFD] p-6 sm:p-8">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs"><span className="rounded-full bg-[#F3F0FF] px-3 py-1 font-semibold uppercase tracking-wide text-[#6121D0]">{resource.type.replace(/_/g, ' ')}</span><span className={`rounded-full px-3 py-1 font-semibold capitalize ${status === 'approved' ? 'bg-emerald-50 text-emerald-900' : status === 'rejected' ? 'bg-rose-50 text-rose-900' : 'bg-amber-50 text-amber-900'}`}>{status}</span></div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-2xl font-semibold text-[#091F5B] sm:text-3xl">{resource.title}</h2><p className="mt-3 text-sm text-[#5C6982]">{[resource.course, resource.topic, resource.level, resource.institution].filter(Boolean).join(' · ')}</p></div>{user?.role === 'student' && <button type="button" onClick={() => { if (!user) return; const next = !saved; setResourceSaved(user.id, id, next); setSaved(next); }} className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${saved ? 'border-[#6121D0] bg-[#F3F0FF] text-[#6121D0]' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#6121D0] hover:text-[#6121D0]'}`}><Bookmark size={16} fill={saved ? 'currentColor' : 'none'} /> {saved ? 'Saved' : 'Save resource'}</button>}</div>
       </div>
       <div className="space-y-6 p-6 sm:p-8">
-        <section><h3 className="mb-2 flex items-center gap-2 font-semibold text-white"><BookOpen size={17} /> Resource details</h3><p className="whitespace-pre-wrap leading-7 text-slate-300">{resource.description || 'No description was provided for this resource.'}</p></section>
-        {resource.tags?.length ? <section><h3 className="mb-2 text-sm font-medium text-slate-300">Topics</h3><div className="flex flex-wrap gap-2">{resource.tags.map(tag => <span key={tag} className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">{tag}</span>)}</div></section> : null}
-        {fileUrl ? <div className="flex flex-wrap gap-3 border-t border-slate-800 pt-5"><a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500"><ExternalLink size={16} /> Open resource file</a><a href={fileUrl} download className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-200 hover:border-violet-500"><Download size={16} /> Download</a></div> : <p className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-100">The resource details are available, but no downloadable file URL was returned by the API.</p>}
+        <section><h3 className="mb-2 flex items-center gap-2 font-semibold text-[#091F5B]"><BookOpen size={17} className="text-[#6121D0]" /> Resource details</h3><p className="whitespace-pre-wrap leading-7 text-[#374151]">{resource.description || 'No description was provided for this resource.'}</p></section>
+        {resource.tags?.length ? <section><h3 className="mb-2 text-sm font-semibold text-[#091F5B]">Topics</h3><div className="flex flex-wrap gap-2">{resource.tags.map(tag => <span key={tag} className="rounded-full border border-[#DCE4EF] bg-[#F8FAFD] px-3 py-1 text-xs text-[#4B5563]">{tag}</span>)}</div></section> : null}
+        {fileUrl ? <div className="flex flex-wrap gap-3 border-t border-[#DCE4EF] pt-5"><a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2C36D9]"><ExternalLink size={16} /> Open resource file</a><a href={fileUrl} download className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-3 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><Download size={16} /> Download</a></div> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">The resource details are available, but no downloadable file URL was returned by the API.</p>}
       </div>
     </article>
   </div>;
