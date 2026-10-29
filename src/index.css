@@ -348,3 +348,27 @@ html[data-theme='dark'] .homepage [class*="bg-[#2C36D9]"] [class~="text-white"] 
 html[data-theme='dark'] .homepage footer {
   background-color: #050B18 !important;
 }
+
+
+/* Sidebar navigation has explicit hover/active colors so dark-mode text never sits on a white hover surface. */
+.app-shell .sidebar-nav-link:hover {
+  background-color: #F3F0FF;
+  color: #6121D0;
+}
+.app-shell .sidebar-nav-link.is-active {
+  background-color: #F3F0FF;
+  color: #6121D0;
+}
+html[data-theme='dark'] .app-shell .sidebar-nav-link:not(.is-active) {
+  color: #CBD5E1;
+}
+html[data-theme='dark'] .app-shell .sidebar-nav-link:hover,
+html[data-theme='dark'] .app-shell .sidebar-nav-link:focus-visible {
+  background-color: #26314A !important;
+  color: #E9D5FF !important;
+}
+html[data-theme='dark'] .app-shell .sidebar-nav-link.is-active {
+  background-color: #30234D !important;
+  color: #E9D5FF !important;
+  box-shadow: inset 0 0 0 1px rgba(196, 181, 253, 0.25);
+}

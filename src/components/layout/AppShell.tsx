@@ -79,7 +79,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const nav = (
     <nav aria-label="Main navigation" className="space-y-1">
       {navItems.map(({ href, label, icon: Icon }) => (
-        <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
+        <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />
           {label}
         </NavLink>
@@ -88,7 +88,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         { label: 'Profile', href: '/profile', icon: UserCircle },
         { label: 'Settings', href: '/settings', icon: Settings },
       ].map(({ label, href, icon: Icon }) => (
-        <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
+        <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />
           {label}
         </NavLink>

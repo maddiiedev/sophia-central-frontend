@@ -66,6 +66,18 @@ export function WalletPage() {
     catch { setMessage(`Your referral code is ${code}. Select and copy it manually.`); }
   };
 
+  const copyInviteLink = async () => {
+    if (!shareLink) return;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setMessage('Your personal invite link has been copied.');
+      setError('');
+    } catch {
+      setMessage(`Your invite link is: ${shareLink}`);
+      setError('');
+    }
+  };
+
   return <div className="space-y-6">
     <SectionTitle eyebrow="Rewards" title="Wisdom Points wallet" />
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
@@ -90,7 +102,10 @@ export function WalletPage() {
     <OverviewCard title="Referral program" action="Invite your community">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6121D0]">Your personal referral code</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] px-4 py-3 font-mono text-xl font-bold tracking-wider text-[#091F5B]">{loading ? 'Loading…' : code || 'Not available'}</span><button type="button" onClick={() => void copyCode()} disabled={!code} aria-label="Copy referral code" className="rounded-xl border border-[#DCE4EF] bg-white p-3 text-[#6121D0] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-50"><Copy size={17}/></button></div><p className="mt-2 text-sm text-[#4B5563]">{stats ? `${stats.successfulReferrals} successful referrals · ${stats.totalBonusEarned} points earned` : 'Invite friends to join your academic community.'}</p></div>
-        <button type="button" onClick={() => void shareCode()} disabled={!code || sharing} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#2C36D9] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><Share2 size={17}/>{sharing ? 'Opening share…' : 'Share code'}</button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button type="button" onClick={() => void copyInviteLink()} disabled={!shareLink} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:cursor-not-allowed disabled:opacity-50"><Copy size={16}/>Copy invite link</button>
+          <button type="button" onClick={() => void shareCode()} disabled={!code || sharing} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#2C36D9] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><Share2 size={17}/>{sharing ? 'Opening share…' : 'Share my code'}</button>
+        </div>
       </div>
       {stats && <div className="mt-5 grid gap-3 sm:grid-cols-3"><div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs text-[#5C6982]">Codes generated</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{stats.totalGenerated}</p></div><div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs text-[#5C6982]">Successful referrals</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{stats.successfulReferrals}</p></div><div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs text-[#5C6982]">Referral points</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{stats.totalBonusEarned}</p></div></div>}
     </OverviewCard>
