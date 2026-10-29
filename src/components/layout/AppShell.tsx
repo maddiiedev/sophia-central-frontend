@@ -18,10 +18,11 @@ import {
   Settings,
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { roleUsers } from '../../lib/mock-data';
 import { BrandLogo } from '../brand/BrandLogo';
+import { notificationsApi } from '../../api/notifications';
 
 const studentNav = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
@@ -54,6 +55,19 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+    let active = true;
+    const refreshUnread = async () => {
+      try { const result = await notificationsApi.list(1); if (active) setUnreadCount(result.unreadCount ?? 0); }
+      catch { /* Keep navigation usable when notifications are temporarily unavailable. */ }
+    };
+    void refreshUnread();
+    const interval = window.setInterval(() => { void refreshUnread(); }, 30000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [user?.id]);
 
   const navItems = user?.role === 'lecturer' ? lecturerNav : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : studentNav;
   const goBack = () => {
@@ -109,7 +123,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
                 <button type="button" onClick={goBack} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Go back" title="Go back"><ArrowLeft size={16} /></button>
                 <button type="button" onClick={() => navigate('/')} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Go to homepage" title="Homepage"><Home size={16} /></button>
                 <button type="button" onClick={() => navigate('/library')} className="flex items-center gap-2 rounded-xl border border-[#D7DEEA] bg-white px-3 py-2 text-sm font-medium text-[#091F5B] hover:border-[#6121D0]" aria-label="Search academic resources"><Search size={15} /><span className="hidden sm:inline">Search resources</span></button>
-                <button type="button" onClick={() => navigate('/notifications')} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] hover:border-[#6121D0]" aria-label="Open notifications" title="Open notifications"><Bell size={16} /></button>
+                <button type="button" onClick={() => navigate('/notifications')} className="relative rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] hover:border-[#6121D0]" aria-label={unreadCount ? `Open notifications, ${unreadCount} unread` : 'Open notifications'} title={unreadCount ? `${unreadCount} unread notifications` : 'Open notifications'}><Bell size={16} />{unreadCount > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
                 <button type="button" onClick={() => void logout()} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-sm font-semibold text-[#091F5B] hover:border-[#6121D0] sm:px-3 sm:py-2"><LogOut size={15} className="sm:mr-2 sm:inline" /><span className="hidden sm:inline">Sign out</span></button>
               </div>
             </div>

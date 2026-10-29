@@ -275,3 +275,76 @@ html[data-theme='dark'] .app-shell [class*="bg-[#6121D0]"][class~="text-white"],
 html[data-theme='dark'] .app-shell [class*="bg-[#2C36D9]"][class~="text-white"] {
   color: #FFFFFF !important;
 }
+
+
+/* In dark mode, invert transparent brand artwork to the white logo treatment. */
+html[data-theme='dark'] [data-logo-tone] img {
+  filter: brightness(0) invert(1) !important;
+}
+/* Light theme: keep legacy dark utility surfaces and their text readable. */
+.app-shell [class*="bg-slate-950"],
+.app-shell [class*="bg-slate-900"] {
+  background-color: #F8FAFD !important;
+}
+.app-shell [class*="bg-slate-950"] [class~="text-white"],
+.app-shell [class*="bg-slate-900"] [class~="text-white"] {
+  color: #091F5B !important;
+}
+.app-shell [class~="text-slate-300"],
+.app-shell [class~="text-slate-400"],
+.app-shell [class~="text-slate-500"] {
+  color: #4B5563 !important;
+}
+.app-shell [class~="text-white"] {
+  color: #091F5B !important;
+}
+.app-shell [class*="bg-[#2C36D9]"] [class~="text-white"],
+.app-shell [class*="bg-[#6121D0]"] [class~="text-white"],
+.app-shell [class*="bg-violet-"] [class~="text-white"],
+.app-shell [class*="bg-indigo-"] [class~="text-white"],
+.app-shell [class*="bg-[#2C36D9]"][class~="text-white"],
+.app-shell [class*="bg-[#6121D0]"][class~="text-white"],
+.app-shell [class*="bg-violet-"][class~="text-white"],
+.app-shell [class*="bg-indigo-"][class~="text-white"] {
+  color: #FFFFFF !important;
+}
+
+/* The public homepage follows the selected theme too, keeping the white logo visible in dark mode. */
+html[data-theme='dark'] .homepage {
+  background-color: #0B1120 !important;
+  color: #E2E8F0 !important;
+}
+html[data-theme='dark'] .homepage header,
+html[data-theme='dark'] .homepage section[class~="bg-white"],
+html[data-theme='dark'] .homepage [class~="bg-white"] {
+  background-color: #0F172A !important;
+  border-color: #334155 !important;
+}
+html[data-theme='dark'] .homepage [class~="bg-[#F8FAFD]"],
+html[data-theme='dark'] .homepage [class~="bg-[#F3F6FC]"],
+html[data-theme='dark'] .homepage [class~="bg-[#F3F0FF]"] {
+  background-color: #172033 !important;
+}
+html[data-theme='dark'] .homepage [class*="border-[#E5E7EB]"],
+html[data-theme='dark'] .homepage [class*="border-[#DCE4EF]"] {
+  border-color: #334155 !important;
+}
+html[data-theme='dark'] .homepage [class~="text-[#091F5B]"],
+html[data-theme='dark'] .homepage [class~="text-[#1F2937]"] {
+  color: #F1F5F9 !important;
+}
+html[data-theme='dark'] .homepage [class~="text-[#4B5563]"],
+html[data-theme='dark'] .homepage [class~="text-[#374151]"],
+html[data-theme='dark'] .homepage [class~="text-[#5C6982]"] {
+  color: #CBD5E1 !important;
+}
+html[data-theme='dark'] .homepage [class~="text-white"] {
+  color: #FFFFFF !important;
+}
+html[data-theme='dark'] .homepage [class*="bg-[#6121D0]"] [class~="text-white"],
+html[data-theme='dark'] .homepage [class*="bg-[#2C36D9]"] [class~="text-white"] {
+  color: #FFFFFF !important;
+}
+html[data-theme='dark'] .homepage footer {
+  background-color: #050B18 !important;
+}

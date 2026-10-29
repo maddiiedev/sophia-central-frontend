@@ -5,15 +5,17 @@ import { brandStats, featureHighlights } from '../lib/mock-data';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white text-[#1F2937]">
+    <div className="homepage min-h-screen bg-white text-[#1F2937]">
       <header className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 bg-white px-4 py-3 sm:px-6 lg:px-8">
         <BrandLogo variant="full" tone="dark" />
         <nav aria-label="Primary navigation" className="hidden items-center gap-7 text-sm font-medium text-[#091F5B] md:flex">
           <a href="#features" className="transition hover:text-[#2C36D9]">Features</a>
           <a href="#impact" className="transition hover:text-[#2C36D9]">Impact</a>
           <a href="#community" className="transition hover:text-[#2C36D9]">Community</a>
+          <a href="#about" className="transition hover:text-[#2C36D9]">About</a>
         </nav>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <a href="#about" className="text-xs font-semibold text-[#6121D0] transition hover:text-[#2C36D9] md:hidden">About</a>
           <Link to="/login" className="rounded-xl border-2 border-[#004BEC] bg-white px-3 py-2 text-sm font-semibold text-[#004BEC] transition hover:bg-[#F3F6FC] sm:px-4">Sign in</Link>
           <Link to="/login" className="brand-button px-3 py-2 text-sm font-semibold shadow-sm sm:px-4">Get started</Link>
         </div>
@@ -81,6 +83,13 @@ export default function HomePage() {
                 <p className="mt-3 text-sm leading-6 text-[#4B5563]">{feature.text}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section id="about" className="mx-auto max-w-7xl bg-[#F8FAFD] px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
+          <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr]">
+            <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">About Sophis Central</p><h2 className="mt-3 text-3xl font-bold leading-tight text-[#091F5B]">A more organized home for academic knowledge.</h2></div>
+            <div><p className="text-base leading-7 text-[#374151]">Sophis Central brings verified academic resources, research materials, lecturer contributions, and study support into one structured space. Resources are reviewed before they enter the shared library, helping students discover materials relevant to their school, faculty, and department.</p><Link to="/login" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9]">Join the community <ArrowRight size={17}/></Link></div>
           </div>
         </section>
 

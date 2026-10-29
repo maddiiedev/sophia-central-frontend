@@ -59,7 +59,7 @@ export function ModerationPage() {
 
   const historyName = (item: ModerationHistoryItem) => item.reviewer?.name ||
     [item.reviewer?.firstName, item.reviewer?.lastName].filter(Boolean).join(' ') ||
-    item.reviewer?.email || 'Moderator';
+    item.reviewer?.email || 'Sophis Moderator';
 
   return <div className="space-y-6">
     <SectionTitle eyebrow="Trust & safety" title="Moderation queue" />
