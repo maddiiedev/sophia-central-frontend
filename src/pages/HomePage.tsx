@@ -116,6 +116,11 @@ export default function HomePage() {
           <div><h3 className="font-semibold text-white">Resources</h3><div className="mt-3 space-y-2 text-sm text-blue-100"><div>Courses</div><div>Academic library</div><div>Research materials</div></div></div>
           <div><h3 className="font-semibold text-white">Contact</h3><div className="mt-3 space-y-2 text-sm text-blue-100"><div>Resource Template</div><div>Terms of Use</div><div>Contact Us</div></div></div>
         </div>
+        <div className="border-t border-white/15">
+          <div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-blue-100 sm:px-6 lg:px-8">
+            © {new Date().getFullYear()} Sophis Central
+          </div>
+        </div>
       </footer>
     </div>
   );
