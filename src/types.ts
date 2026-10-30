@@ -14,6 +14,7 @@ export interface User {
   bio?: string;
   isProfileComplete?: boolean;
   avatar?: string;
+  profileImage?: string;
   isVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;

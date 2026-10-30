@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { profileImageApi } from '../api/upload';
 
 export function ProfileSettingsPage() {
-  const { user, completeOnboarding } = useAuth();
+  const { user, completeOnboarding, refreshSession } = useAuth();
   const [form, setForm] = useState({ institution: '', faculty: '', department: '', programme: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -25,6 +27,29 @@ export function ProfileSettingsPage() {
 
   if (!user) return null;
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const uploadPhoto = async (file?: File) => {
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Choose a JPG, PNG, or WebP image.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Your profile image must be smaller than 5 MB.');
+      return;
+    }
+    setUploadingPhoto(true);
+    setError('');
+    setMessage('');
+    try {
+      await profileImageApi.upload(file);
+      await refreshSession();
+      setMessage('Profile picture updated successfully.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to update your profile picture.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
   const save = async () => {
     setSaving(true); setMessage(''); setError('');
     try {
@@ -52,11 +77,21 @@ export function ProfileSettingsPage() {
   return <div className="mx-auto max-w-4xl space-y-6">
     <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Account & settings</p><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">Your profile</h2><p className="mt-2 text-[#4B5563]">Edit your academic profile. Changes are saved to your Sophis Central account.</p></div>
     <section className="glass-panel p-5 sm:p-7">
-      <div className="mb-6 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4">
-        <p className="text-xs uppercase tracking-wider text-[#5C6982]">Account identity</p>
-        <p className="mt-2 font-semibold text-[#091F5B]">{user.name}</p>
-        <p className="mt-1 text-sm text-[#4B5563]">{user.email}</p>
-        <p className="mt-2 text-xs font-semibold capitalize text-[#6121D0]">{user.role} account</p>
+      <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:flex-row sm:items-center">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-2xl font-bold text-white shadow-sm">
+          {user.profileImage ? <img src={user.profileImage} alt="Profile picture" className="h-full w-full object-cover" /> : (user.firstName?.[0] || user.name?.[0] || 'U').toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs uppercase tracking-wider text-[#5C6982]">Account identity</p>
+          <p className="mt-1 font-semibold text-[#091F5B]">{user.name}</p>
+          <p className="mt-1 text-sm text-[#4B5563]">{user.email}</p>
+          <p className="mt-1 text-xs font-semibold capitalize text-[#6121D0]">{user.role} account</p>
+          <label className="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#6121D0] hover:border-[#6121D0]">
+            {uploadingPhoto ? 'Uploading photo…' : user.profileImage ? 'Change profile picture' : 'Upload profile picture'}
+            <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingPhoto} onChange={(event) => { void uploadPhoto(event.target.files?.[0]); event.currentTarget.value = ''; }} />
+          </label>
+          <p className="mt-2 text-xs text-[#5C6982]">JPG, PNG, or WebP · Maximum 5 MB</p>
+        </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         {textField('institution', 'Institution', 'Your institution')}

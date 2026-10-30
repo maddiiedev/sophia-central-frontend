@@ -12,7 +12,7 @@ export function ProtectedRoute({
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
 
-  if (isLoading) return <div className="p-6 text-slate-300">Checking session...</div>;
+  if (isLoading) return <div className="p-6 text-slate-300">Loading your workspace…</div>;
   if (!isAuthenticated || !user) return <Navigate to="/login" replace state={{ from: location }} />;
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to={user.role === 'moderator' || user.role === 'admin' ? '/moderation' : '/dashboard'} replace />;

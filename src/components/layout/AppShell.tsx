@@ -124,6 +124,9 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
                 <button type="button" onClick={() => navigate('/')} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Go to homepage" title="Homepage"><Home size={16} /></button>
                 <button type="button" onClick={() => navigate('/library')} className="flex items-center gap-2 rounded-xl border border-[#D7DEEA] bg-white px-3 py-2 text-sm font-medium text-[#091F5B] hover:border-[#6121D0]" aria-label="Search academic resources"><Search size={15} /><span className="hidden sm:inline">Search resources</span></button>
                 <button type="button" onClick={() => navigate('/notifications')} className="relative rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] hover:border-[#6121D0]" aria-label={unreadCount ? `Open notifications, ${unreadCount} unread` : 'Open notifications'} title={unreadCount ? `${unreadCount} unread notifications` : 'Open notifications'}><Bell size={16} />{unreadCount > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
+                <button type="button" onClick={() => navigate('/profile')} className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#DCE4EF] bg-[#2C36D9] text-sm font-bold text-white" aria-label="Open your profile" title="Your profile">
+                  {user?.profileImage ? <img src={user.profileImage} alt="" className="h-full w-full object-cover" /> : (user?.firstName?.[0] || user?.name?.[0] || 'U').toUpperCase()}
+                </button>
                 <button type="button" onClick={() => void logout()} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-sm font-semibold text-[#091F5B] hover:border-[#6121D0] sm:px-3 sm:py-2"><LogOut size={15} className="sm:mr-2 sm:inline" /><span className="hidden sm:inline">Sign out</span></button>
               </div>
             </div>
@@ -139,7 +142,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
 export function UserBadge() {
   const { user } = useAuth();
   const current = user ?? roleUsers.student;
-  return <div className="flex items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2C36D9] text-sm font-semibold text-white">{current.avatar || current.name?.slice(0, 1)}</div><div><div className="text-sm font-semibold text-[#091F5B]">{current.name}</div><div className="text-xs text-[#4B5563]">{current.institution || 'Institution not set'}</div></div></div>;
+  return <div className="flex items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm"><div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#2C36D9] text-sm font-semibold text-white">{current.profileImage ? <img src={current.profileImage} alt="" className="h-full w-full object-cover" /> : (current.firstName?.[0] || current.name?.slice(0, 1))}</div><div><div className="text-sm font-semibold text-[#091F5B]">{current.name}</div><div className="text-xs text-[#4B5563]">{current.institution || 'Institution not set'}</div></div></div>;
 }
 
 export function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
