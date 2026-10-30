@@ -133,3 +133,19 @@ Backend API and database migrations: [ReignnRule11/sophia-central-backend](https
 - Run migrations through the backend's documented migration process before relying on newly persisted profile fields.
 - Verify registration/login, onboarding, role-based access, resource search/reader, saved resources, lecturer submission, and moderation against the target environment.
 - CI passing indicates the configured automated checks passed; it does not alone establish that the current hosting deployment or every live end-to-end journey is healthy.
+
+### Production frontend domain
+
+The canonical production web address is **https://sophiscentral.vercel.app**. The Vercel project remains connected to the existing production Git branch; changing the assigned domain does not require changing the Git repository, build command, output directory, or API service.
+
+When the new domain is assigned in Vercel:
+
+1. Add `sophiscentral.vercel.app` to this existing frontend project and assign it to the Production environment.
+2. Confirm that the domain is verified and resolves to the latest successful production deployment.
+3. Keep the previous `*.vercel.app` hostname attached temporarily and configure it to redirect to `https://sophiscentral.vercel.app` after the new hostname is healthy.
+4. Update the backend's production `CORS_ORIGINS` allowlist and password-reset `FRONTEND_URL` to the new HTTPS origin. Keep localhost origins in local development configuration only.
+5. Redeploy the backend after its environment changes, and create a new production frontend deployment after any Vercel environment-variable changes.
+
+Do not change `VITE_API_BASE_URL` as part of this frontend-domain migration: the API remains `https://sophia-central-backend.onrender.com`. Preview deployments and local development continue to use their own URLs and local API configuration.
+
+The old production hostname should only be removed after the redirect, login/session flow, password-reset links, and API CORS have been verified on the new hostname.
