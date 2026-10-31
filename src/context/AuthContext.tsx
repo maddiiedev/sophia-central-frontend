@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { authApi } from '../api/auth';
 import { academicApi } from '../api/academic';
 import { setCsrfToken } from '../lib/api/client';
+import { profileImageApi } from '../api/upload';
 import type { User, UserRole } from '../types';
 
 type RegisterPayload = {
@@ -30,10 +31,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCsrfToken(response.csrfToken);
   }, []);
   const clearSession = useCallback(() => { setUser(null); setCsrfToken(null); }, []);
+  const hydrateUser = useCallback(async (nextUser: User): Promise<User> => {
+    if (!nextUser.profileImage) return nextUser;
+    try {
+      const image = await profileImageApi.getUrl();
+      return image.url ? { ...nextUser, profileImage: image.url } : nextUser;
+    } catch { return nextUser; }
+  }, []);
   const refreshSession = useCallback(async () => {
     const response = await authApi.me();
-    setUser(response.user);
-  }, []);
+    setUser(await hydrateUser(response.user));
+  }, [hydrateUser]);
 
   useEffect(() => {
     let active = true;
@@ -55,9 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
     const response = await authApi.login({ email, password });
-    setUser(response.user);
+    setUser(await hydrateUser(response.user));
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
-  }, [initializeCsrf]);
+  }, [initializeCsrf, hydrateUser]);
 
   const register = useCallback(async (payload: RegisterPayload) => {
     await initializeCsrf();
@@ -78,14 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         twitter: optionalUrl(socialLinks.twitter),
       } : undefined,
     });
-    setUser(response.user);
+    setUser(await hydrateUser(response.user));
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
-  }, [initializeCsrf]);
+  }, [initializeCsrf, hydrateUser]);
 
   const completeOnboarding = useCallback(async (payload: OnboardingPayload) => {
     const response = await academicApi.completeOnboarding(payload);
-    setUser(response.user);
-  }, []);
+    setUser(await hydrateUser(response.user));
+  }, [hydrateUser]);
   const logout = useCallback(async () => {
     try { await authApi.logout(); } finally { clearSession(); }
   }, [clearSession]);

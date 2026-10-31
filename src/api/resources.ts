@@ -24,6 +24,11 @@ export const resourcesApi = {
     return resources.map(mapResource);
   },
 
+  fileUrl: async (id: string, download = false, token?: string | null) => {
+    const endpoint = download ? 'download-url' : 'file-url';
+    return apiRequest<{ url: string }>(`/resources/${encodeURIComponent(id)}/${endpoint}`, { method: 'GET' }, token ?? null);
+  },
+
   byId: async (id: string, token?: string | null) => {
     const resource = await apiRequest<ApiResource>(`/resources/${encodeURIComponent(id)}`, { method: 'GET' }, token ?? null);
     return mapResource(resource);

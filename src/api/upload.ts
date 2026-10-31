@@ -5,6 +5,7 @@ type PresignedUpload = { presignedUrl: string; key: string; uploadId: string; pu
 type ProfileImagePresign = { presignedUrl: string; key: string; publicUrl: string };
 
 export const profileImageApi = {
+  getUrl: () => apiRequest<{ url: string | null }>('/upload/profile-image/url', { method: 'GET' }),
   async upload(file: File) {
     const signed = await apiRequest<ProfileImagePresign>('/upload/profile-image/presigned-url', {
       method: 'POST',
