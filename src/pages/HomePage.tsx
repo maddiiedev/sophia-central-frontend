@@ -15,7 +15,6 @@ export default function HomePage() {
           <a href="#about" className="transition hover:text-[#2C36D9]">About</a>
         </nav>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <a href="#about" className="text-xs font-semibold text-[#6121D0] transition hover:text-[#2C36D9] md:hidden">About</a>
           <Link to="/login" className="rounded-xl border-2 border-[#004BEC] bg-white px-3 py-2 text-sm font-semibold text-[#004BEC] transition hover:bg-[#F3F6FC] sm:px-4">Sign in</Link>
           <Link to="/login" className="brand-button px-3 py-2 text-sm font-semibold shadow-sm sm:px-4">Get started</Link>
         </div>
