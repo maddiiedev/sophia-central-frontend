@@ -15,6 +15,7 @@ import {
   X,
   UserCircle,
   Settings,
+  LifeBuoy,
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -29,12 +30,14 @@ const studentNav = [
   { label: 'Saved resources', href: '/saved', icon: Bookmark },
   { label: 'AI Tutor', href: '/ai', icon: BrainCircuit },
   { label: 'Wallet', href: '/wallet', icon: WalletCards },
+  { label: 'Contact support', href: '/support', icon: LifeBuoy },
 ];
 
 const lecturerNav = [
   { label: 'Dashboard', href: '/lecturer', icon: LayoutGrid },
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'Submit resource', href: '/upload', icon: Upload },
+  { label: 'Contact support', href: '/support', icon: LifeBuoy },
 ];
 
 const moderatorNav = [

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
+import { AdminProfilePage } from './AdminProfilePage';
 
 export function ProfileSettingsPage() {
   const { user, completeOnboarding, refreshSession } = useAuth();
@@ -26,6 +27,7 @@ export function ProfileSettingsPage() {
   }, [user]);
 
   if (!user) return null;
+  if (user.role === 'moderator' || user.role === 'admin') return <AdminProfilePage />;
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const uploadPhoto = async (file?: File) => {
     if (!file) return;
@@ -104,7 +106,7 @@ export function ProfileSettingsPage() {
       </div>
       {message && <p role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{message}</p>}
       {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
-      <div className="mt-6 flex flex-wrap justify-end gap-3"><Link to={user.role === 'lecturer' ? '/lecturer' : user.role === 'moderator' || user.role === 'admin' ? '/moderation' : '/dashboard'} className="rounded-xl border border-[#DCE4EF] bg-white px-5 py-3 font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">Back to dashboard</Link><button type="button" onClick={() => void save()} disabled={saving} className="rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-50">{saving ? 'Saving…' : 'Save profile changes'}</button></div>
+      <div className="mt-6 flex flex-wrap justify-end gap-3"><Link to={user.role === 'lecturer' ? '/lecturer' : '/dashboard'} className="rounded-xl border border-[#DCE4EF] bg-white px-5 py-3 font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">Back to dashboard</Link><button type="button" onClick={() => void save()} disabled={saving} className="rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-50">{saving ? 'Saving…' : 'Save profile changes'}</button></div>
     </section>
   </div>;
 }
