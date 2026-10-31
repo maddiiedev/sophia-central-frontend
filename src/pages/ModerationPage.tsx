@@ -4,9 +4,8 @@ import { OverviewCard, SectionTitle } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
 import type { ModerationItem } from '../types';
 import type { ModerationHistoryItem } from '../api/moderation';
-import { SupportRequestsPanel } from '../components/moderation/SupportRequestsPanel';
 
-type ModerationTab = 'queue' | 'history' | 'support';
+type ModerationTab = 'queue' | 'history';
 
 export function ModerationPage() {
   const [items, setItems] = useState<ModerationItem[]>([]);
@@ -69,10 +68,9 @@ export function ModerationPage() {
     <div className="flex flex-wrap gap-2" role="tablist" aria-label="Moderation sections">
       <button type="button" role="tab" aria-selected={tab === 'queue'} onClick={() => setTab('queue')} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${tab === 'queue' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9]'}`}>Pending queue ({pending.length})</button>
       <button type="button" role="tab" aria-selected={tab === 'history'} onClick={() => setTab('history')} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${tab === 'history' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9]'}`}>Decision history</button>
-      <button type="button" role="tab" aria-selected={tab === 'support'} onClick={() => setTab('support')} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${tab === 'support' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9]'}`}>Support requests</button>
     </div>
 
-    {tab === 'support' ? <SupportRequestsPanel /> : tab === 'queue' ? <OverviewCard title={`${pending.length} pending lecturer uploads`} action="Review queue">
+    {tab === 'queue' ? <OverviewCard title={`${pending.length} pending lecturer uploads`} action="Review queue">
       <div className="space-y-3">
         <div className="flex justify-end"><button type="button" onClick={() => void loadQueue()} disabled={loading || Boolean(processingId)} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-medium text-[#091F5B] hover:border-[#6121D0] disabled:opacity-50"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh queue</button></div>
         {loading ? <div className="p-6 text-sm text-[#5C6982]">Loading pending lecturer uploads…</div> : pending.length === 0 ? <div className="p-8 text-center text-sm text-[#5C6982]"><ShieldCheck size={24} className="mx-auto mb-2 text-[#6121D0]" />No pending uploads. Refresh to check for new submissions.</div> : pending.map((item) => {
