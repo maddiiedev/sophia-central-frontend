@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Home,
   Bell,
   BookOpen,
   Bookmark,
@@ -121,7 +120,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <button type="button" onClick={goBack} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Go back" title="Go back"><ArrowLeft size={16} /></button>
-                <button type="button" onClick={() => navigate('/')} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Go to homepage" title="Homepage"><Home size={16} /></button>
+                
                 <button type="button" onClick={() => navigate('/library')} className="flex items-center gap-2 rounded-xl border border-[#D7DEEA] bg-white px-3 py-2 text-sm font-medium text-[#091F5B] hover:border-[#6121D0]" aria-label="Search academic resources"><Search size={15} /><span className="hidden sm:inline">Search resources</span></button>
                 <button type="button" onClick={() => navigate('/notifications')} className="relative rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] hover:border-[#6121D0]" aria-label={unreadCount ? `Open notifications, ${unreadCount} unread` : 'Open notifications'} title={unreadCount ? `${unreadCount} unread notifications` : 'Open notifications'}><Bell size={16} />{unreadCount > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
                 <button type="button" onClick={() => navigate('/profile')} className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#DCE4EF] bg-[#2C36D9] text-sm font-bold text-white" aria-label="Open your profile" title="Your profile">
