@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Bookmark, BookOpen, Download, FileText } from 'lucide-react';
 import { resourcesApi } from '../api/resources';
+import { apiRequest } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
 import { getSavedResourceIds, setResourceSaved } from '../lib/savedResources';
 import { LoadingState } from '../components/states/LoadingState';
@@ -19,6 +20,7 @@ export function ResourceReaderPage() {
   const [saved, setSaved] = useState(false);
   const [fileAction, setFileAction] = useState<'open' | 'download' | null>(null);
   const [viewerUrl, setViewerUrl] = useState('');
+  const [restrictionBusy, setRestrictionBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -61,13 +63,24 @@ export function ResourceReaderPage() {
     } finally { setFileAction(null); }
   };
   const status = resource.moderationStatus || (resource.isVerified ? 'approved' : 'pending');
+  const updateDownloadRestriction = async () => {
+    if (!user || !['moderator', 'admin'].includes(user.role) || restrictionBusy) return;
+    setRestrictionBusy(true); setError('');
+    try {
+      const next = !downloadRestricted;
+      await apiRequest(`/resources/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ downloadRestricted: next }) });
+      setResource((current) => current ? { ...current, downloadRestricted: next } : current);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to update resource download access.');
+    } finally { setRestrictionBusy(false); }
+  };
 
   return <div className="mx-auto max-w-4xl space-y-5">
     <Link to="/library" className="inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0] transition hover:text-[#2C36D9]"><ArrowLeft size={16} /> Back to approved library</Link>
     <article className="overflow-hidden rounded-3xl border border-[#DCE4EF] bg-white shadow-sm">
       <div className="border-b border-[#DCE4EF] bg-[#F8FAFD] p-6 sm:p-8">
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs"><span className="rounded-full bg-[#F3F0FF] px-3 py-1 font-semibold uppercase tracking-wide text-[#6121D0]">{resource.type.replace(/_/g, ' ')}</span><span className={`rounded-full px-3 py-1 font-semibold capitalize ${status === 'approved' ? 'bg-emerald-50 text-emerald-900' : status === 'rejected' ? 'bg-rose-50 text-rose-900' : 'bg-amber-50 text-amber-900'}`}>{status}</span></div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-2xl font-semibold text-[#091F5B] sm:text-3xl">{resource.title}</h2><p className="mt-3 text-sm text-[#5C6982]">{[resource.course, resource.topic, resource.level, resource.institution].filter(Boolean).join(' · ')}</p></div>{user?.role === 'student' && <button type="button" onClick={() => { if (!user) return; const next = !saved; setResourceSaved(user.id, id, next); setSaved(next); }} className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${saved ? 'border-[#6121D0] bg-[#F3F0FF] text-[#6121D0]' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#6121D0] hover:text-[#6121D0]'}`}><Bookmark size={16} fill={saved ? 'currentColor' : 'none'} /> {saved ? 'Saved' : 'Save resource'}</button>}</div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-2xl font-semibold text-[#091F5B] sm:text-3xl">{resource.title}</h2><p className="mt-3 text-sm text-[#5C6982]">{[resource.course, resource.topic, resource.level, resource.institution].filter(Boolean).join(' · ')}</p></div><div className="flex flex-wrap gap-2">{user?.role === 'student' && <button type="button" onClick={() => { if (!user) return; const next = !saved; setResourceSaved(user.id, id, next); setSaved(next); }} className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${saved ? 'border-[#6121D0] bg-[#F3F0FF] text-[#6121D0]' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#6121D0] hover:text-[#6121D0]'}`}><Bookmark size={16} fill={saved ? 'currentColor' : 'none'} /> {saved ? 'Saved' : 'Save resource'}</button>}{(user?.role === 'moderator' || user?.role === 'admin') && <button type="button" onClick={() => void updateDownloadRestriction()} disabled={restrictionBusy} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold disabled:opacity-50 ${downloadRestricted ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>{restrictionBusy ? 'Saving…' : downloadRestricted ? 'Allow downloads' : 'Restrict downloads'}</button>}</div></div>
       </div>
       <div className="space-y-6 p-6 sm:p-8">
         <section><h3 className="mb-2 flex items-center gap-2 font-semibold text-[#091F5B]"><BookOpen size={17} className="text-[#6121D0]" /> Resource details</h3><p className="whitespace-pre-wrap leading-7 text-[#374151]">{resource.description || 'No description was provided for this resource.'}</p></section>
