@@ -14,6 +14,8 @@ import {
   UserCircle,
   Settings,
   LifeBuoy,
+  ChartNoAxesCombined,
+  BriefcaseBusiness,
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -41,6 +43,8 @@ const moderatorNav = [
   { label: 'Review queue', href: '/moderation', icon: ShieldCheck },
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
+  { label: 'Analytics', href: '/moderation/analytics', icon: ChartNoAxesCombined },
+  { label: 'Management', href: '/moderation/management', icon: BriefcaseBusiness },
 ];
 
 const adminNav = [
@@ -99,9 +103,10 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         </NavLink>
       ))}
       {[
+        ...(user?.role === 'student' || user?.role === 'lecturer' ? [{ label: 'Contact support', href: '/support', icon: LifeBuoy }] : []),
         { label: 'Profile', href: '/profile', icon: UserCircle },
         { label: 'Settings', href: '/settings', icon: Settings },
-        ...(user?.role === 'student' || user?.role === 'lecturer' ? [{ label: 'Contact support', href: '/support', icon: LifeBuoy }] : []),
+        ...(user?.role === 'lecturer' ? [{ label: 'Analytics', href: '/lecturer/analytics', icon: ChartNoAxesCombined }] : []),
       ].map(({ label, href, icon: Icon }) => (
         <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />

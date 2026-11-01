@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Bookmark, FileText, FlaskConical, Search } from 'lucide-react';
+import { BookOpen, Bookmark, FileText, FlaskConical, Search, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { resourcesApi } from '../api/resources';
+import { apiRequest } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
 import { getSavedResourceIds } from '../lib/savedResources';
 import { LoadingState } from '../components/states/LoadingState';
@@ -26,6 +27,7 @@ export function LibraryPage() {
   const navigate = useNavigate();
   const [materialFilter, setMaterialFilter] = useState<MaterialFilter>('academic');
   const [query, setQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState('');
   const [course, setCourse] = useState('');
   const [topic, setTopic] = useState('');
   const [researchType, setResearchType] = useState('');
@@ -45,9 +47,11 @@ export function LibraryPage() {
   const faculties = useMemo(() => Array.from(new Set((data ?? []).filter((item) => !institution || academicValue(item, 'institution') === institution).map((item) => academicValue(item, 'faculty')).filter(Boolean))).sort(), [data, institution]);
   const departments = useMemo(() => Array.from(new Set((data ?? []).filter((item) => (!institution || academicValue(item, 'institution') === institution) && (!faculty || academicValue(item, 'faculty') === faculty)).map((item) => academicValue(item, 'department')).filter(Boolean))).sort(), [data, institution, faculty]);
 
+  const activeQuery = submittedQuery || query;
+
   const filteredResources = useMemo(() => {
     if (!data) return [];
-    const normalized = query.trim().toLowerCase();
+    const normalized = activeQuery.trim().toLowerCase();
     const saved = new Set(user ? getSavedResourceIds(user.id) : []);
     return data.filter((resource) => {
       const status = String(resource.moderationStatus || (resource.isVerified ? 'approved' : 'pending')).toLowerCase();
@@ -59,7 +63,7 @@ export function LibraryPage() {
       if (institution && academicValue(resource, 'institution') !== institution) return false;
       if (faculty && academicValue(resource, 'faculty') !== faculty) return false;
       if (department && academicValue(resource, 'department') !== department) return false;
-      if (normalized && ![resource.title, resource.description, resource.course, resource.topic, academicValue(resource, 'institution'), ...(resource.tags ?? []), academicValue(resource, 'faculty'), academicValue(resource, 'department')].filter(Boolean).join(' ').toLowerCase().includes(normalized)) return false;
+      if (normalized && ![resource.title, resource.description, resource.course, resource.topic, academicValue(resource, 'institution'), ...(resource.tags ?? []), academicValue(resource, 'faculty'), academicValue(resource, 'department'), (resource as AcademicResource).uploader?.name, (resource as AcademicResource).uploader?.firstName, (resource as AcademicResource).uploader?.lastName].filter(Boolean).join(' ').toLowerCase().includes(normalized)) return false;
       if (materialFilter === 'academic') {
         if (course && !String(resource.course ?? '').toLowerCase().includes(course.trim().toLowerCase())) return false;
         if (topic && !String(resource.topic ?? '').toLowerCase().includes(topic.trim().toLowerCase())) return false;
@@ -71,7 +75,7 @@ export function LibraryPage() {
       void saved;
       return true;
     });
-  }, [data, materialFilter, query, course, topic, researchType, researchDate, institution, faculty, department, user]);
+  }, [data, materialFilter, activeQuery, course, topic, researchType, researchDate, institution, faculty, department, user]);
 
   if (isLoading) return <LoadingState message="Loading approved academic and research materials..." />;
   if (isError) return <ErrorState message={error instanceof Error ? error.message : 'Unable to load approved resources.'} onRetry={() => void refetch()} />;
@@ -81,7 +85,11 @@ export function LibraryPage() {
   return <div className="space-y-6">
     <div className="rounded-3xl border border-[#2C36D9]/20 bg-[#2C36D9] p-5 text-white sm:p-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] uppercase tracking-[0.2em] text-white/85">Sophis Central · {user?.institution || 'Academic library'}</p><h2 className="mt-2 text-2xl font-semibold text-white">{materialFilter === 'academic' ? 'Academic materials' : 'Research materials'}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-white/90">{materialFilter === 'academic' ? 'Browse moderator-approved course notes and past questions by school, faculty, department, course or topic.' : 'Browse approved research papers by academic community, topic, research type and date.'}</p></div>{user?.role === 'student' && <Link to="/saved" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"><Bookmark size={16} /> Saved resources</Link>}</div>
-      <label className="mt-5 flex items-center gap-3 rounded-2xl border border-white/30 bg-white px-4 py-3 focus-within:border-white"><Search size={18} className="shrink-0 text-[#6121D0]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title, school, faculty, department, course or topic…" aria-label="Search approved resources" className="w-full bg-transparent text-sm text-[#091F5B] outline-none placeholder:text-[#5C6982]" /></label>
+      <form className="mt-5 flex flex-col gap-2 rounded-2xl border border-white/30 bg-white p-2 sm:flex-row sm:items-center" role="search" onSubmit={(event) => { event.preventDefault(); const submitted = query.trim(); setSubmittedQuery(submitted); if (submitted) void apiRequest('/analytics/search-event', { method: 'POST', body: JSON.stringify({ query: submitted }) }).catch(() => undefined); }}>
+        <label className="flex min-w-0 flex-1 items-center gap-3 px-2 py-2"><Search size={18} className="shrink-0 text-[#6121D0]" /><input value={query} onChange={(event) => { setQuery(event.target.value); if (!event.target.value) setSubmittedQuery(''); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); const submitted = query.trim(); setSubmittedQuery(submitted); if (submitted) void apiRequest('/analytics/search-event', { method: 'POST', body: JSON.stringify({ query: submitted }) }).catch(() => undefined); } }} placeholder="Search course title, lecturer, department, faculty or topic…" aria-label="Search approved resources" className="w-full bg-transparent text-sm text-[#091F5B] outline-none placeholder:text-[#5C6982]" /></label>
+        {query && <button type="button" onClick={() => { setQuery(''); setSubmittedQuery(''); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DCE4EF] px-3 py-2.5 text-sm font-semibold text-[#091F5B] hover:bg-[#F8FAFD]" aria-label="Clear search"><X size={15}/> Clear</button>}
+        <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#6121D0] focus:ring-offset-2"><Search size={16}/> Search</button>
+      </form>
     </div>
 
     <div className="flex flex-wrap items-center gap-2" aria-label="Material type"><button type="button" onClick={() => setMaterialFilter('academic')} aria-pressed={materialFilter === 'academic'} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${materialFilter === 'academic' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9] hover:text-[#6121D0]'}`}>Academic materials</button><button type="button" onClick={() => setMaterialFilter('research')} aria-pressed={materialFilter === 'research'} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${materialFilter === 'research' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9] hover:text-[#6121D0]'}`}>Research materials</button><span className="ml-auto self-center text-xs font-medium text-[#5C6982]">{filteredResources.length} approved result{filteredResources.length === 1 ? '' : 's'}</span></div>

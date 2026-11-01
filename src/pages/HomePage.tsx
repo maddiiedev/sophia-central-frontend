@@ -63,16 +63,15 @@ export default function HomePage() {
       </main>
 
       <footer className="bg-[#091F5B] text-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
-          <div><BrandLogo variant="full" tone="light" linked={false} className="brightness-0 invert" /><p className="mt-4 max-w-sm text-sm leading-6 text-blue-100">Your academic resources. One central destination.</p></div>
-          <div><h3 className="font-semibold text-white">Resources</h3><div className="mt-3 space-y-2 text-sm text-blue-100"><div>Courses</div><div>Academic library</div><div>Research materials</div></div></div>
-          <div><h3 className="font-semibold text-white">Contact</h3><div className="mt-3 space-y-2 text-sm text-blue-100"><div>Resource Template</div><div>Terms of Use</div><div>Contact Us</div></div></div>
-        </div>
-        <div className="border-t border-white/15">
-          <div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-blue-100 sm:px-6 lg:px-8">
-            © {new Date().getFullYear()} Sophis Central
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr] lg:px-8">
+          <div>
+            <BrandLogo variant="full" tone="light" linked={false} className="brightness-0 invert" />
+            <p className="mt-5 max-w-xl text-sm leading-7 text-blue-100">Sophis Central is an academic learning and knowledge-sharing platform that connects students and lecturers with educational resources, supports academic discovery, and helps learners study more effectively with intelligent AI assistance. Find course notes, past questions, research papers and projects in one organized space, save useful resources for later, and get AI-guided support as you learn. Our goal is to make quality academic support easier to discover and more useful across every stage of the learning journey.</p>
           </div>
+          <div><h3 className="font-semibold text-white">Explore</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#features" className="block hover:text-white">Features</a><a href="#community" className="block hover:text-white">Academic community</a><Link to="/login" className="block hover:text-white">Academic library</Link><Link to="/login" className="block hover:text-white">Research materials</Link></div></div>
+          <div><h3 className="font-semibold text-white">Information</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#about" className="block hover:text-white">About Us</a><a href="mailto:info@vinosta.com" className="block hover:text-white">Contact Us</a><Link to="/terms" className="block hover:text-white">Terms</Link><Link to="/privacy" className="block hover:text-white">Privacy Policy</Link></div></div>
         </div>
+        <div className="border-t border-white/15"><div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-blue-100 sm:px-6 lg:px-8">© {new Date().getFullYear()} Sophis Central. All rights reserved.</div></div>
       </footer>
     </div>
   );
