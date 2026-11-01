@@ -14,7 +14,7 @@ type RegisterPayload = {
   [key: string]: unknown;
 };
 type OnboardingPayload = Parameters<typeof academicApi.completeOnboarding>[0];
-type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (email: string, password: string, _role?: UserRole) => Promise<void>; register: (payload: RegisterPayload) => Promise<void>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
+type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<void>; register: (payload: RegisterPayload) => Promise<void>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function optionalUrl(value: unknown): string | undefined {
@@ -73,9 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('pagehide', logoutOnPageExit);
   }, [user, clearSession]);
 
-  const login = useCallback(async (email: string, password: string, _role?: UserRole) => {
+  const login = useCallback(async (identifier: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
-    const response = await authApi.login({ email, password });
+    const response = await authApi.login({ identifier, password });
     setUser(await hydrateUser(response.user));
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
   }, [initializeCsrf, hydrateUser]);
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       institution: typeof payload.institution === 'string' ? payload.institution.trim() || undefined : undefined,
       faculty: typeof payload.faculty === 'string' ? payload.faculty.trim() || undefined : undefined,
       department: typeof payload.department === 'string' ? payload.department.trim() || undefined : undefined,
-      socialHandle: typeof payload.handle === 'string' ? payload.handle.trim() || undefined : undefined,
+      academicHandle: typeof payload.handle === 'string' ? payload.handle.trim().replace(/^@/, '').toLowerCase() : '',
       socialLinks: socialLinks ? {
         linkedin: optionalUrl(socialLinks.linkedin),
         instagram: optionalUrl(socialLinks.instagram),

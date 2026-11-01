@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
+  identifier: z.string().trim().min(1, 'Enter your email address or username').max(320, 'Email address or username is too long'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
@@ -16,7 +16,7 @@ export const registerSchema = z.object({
   institution: z.string().trim().max(160, 'Institution name is too long').optional(),
   faculty: z.string().trim().max(160, 'Faculty name is too long').optional(),
   department: z.string().trim().max(160, 'Department name is too long').optional(),
-  handle: z.string().trim().max(80, 'Social handle is too long').optional().or(z.literal('')),
+  handle: z.string().trim().transform((value) => value.replace(/^@/, '').toLowerCase()).pipe(z.string().min(3, 'Academic handle must be at least 3 characters').max(30, 'Academic handle must be 30 characters or fewer').regex(/^[a-z0-9._]+$/, 'Use only letters, numbers, periods, and underscores')),
   socialLinks: z.object({
     linkedin: z.string().optional(),
     instagram: z.string().optional(),

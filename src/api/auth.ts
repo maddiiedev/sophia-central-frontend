@@ -1,7 +1,7 @@
 import { apiRequest } from '../lib/api/client';
 import type { User, UserRole } from '../types';
 
-type LoginPayload = { email: string; password: string };
+type LoginPayload = { identifier: string; password: string };
 type RegisterPayload = {
   email: string;
   password: string;
@@ -11,6 +11,7 @@ type RegisterPayload = {
   institution?: string;
   faculty?: string;
   department?: string;
+  academicHandle: string;
   socialHandle?: string;
   socialLinks?: { linkedin?: string; instagram?: string; twitter?: string };
 };
