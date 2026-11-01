@@ -6,7 +6,7 @@ import { featureHighlights } from '../lib/mock-data';
 export default function HomePage() {
   return (
     <div className="homepage min-h-screen bg-white text-[#1F2937]">
-      <header className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 bg-white px-4 py-3 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 mx-auto flex w-full max-w-7xl items-center justify-between gap-4 border-b border-[#E5E7EB] bg-white px-4 py-3 shadow-sm sm:px-6 lg:px-8">
         <BrandLogo variant="full" tone="dark" />
         <nav aria-label="Primary navigation" className="hidden items-center gap-7 text-sm font-medium text-[#091F5B] md:flex">
           <a href="#features" className="transition hover:text-[#2C36D9]">Features</a>

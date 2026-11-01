@@ -77,7 +77,7 @@ export function ProfileSettingsPage() {
   </label>;
 
   return <div className="mx-auto max-w-4xl space-y-6">
-    <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Account & settings</p><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">Your profile</h2><p className="mt-2 text-[#4B5563]">Edit your academic profile. Changes are saved to your Sophis Central account.</p></div>
+    <div><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">Your profile</h2><p className="mt-2 text-[#4B5563]">Edit your academic profile. Changes are saved to your Sophis Central account.</p></div>
     <section className="glass-panel p-5 sm:p-7">
       <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:flex-row sm:items-center">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-2xl font-bold text-white shadow-sm">
