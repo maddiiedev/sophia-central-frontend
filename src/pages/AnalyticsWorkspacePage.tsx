@@ -71,6 +71,7 @@ export function AnalyticsWorkspacePage() {
         ]
     : [
         { label: 'My resources', value: metrics?.totalResources ?? '—', icon: BookOpen },
+        { label: 'My searches', value: metrics?.searches ?? 0, icon: Search },
         { label: 'Resource views', value: metrics?.totalViews ?? '—', icon: Eye },
         { label: 'Downloads', value: metrics?.totalDownloads ?? '—', icon: Download },
         { label: 'Returning-user retention', value: `${metrics?.retentionRate ?? 0}%`, icon: Repeat2 },
