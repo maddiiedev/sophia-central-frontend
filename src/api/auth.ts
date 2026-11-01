@@ -20,7 +20,7 @@ export const authApi = {
   login: (payload: LoginPayload) => apiRequest<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
   register: (payload: RegisterPayload) => apiRequest<{ user: User; csrfToken?: string }>('/auth/signup', { method: 'POST', body: JSON.stringify(payload) }),
   me: () => apiRequest<{ user: User }>('/auth/me'),
-  logout: () => apiRequest<{ success: boolean }>('/auth/logout', { method: 'POST' }),
+  logout: (options: RequestInit = {}) => apiRequest<{ success: boolean }>('/auth/logout', { method: 'POST', ...options }),
   requestPasswordReset: (email: string) => apiRequest<{ message: string }>('/auth/password-reset/request', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (token: string, password: string) => apiRequest<{ message: string }>('/auth/password-reset/confirm', { method: 'POST', body: JSON.stringify({ token, password }) }),
 };

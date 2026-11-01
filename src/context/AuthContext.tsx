@@ -60,6 +60,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { active = false; };
   }, [clearSession, initializeCsrf, refreshSession]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const logoutOnPageExit = () => {
+      // keepalive lets the browser finish the authenticated logout request while the document is unloading.
+      void authApi.logout({ keepalive: true }).catch(() => undefined);
+      clearSession();
+    };
+
+    window.addEventListener('pagehide', logoutOnPageExit);
+    return () => window.removeEventListener('pagehide', logoutOnPageExit);
+  }, [user, clearSession]);
+
   const login = useCallback(async (email: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
     const response = await authApi.login({ email, password });
