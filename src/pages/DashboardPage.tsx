@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShieldCheck, UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Eye, EyeOff, BrainCircuit, Flame } from 'lucide-react';
+import { UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, Eye, EyeOff, BrainCircuit, Flame } from 'lucide-react';
 import { OverviewCard, UserBadge } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
 import { useAuth } from '../context/AuthContext';
@@ -137,7 +137,7 @@ export function DashboardPage() {
 
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <OverviewCard title="Your learning path" action="Personalized"><div className="rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="font-semibold text-[#091F5B]">{user?.programme || user?.department || 'Your programme'}</p><p className="mt-1 text-sm text-[#5C6982]">{[user?.institution, user?.faculty, user?.department].filter(Boolean).join(' · ') || 'Complete your academic profile to personalize your learning path.'}</p></div></OverviewCard>
-      <OverviewCard title="Quick access" action="Explore"><div className="space-y-3"><Link to="/library?focusSearch=1" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#6121D0]"><Search size={16} className="text-[#6121D0]" /> Search academic resources</Link><Link to="/library" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#2C36D9]"><ShieldCheck size={16} className="text-[#2C36D9]" /> Moderator-approved resources</Link><Link to="/ai" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#2C36D9]"><BookOpen size={16} className="text-[#2C36D9]" /> Ask the AI tutor</Link></div></OverviewCard>
+
     </div>
 
     <section aria-label="Latest resources for your academic community" className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm sm:p-6">
