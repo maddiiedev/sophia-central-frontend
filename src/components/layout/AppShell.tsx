@@ -23,7 +23,6 @@ import { useAuth } from '../../context/AuthContext';
 import { roleUsers } from '../../lib/mock-data';
 import { BrandLogo } from '../brand/BrandLogo';
 import { notificationsApi } from '../../api/notifications';
-import { supportApi } from '../../api/support';
 
 const studentNav = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
@@ -61,7 +60,6 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [pendingSupportCount, setPendingSupportCount] = useState(0);
 
   useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
@@ -75,18 +73,6 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
     return () => { active = false; window.clearInterval(interval); };
   }, [user?.id]);
 
-  useEffect(() => {
-    if (user?.role !== 'moderator' && user?.role !== 'admin') { setPendingSupportCount(0); return; }
-    let active = true;
-    const refreshPendingSupport = async () => {
-      try { const requests = await supportApi.moderationList('pending'); if (active) setPendingSupportCount(requests.length); }
-      catch { /* Keep the navigation available if support requests cannot be loaded. */ }
-    };
-    void refreshPendingSupport();
-    const interval = window.setInterval(() => { void refreshPendingSupport(); }, 30000);
-    return () => { active = false; window.clearInterval(interval); };
-  }, [user?.id, user?.role]);
-
   const navItems = user?.role === 'lecturer' ? lecturerNav : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : studentNav;
   const goBack = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
@@ -99,7 +85,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
       {navItems.map(({ href, label, icon: Icon }) => (
         <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />
-          {href === '/moderation/support' ? `${label} (${pendingSupportCount})` : label}
+          {label}
         </NavLink>
       ))}
       {[

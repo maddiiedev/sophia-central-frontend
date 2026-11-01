@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, Bookmark, FileText, FlaskConical, Search, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resourcesApi } from '../api/resources';
 import { apiRequest } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +25,8 @@ function academicValue(resource: Resource, key: 'faculty' | 'department' | 'inst
 export function LibraryPage() {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [materialFilter, setMaterialFilter] = useState<MaterialFilter>('academic');
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
@@ -35,6 +37,25 @@ export function LibraryPage() {
   const [institution, setInstitution] = useState('');
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('departmentOnly') === '1' && user) {
+      setInstitution(user.institution ?? '');
+      setFaculty(user.faculty ?? '');
+      setDepartment(user.department ?? '');
+    }
+  }, [searchParams, user?.id]);
+
+  useEffect(() => {
+    if (searchParams.get('focusSearch') !== '1') return;
+    const initialQuery = searchParams.get('q') ?? '';
+    setQuery(initialQuery);
+    setSubmittedQuery(initialQuery);
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      searchInputRef.current?.focus();
+    });
+  }, [searchParams]);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['resources', 'approved-library'],
@@ -57,6 +78,7 @@ export function LibraryPage() {
       const status = String(resource.moderationStatus || (resource.isVerified ? 'approved' : 'pending')).toLowerCase();
       // Defensive UI guard; the backend also enforces approved-only library access.
       if (status !== 'approved') return false;
+      if (searchParams.get('departmentOnly') === '1' && (!user?.department || academicValue(resource, 'department').toLowerCase() !== user.department.trim().toLowerCase())) return false;
       const isResearch = /research|paper|journal|thesis|dissertation/i.test([resource.type, resource.title, resource.course, resource.topic].filter(Boolean).join(' '));
       if (materialFilter === 'research' && !isResearch) return false;
       if (materialFilter === 'academic' && isResearch) return false;
@@ -75,7 +97,7 @@ export function LibraryPage() {
       void saved;
       return true;
     });
-  }, [data, materialFilter, activeQuery, course, topic, researchType, researchDate, institution, faculty, department, user]);
+  }, [data, materialFilter, activeQuery, course, topic, researchType, researchDate, institution, faculty, department, user, searchParams]);
 
   if (isLoading) return <LoadingState message="Loading approved academic and research materials..." />;
   if (isError) return <ErrorState message={error instanceof Error ? error.message : 'Unable to load approved resources.'} onRetry={() => void refetch()} />;
@@ -86,7 +108,7 @@ export function LibraryPage() {
     <div className="rounded-3xl border border-[#2C36D9]/20 bg-[#2C36D9] p-5 text-white sm:p-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] uppercase tracking-[0.2em] text-white/85">Sophis Central · {user?.institution || 'Academic library'}</p><h2 className="mt-2 text-2xl font-semibold text-white">{materialFilter === 'academic' ? 'Academic materials' : 'Research materials'}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-white/90">{materialFilter === 'academic' ? 'Browse moderator-approved course notes and past questions by school, faculty, department, course or topic.' : 'Browse approved research papers by academic community, topic, research type and date.'}</p></div>{user?.role === 'student' && <Link to="/saved" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"><Bookmark size={16} /> Saved resources</Link>}</div>
       <form className="mt-5 flex flex-col gap-2 rounded-2xl border border-white/30 bg-white p-2 sm:flex-row sm:items-center" role="search" onSubmit={(event) => { event.preventDefault(); const submitted = query.trim(); setSubmittedQuery(submitted); if (submitted) void apiRequest('/analytics/search-event', { method: 'POST', body: JSON.stringify({ query: submitted }) }).catch(() => undefined); }}>
-        <label className="flex min-w-0 flex-1 items-center gap-3 px-2 py-2"><Search size={18} className="shrink-0 text-[#6121D0]" /><input value={query} onChange={(event) => { setQuery(event.target.value); if (!event.target.value) setSubmittedQuery(''); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); const submitted = query.trim(); setSubmittedQuery(submitted); if (submitted) void apiRequest('/analytics/search-event', { method: 'POST', body: JSON.stringify({ query: submitted }) }).catch(() => undefined); } }} placeholder="Search course title, lecturer, department, faculty or topic…" aria-label="Search approved resources" className="w-full bg-transparent text-sm text-[#091F5B] outline-none placeholder:text-[#5C6982]" /></label>
+        <label className="flex min-w-0 flex-1 items-center gap-3 px-2 py-2"><Search size={18} className="shrink-0 text-[#6121D0]" /><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); if (!event.target.value) setSubmittedQuery(''); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); const submitted = query.trim(); setSubmittedQuery(submitted); if (submitted) void apiRequest('/analytics/search-event', { method: 'POST', body: JSON.stringify({ query: submitted }) }).catch(() => undefined); } }} placeholder="Search course title, lecturer, department, faculty or topic…" aria-label="Search approved resources" className="w-full bg-transparent text-sm text-[#091F5B] outline-none placeholder:text-[#5C6982]" /></label>
         {query && <button type="button" onClick={() => { setQuery(''); setSubmittedQuery(''); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DCE4EF] px-3 py-2.5 text-sm font-semibold text-[#091F5B] hover:bg-[#F8FAFD]" aria-label="Clear search"><X size={15}/> Clear</button>}
         <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#6121D0] focus:ring-offset-2"><Search size={16}/> Search</button>
       </form>

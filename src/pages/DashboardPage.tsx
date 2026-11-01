@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShieldCheck, UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, BookOpen } from 'lucide-react';
+import { Search, ShieldCheck, UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Eye, EyeOff, BrainCircuit, Flame } from 'lucide-react';
 import { OverviewCard, UserBadge } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
 import { useAuth } from '../context/AuthContext';
 import type { Resource } from '../types';
+import { apiRequest } from '../lib/api/client';
 
 type ResourceWithUploader = Resource & {
   uploader?: {
@@ -35,7 +36,26 @@ export function DashboardPage() {
   const [error, setError] = useState('');
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [studyStreak, setStudyStreak] = useState<number | null>(null);
+  const [wisdomBalance, setWisdomBalance] = useState<number | null>(null);
+  const [showWisdomBalance, setShowWisdomBalance] = useState(false);
   const firstName = user?.firstName?.trim() || user?.name?.trim().split(/\s+/)[0] || 'there';
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    const loadEngagement = async () => {
+      const [streakResult, balanceResult] = await Promise.all([
+        apiRequest<{ currentStreak?: number }>('/analytics/study-event', { method: 'POST', body: JSON.stringify({}) }).catch(() => null),
+        apiRequest<number>('/points/my-wallet/balance').catch(() => null),
+      ]);
+      if (!active) return;
+      if (streakResult) setStudyStreak(Number(streakResult.currentStreak ?? 0));
+      if (balanceResult !== null) setWisdomBalance(typeof balanceResult === 'number' ? balanceResult : Number(balanceResult));
+    };
+    void loadEngagement();
+    return () => { active = false; };
+  }, [user?.id]);
 
   useEffect(() => {
     let active = true;
@@ -108,13 +128,16 @@ export function DashboardPage() {
       </Link>
     </section>
 
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{[
-      { label: 'Resources', value: relatedResources.length.toLocaleString(), helper: 'approved for your department' }, { label: 'Study streak', value: '—', helper: 'study consistently to build one' }, { label: 'AI tutor', value: 'Ready', helper: 'study support' }, { label: 'Wisdom points', value: '—', helper: 'check your wallet for balance' },
-    ].map((stat) => <div key={stat.label} className="rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-sm"><div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#71809A]">{stat.label}</div><div className="mt-4 text-3xl font-bold text-[#091F5B]">{stat.value}</div><div className="mt-1 text-sm text-[#5C6982]">{stat.helper}</div></div>)}</div>
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <Link to="/library?departmentOnly=1" className="rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-sm transition hover:border-[#6121D0] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#6121D0]"><div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#71809A]">Resources</div><div className="mt-4 text-3xl font-bold text-[#091F5B]">{relatedResources.length.toLocaleString()}</div><div className="mt-1 text-sm text-[#5C6982]">Approved for your department</div><span className="mt-3 inline-block text-sm font-semibold text-[#6121D0]">Browse department resources →</span></Link>
+      <div className="rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-sm"><div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#71809A]"><Flame size={15} className="text-[#6121D0]"/> Study streak</div><div className="mt-4 text-3xl font-bold text-[#091F5B]">{studyStreak === null ? '—' : studyStreak}</div><div className="mt-1 text-sm text-[#5C6982]">{studyStreak === 1 ? 'day in a row' : 'consecutive study days'}</div></div>
+      <Link to="/ai" className="rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-sm transition hover:border-[#2C36D9] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2C36D9]"><div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#71809A]"><BrainCircuit size={15} className="text-[#2C36D9]"/> AI tutor</div><div className="mt-4 text-3xl font-bold text-[#091F5B]">Ready</div><div className="mt-1 text-sm text-[#5C6982]">Open your AI study assistant</div><span className="mt-3 inline-block text-sm font-semibold text-[#2C36D9]">Open AI Tutor →</span></Link>
+      <div className="rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-sm"><div className="flex items-center justify-between gap-2"><div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#71809A]">Wisdom points</div><button type="button" onClick={() => setShowWisdomBalance(value => !value)} aria-label={showWisdomBalance ? 'Hide Wisdom Points balance' : 'Show Wisdom Points balance'} title={showWisdomBalance ? 'Hide balance' : 'Show balance'} className="rounded-lg p-1.5 text-[#6121D0] hover:bg-[#F3F0FF]">{showWisdomBalance ? <EyeOff size={17}/> : <Eye size={17}/>}</button></div><div className="mt-4 text-3xl font-bold text-[#091F5B]">{showWisdomBalance ? (wisdomBalance === null ? '—' : wisdomBalance.toLocaleString()) : '••••••'}</div><div className="mt-1 text-sm text-[#5C6982]">Private account balance</div></div>
+    </div>
 
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <OverviewCard title="Your learning path" action="Personalized"><div className="rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="font-semibold text-[#091F5B]">{user?.programme || user?.department || 'Your programme'}</p><p className="mt-1 text-sm text-[#5C6982]">{[user?.institution, user?.faculty, user?.department].filter(Boolean).join(' · ') || 'Complete your academic profile to personalize your learning path.'}</p></div></OverviewCard>
-      <OverviewCard title="Quick access" action="Explore"><div className="space-y-3"><Link to="/library" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#6121D0]"><Search size={16} className="text-[#6121D0]" /> Search academic resources</Link><div className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937]"><ShieldCheck size={16} className="text-[#2C36D9]" /> Moderator-approved resources</div><Link to="/ai" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#2C36D9]"><BookOpen size={16} className="text-[#2C36D9]" /> Ask the AI tutor</Link></div></OverviewCard>
+      <OverviewCard title="Quick access" action="Explore"><div className="space-y-3"><Link to="/library?focusSearch=1" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#6121D0]"><Search size={16} className="text-[#6121D0]" /> Search academic resources</Link><Link to="/library" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#2C36D9]"><ShieldCheck size={16} className="text-[#2C36D9]" /> Moderator-approved resources</Link><Link to="/ai" className="flex items-center gap-3 rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#1F2937] hover:border-[#2C36D9]"><BookOpen size={16} className="text-[#2C36D9]" /> Ask the AI tutor</Link></div></OverviewCard>
     </div>
 
     <section aria-label="Latest resources for your academic community" className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm sm:p-6">

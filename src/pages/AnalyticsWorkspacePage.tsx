@@ -7,7 +7,7 @@ import { SectionTitle } from '../components/layout/AppShell';
 type ResourceMetric = { id: string; title: string; course?: string; views: number; downloads: number; contributor?: string };
 type SearchMetric = { query: string; count: number };
 type Metrics = {
-  totalResources?: number; totalViews?: number; totalDownloads?: number; totalUsers?: number;
+  totalResources?: number; totalViews?: number; totalDownloads?: number; totalUsers?: number; activeResources?: number;
   totalReviews?: number; totalStudents?: number; totalLecturers?: number; searches?: number;
   uniqueUsers?: number; returningUsers?: number; retentionRate?: number; contributors?: number;
   views?: number; downloads?: number; popularResources?: ResourceMetric[]; topSearches?: SearchMetric[];
@@ -15,6 +15,22 @@ type Metrics = {
 function MetricCard({ label, value, icon: Icon, helper }: { label: string; value: string | number; icon: typeof BookOpen; helper?: string }) {
   return <div className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-sm font-medium text-[#5C6982]">{label}</span><Icon size={18} className="text-[#6121D0}" /></div><div className="mt-3 text-3xl font-bold text-[#091F5B]">{value}</div>{helper && <p className="mt-1 text-xs text-[#5C6982]">{helper}</p>}</div>;
 }
+function ActivityPieChart({ metrics, label }: { metrics: Metrics; label: string }) {
+  const parts = [
+    { label: 'Searches', value: Math.max(0, Number(metrics.searches ?? 0)), color: '#6121D0' },
+    { label: 'Resource views', value: Math.max(0, Number(metrics.totalViews ?? metrics.views ?? 0)), color: '#2C36D9' },
+    { label: 'Downloads', value: Math.max(0, Number(metrics.totalDownloads ?? metrics.downloads ?? 0)), color: '#0F9F6E' },
+  ];
+  const total = parts.reduce((sum, item) => sum + item.value, 0);
+  let offset = 0;
+  const stops = parts.map((item) => {
+    const start = offset;
+    offset += total ? item.value / total * 100 : 0;
+    return `${item.color} ${start}% ${offset}%`;
+  }).join(', ');
+  return <section className="rounded-2xl border border-[#DCE4EF] bg-white p-5"><div className="mb-4"><h3 className="font-semibold text-[#091F5B]">Activity mix · pie chart</h3><p className="mt-1 text-sm text-[#5C6982]">{label}</p></div><div className="flex flex-col items-center gap-6 sm:flex-row"><div role="img" aria-label={total ? parts.map((item) => `${item.label}: ${item.value}`).join(', ') : 'No activity recorded yet'} className="h-40 w-40 shrink-0 rounded-full" style={{ background: total ? `conic-gradient(${stops})` : '#E5E7EB' }}><div className="m-10 flex h-20 w-20 items-center justify-center rounded-full bg-white text-center"><div><p className="text-xl font-bold text-[#091F5B]">{total.toLocaleString()}</p><p className="text-[10px] text-[#5C6982]">Total events</p></div></div></div><div className="w-full space-y-3">{parts.map((item) => <div key={item.label} className="flex items-center justify-between gap-4"><div className="flex items-center gap-2"><span aria-hidden="true" className="h-3 w-3 rounded-sm" style={{ backgroundColor: item.color }}/><span className="text-sm text-[#4B5563]">{item.label}</span></div><div className="text-right"><span className="font-semibold text-[#091F5B]">{item.value.toLocaleString()}</span><span className="ml-2 text-xs text-[#71809A]">{total ? Math.round(item.value / total * 100) : 0}%</span></div></div>)}</div></div>{total === 0 && <p className="mt-4 text-sm text-[#5C6982]">The chart will populate as searches, views and downloads are recorded.</p>}</section>;
+}
+
 export function AnalyticsWorkspacePage() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -82,6 +98,7 @@ export function AnalyticsWorkspacePage() {
     {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div>}
     {loading ? <div className="rounded-2xl border border-[#DCE4EF] p-8 text-sm text-[#5C6982]">Loading analytics…</div> : <>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map((card) => <MetricCard key={card.label} label={card.label} value={card.value} icon={card.icon} />)}</div>
+      <ActivityPieChart metrics={metrics ?? {}} label={moderator ? (view === 'students' ? 'Student account activity' : 'Lecturer account activity') : 'Activity on your resources and your library searches'} />
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="rounded-2xl border border-[#DCE4EF] bg-white p-5"><div className="mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-[#6121D0]"/><h3 className="font-semibold text-[#091F5B]">Popular resources</h3></div>{metrics?.popularResources?.length ? <div className="space-y-3">{metrics.popularResources.map((item) => <div key={item.id} className="flex items-start justify-between gap-3 border-b border-[#EEF1F6] pb-3 last:border-0"><div className="min-w-0"><p className="font-medium text-[#091F5B]">{item.title}</p><p className="mt-1 text-xs text-[#5C6982]">{item.course || 'Course not specified'}{item.contributor ? ` · ${item.contributor}` : ''}</p></div><p className="shrink-0 text-right text-xs text-[#5C6982]"><span className="block">{item.views} views</span><span>{item.downloads} downloads</span></p></div>)}</div> : <p className="text-sm text-[#5C6982]">No resource activity has been recorded yet.</p>}</section>
         <section className="rounded-2xl border border-[#DCE4EF] bg-white p-5"><div className="mb-4 flex items-center gap-2"><Search size={18} className="text-[#6121D0]"/><h3 className="font-semibold text-[#091F5B]">Popular search terms</h3></div>{metrics?.topSearches?.length ? <div className="space-y-3">{metrics.topSearches.map((item) => <div key={item.query} className="flex items-center justify-between gap-3 rounded-xl bg-[#F8FAFD] p-3"><span className="text-sm text-[#091F5B]">{item.query}</span><span className="rounded-full bg-[#F3F0FF] px-2.5 py-1 text-xs font-semibold text-[#6121D0]">{item.count} searches</span></div>)}</div> : <p className="text-sm text-[#5C6982]">Search analytics will populate as authenticated users search the library.</p>}</section>

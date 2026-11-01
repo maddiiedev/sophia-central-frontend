@@ -5,6 +5,7 @@ import { supportApi, type SupportRequest, type SupportRequestStatus } from '../.
 export function SupportRequestsPanel() {
   const [status, setStatus] = useState<SupportRequestStatus | 'history'>('pending');
   const [items, setItems] = useState<SupportRequest[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [resolution, setResolution] = useState<Record<string, string>>({});
@@ -14,10 +15,13 @@ export function SupportRequestsPanel() {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
+      const pending = await supportApi.moderationList('pending');
+      setPendingCount(pending.length);
       if (status === 'history') {
-        const [pending, concluded] = await Promise.all([supportApi.moderationList('pending'), supportApi.moderationList('concluded')]);
+        const concluded = await supportApi.moderationList('concluded');
         setItems([...pending, ...concluded].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-      } else setItems(await supportApi.moderationList(status));
+      } else if (status === 'pending') setItems(pending);
+      else setItems(await supportApi.moderationList(status));
     }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load support requests.'); }
     finally { setLoading(false); }
@@ -33,6 +37,7 @@ export function SupportRequestsPanel() {
     try {
       await supportApi.conclude(item.id, message);
       setItems(current => current.filter(request => request.id !== item.id));
+      if (item.status === 'pending') setPendingCount(current => Math.max(0, current - 1));
       setResolution(current => { const next = { ...current }; delete next[item.id]; return next; });
       setNotice('Support request concluded. A resolution notification has been sent to the user.');
     } catch (cause) {
@@ -47,7 +52,7 @@ export function SupportRequestsPanel() {
     <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Administration</p><h2 className="mt-1 text-xl font-bold text-[#091F5B]">Support requests</h2><p className="mt-1 text-sm text-[#5C6982]">Review user issues, record the outcome and notify the account owner.</p></div><button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#091F5B] hover:border-[#6121D0]"><RefreshCw size={15} className={loading ? 'animate-spin' : ''}/> Refresh</button></div>
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</p>}
-    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Support request views"><button type="button" role="tab" aria-selected={status === 'pending'} onClick={() => { setStatus('pending'); setNotice(''); }} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${status === 'pending' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>Pending</button><button type="button" role="tab" aria-selected={status === 'concluded'} onClick={() => { setStatus('concluded'); setNotice(''); }} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${status === 'concluded' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>Concluded</button><button type="button" role="tab" aria-selected={status === 'history'} onClick={() => { setStatus('history'); setNotice(''); }} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${status === 'history' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>Request history</button></div>
+    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Support request views"><button type="button" role="tab" aria-selected={status === 'pending'} onClick={() => { setStatus('pending'); setNotice(''); }} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${status === 'pending' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`} >Pending ({pendingCount})</button><button type="button" role="tab" aria-selected={status === 'concluded'} onClick={() => { setStatus('concluded'); setNotice(''); }} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${status === 'concluded' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>Concluded</button><button type="button" role="tab" aria-selected={status === 'history'} onClick={() => { setStatus('history'); setNotice(''); }} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${status === 'history' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>Request history</button></div>
     <div className="space-y-4">{loading ? <p className="rounded-xl bg-[#F8FAFD] p-6 text-sm text-[#5C6982]">Loading support requests…</p> : items.length === 0 ? <div className="rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-8 text-center"><ShieldCheck size={24} className="mx-auto text-[#6121D0]"/><p className="mt-3 font-semibold text-[#091F5B]">{status === 'history' ? 'No support request history' : `No ${status} support requests`}</p><p className="mt-1 text-sm text-[#5C6982]">New requests from students and lecturers will appear here.</p></div> : items.map(item => {
       const owner = item.user;
       const busy = processingId === item.id;
