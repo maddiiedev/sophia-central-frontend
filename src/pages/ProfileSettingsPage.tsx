@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, Save, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
 import { AdminProfilePage } from './AdminProfilePage';
@@ -118,7 +118,7 @@ export function ProfileSettingsPage() {
   </div>;
 
   return <div className="mx-auto max-w-4xl space-y-6">
-    <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">Your profile</h2><p className="mt-2 text-[#4B5563]">Edit each field and save it individually, or save all changes together.</p></div><Link to={user.role === 'lecturer' ? '/lecturer' : '/dashboard'} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#DCE4EF] bg-[#F8FAFD] px-4 py-2.5 text-sm font-semibold text-[#091F5B] shadow-sm transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]"><ArrowLeft size={16}/> Back to dashboard</Link></div>
+    <div><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">Your profile</h2><p className="mt-2 text-[#4B5563]">Edit each field and save it individually, or save all changes together.</p></div>
     <section className="glass-panel p-5 sm:p-7">
       <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:flex-row sm:items-center">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-2xl font-bold text-white shadow-sm">
@@ -150,7 +150,7 @@ export function ProfileSettingsPage() {
       <div className="mt-6 flex flex-wrap justify-end gap-3"><button type="button" onClick={() => void save()} disabled={saving || savingField !== null} className="rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-50">{saving ? 'Saving…' : 'Save all changes'}</button></div>
     </section>
 
-    <section className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 sm:p-6"><div className="flex items-start gap-3"><span className="rounded-xl bg-rose-100 p-3 text-rose-700"><Trash2 size={20}/></span><div className="min-w-0 flex-1"><h3 className="font-bold text-rose-900">Delete account</h3><p className="mt-1 text-sm leading-6 text-rose-800">Permanently remove your student or lecturer account and its associated records, including profile data, uploaded resources, support requests, wallet history and activity. This action cannot be undone.</p><button type="button" onClick={() => setDeleteConfirmOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"><Trash2 size={15}/> Delete my account</button></div></div></section>
+    <section className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 sm:p-6"><div className="flex items-start gap-3"><span className="rounded-xl bg-rose-100 p-3 text-rose-700"><Trash2 size={20}/></span><div className="min-w-0 flex-1"><h3 className="font-bold text-rose-900">Delete account</h3><p className="mt-1 text-sm leading-6 text-rose-800">Permanently remove your account and its associated records, including profile data, uploaded resources, support requests, wallet history and activity. This action cannot be undone.</p><button type="button" onClick={() => setDeleteConfirmOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"><Trash2 size={15}/> Delete my account</button></div></div></section>
 
     {deleteConfirmOpen && <div role="dialog" aria-modal="true" aria-labelledby="delete-account-title" className="fixed inset-0 z-50 flex items-center justify-center bg-[#091F5B]/60 p-4"><div className="w-full max-w-lg rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-2xl"><div className="flex items-start gap-3"><span className="rounded-xl bg-rose-100 p-3 text-rose-700"><AlertTriangle size={22}/></span><div><h3 id="delete-account-title" className="text-xl font-bold text-[#091F5B]">Are you sure you want to delete your account?</h3><p className="mt-3 text-sm leading-6 text-[#4B5563]">All associated records will be permanently deleted from Sophis Central, including your uploaded resources and activity history. You cannot recover this account after deletion.</p></div></div><div className="mt-6 flex flex-wrap justify-end gap-3"><button type="button" onClick={() => setDeleteConfirmOpen(false)} disabled={deletingAccount} className="rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 font-semibold text-[#091F5B] disabled:opacity-50">Cancel</button><button type="button" onClick={() => void deleteAccount()} disabled={deletingAccount} className="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-4 py-2.5 font-semibold text-white transition hover:bg-rose-800 disabled:opacity-50"><Trash2 size={15}/>{deletingAccount ? 'Deleting account…' : 'Yes, permanently delete'}</button></div></div></div>}
   </div>;
