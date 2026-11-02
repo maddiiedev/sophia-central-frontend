@@ -16,6 +16,7 @@ import {
   LifeBuoy,
   ChartNoAxesCombined,
   BriefcaseBusiness,
+  MessageCircle,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -30,12 +31,15 @@ const studentNav = [
   { label: 'Saved resources', href: '/saved', icon: Bookmark },
   { label: 'AI Tutor', href: '/ai', icon: BrainCircuit },
   { label: 'Wallet', href: '/wallet', icon: WalletCards },
+  { label: 'Group Chat', href: '/chat/group', icon: MessageCircle },
+  { label: 'Messages', href: '/messages', icon: MessageCircle },
 ];
 
 const lecturerNav = [
   { label: 'Dashboard', href: '/lecturer', icon: LayoutGrid },
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'Submit resource', href: '/upload', icon: Upload },
+  { label: 'Messages', href: '/messages', icon: MessageCircle },
 ];
 
 const moderatorNav = [
