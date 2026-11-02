@@ -24,6 +24,13 @@ export const resourcesApi = {
     return resources.map(mapResource);
   },
 
+  downloaded: async (token?: string | null) => {
+    const resources = await apiRequest<ApiResource[]>('/resources/downloaded', { method: 'GET' }, token ?? null);
+    return resources.map(mapResource);
+  },
+
+  downloadInApp: async (id: string, token?: string | null) => apiRequest<{ downloaded: true; resourceId: string }>(`/resources/${encodeURIComponent(id)}/download`, { method: 'POST' }, token ?? null),
+
   saved: async (token?: string | null) => {
     const resources = await apiRequest<ApiResource[]>('/resources/saved', { method: 'GET' }, token ?? null);
     return resources.map(mapResource);

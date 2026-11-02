@@ -28,7 +28,7 @@ import { notificationsApi } from '../../api/notifications';
 const studentNav = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
   { label: 'Academic & research materials', href: '/library', icon: BookOpen },
-  { label: 'Saved resources', href: '/saved', icon: Bookmark },
+  { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'AI Tutor', href: '/ai', icon: BrainCircuit },
   { label: 'Wallet', href: '/wallet', icon: WalletCards },
   { label: 'Group Chat', href: '/chat/group', icon: MessageCircle },
@@ -38,7 +38,7 @@ const studentNav = [
 const lecturerNav = [
   { label: 'Dashboard', href: '/lecturer', icon: LayoutGrid },
   { label: 'Resource library', href: '/library', icon: BookOpen },
-  { label: 'Saved resources', href: '/saved', icon: Bookmark },
+  { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Submit resource', href: '/upload', icon: Upload },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
 ];
@@ -46,6 +46,7 @@ const lecturerNav = [
 const moderatorNav = [
   { label: 'Review queue', href: '/moderation', icon: ShieldCheck },
   { label: 'Resource library', href: '/library', icon: BookOpen },
+  { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
   { label: 'Analytics', href: '/moderation/analytics', icon: ChartNoAxesCombined },
   { label: 'Management', href: '/moderation/management', icon: BriefcaseBusiness },
@@ -56,6 +57,7 @@ const adminNav = [
   { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Resource review', href: '/moderation', icon: ShieldCheck },
   { label: 'Resource library', href: '/library', icon: BookOpen },
+  { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Analytics', href: '/analytics', icon: LayoutGrid },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
 ];

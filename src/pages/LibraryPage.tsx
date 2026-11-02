@@ -5,7 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { resourcesApi } from '../api/resources';
 import { apiRequest } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
-import { getSavedResourceIds } from '../lib/savedResources';
+
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
 import { EmptyState } from '../components/states/EmptyState';
@@ -37,6 +37,7 @@ export function LibraryPage() {
   const [institution, setInstitution] = useState('');
   const [faculty, setFaculty] = useState('');
   const [department, setDepartment] = useState('');
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (searchParams.get('departmentOnly') === '1' && user) {
@@ -64,6 +65,15 @@ export function LibraryPage() {
     staleTime: 60_000,
   });
 
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    void resourcesApi.saved().then((saved) => {
+      if (active) setSavedIds(new Set(saved.map((item) => item.id)));
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [user?.id]);
+
   const institutions = useMemo(() => Array.from(new Set((data ?? []).map((item) => academicValue(item, 'institution')).filter(Boolean))).sort(), [data]);
   const faculties = useMemo(() => Array.from(new Set((data ?? []).filter((item) => !institution || academicValue(item, 'institution') === institution).map((item) => academicValue(item, 'faculty')).filter(Boolean))).sort(), [data, institution]);
   const departments = useMemo(() => Array.from(new Set((data ?? []).filter((item) => (!institution || academicValue(item, 'institution') === institution) && (!faculty || academicValue(item, 'faculty') === faculty)).map((item) => academicValue(item, 'department')).filter(Boolean))).sort(), [data, institution, faculty]);
@@ -73,7 +83,6 @@ export function LibraryPage() {
   const filteredResources = useMemo(() => {
     if (!data) return [];
     const normalized = activeQuery.trim().toLowerCase();
-    const saved = new Set(user ? getSavedResourceIds(user.id) : []);
     return data.filter((resource) => {
       const status = String(resource.moderationStatus || (resource.isVerified ? 'approved' : 'pending')).toLowerCase();
       // Defensive UI guard; the backend also enforces approved-only library access.
@@ -95,7 +104,6 @@ export function LibraryPage() {
         if (researchType && !String(resource.type ?? '').toLowerCase().includes(researchType.trim().toLowerCase())) return false;
         if (researchDate && resource.createdAt && new Date(resource.createdAt).toISOString().slice(0, 10) !== researchDate) return false;
       }
-      void saved;
       return true;
     });
   }, [data, materialFilter, activeQuery, course, topic, researchType, researchDate, institution, faculty, department, user, searchParams]);
@@ -128,7 +136,7 @@ export function LibraryPage() {
       const research = /research|paper|journal|thesis|dissertation/i.test([resource.type, resource.title].join(' '));
       const facultyValue = academicValue(resource, 'faculty');
       const departmentValue = academicValue(resource, 'department');
-      return <button type="button" key={resource.id} onClick={() => navigate(`/resource/${encodeURIComponent(resource.id)}`)} className="group rounded-2xl border border-[#DCE4EF] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-[#6121D0] hover:bg-[#F8F5FF] focus:outline-none focus:ring-2 focus:ring-[#2C36D9]"><div className="mb-4 flex items-center justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-2 rounded-full bg-[#F3F0FF] px-3 py-1 text-xs font-semibold text-[#6121D0]">{research ? <FlaskConical size={14} /> : <FileText size={14} />}{research ? 'Research' : 'Academic'}</span>{(user?.role === 'moderator' || user?.role === 'admin') && <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${String(resource.moderationStatus || 'pending').toLowerCase() === 'approved' ? 'bg-emerald-50 text-emerald-800' : String(resource.moderationStatus || 'pending').toLowerCase() === 'rejected' ? 'bg-rose-50 text-rose-800' : 'bg-amber-50 text-amber-800'}`}>{String(resource.moderationStatus || 'pending')}</span>}</div><BookOpen size={17} className="text-[#5C6982] transition group-hover:text-[#6121D0]" /></div><h3 className="text-lg font-semibold text-[#091F5B]">{resource.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-[#4B5563]">{resource.description || 'Open this resource to view its details.'}</p><div className="mt-4 flex flex-wrap gap-2 text-xs text-[#5C6982]">{resource.course && <span>{resource.course}</span>}{resource.topic && <span>· {resource.topic}</span>}{academicValue(resource, 'institution') && <span>· {academicValue(resource, 'institution')}</span>}{facultyValue && <span>· {facultyValue}</span>}{departmentValue && <span>· {departmentValue}</span>}</div><div className="mt-5 flex items-center gap-2 border-t border-[#DCE4EF] pt-3 text-sm font-semibold text-[#6121D0] group-hover:text-[#2C36D9]"><BookOpen size={15} /> Open resource <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></div></button>;
+      return <div key={resource.id} className="relative rounded-2xl border border-[#DCE4EF] bg-white transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><button type="button" onClick={() => navigate(`/resource/${encodeURIComponent(resource.id)}`)} className="group w-full rounded-2xl p-5 pb-16 text-left focus:outline-none focus:ring-2 focus:ring-[#2C36D9]"><div className="mb-4 flex items-center justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-2 rounded-full bg-[#F3F0FF] px-3 py-1 text-xs font-semibold text-[#6121D0]">{research ? <FlaskConical size={14} /> : <FileText size={14} />}{research ? 'Research' : 'Academic'}</span>{(user?.role === 'moderator' || user?.role === 'admin') && <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${String(resource.moderationStatus || 'pending').toLowerCase() === 'approved' ? 'bg-emerald-50 text-emerald-800' : String(resource.moderationStatus || 'pending').toLowerCase() === 'rejected' ? 'bg-rose-50 text-rose-800' : 'bg-amber-50 text-amber-800'}`}>{String(resource.moderationStatus || 'pending')}</span>}</div><BookOpen size={17} className="text-[#5C6982] transition group-hover:text-[#6121D0]" /></div><h3 className="text-lg font-semibold text-[#091F5B]">{resource.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-[#4B5563]">{resource.description || 'Open this resource to view its details.'}</p><div className="mt-4 flex flex-wrap gap-2 text-xs text-[#5C6982]">{resource.course && <span>{resource.course}</span>}{resource.topic && <span>· {resource.topic}</span>}{academicValue(resource, 'institution') && <span>· {academicValue(resource, 'institution')}</span>}{facultyValue && <span>· {facultyValue}</span>}{departmentValue && <span>· {departmentValue}</span>}</div><div className="mt-5 flex items-center gap-2 border-t border-[#DCE4EF] pt-3 text-sm font-semibold text-[#6121D0] group-hover:text-[#2C36D9]"><BookOpen size={15} /> Open resource <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></div></button><button type="button" onClick={async (event) => { event.stopPropagation(); try { if (savedIds.has(resource.id)) { await resourcesApi.unsave(resource.id); setSavedIds((current) => { const next = new Set(current); next.delete(resource.id); return next; }); } else { await resourcesApi.save(resource.id); setSavedIds((current) => new Set(current).add(resource.id)); } } catch { /* The reader displays detailed API errors if the resource cannot be saved. */ } }} className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-xs font-semibold text-[#6121D0] hover:border-[#6121D0]" aria-label={savedIds.has(resource.id) ? "Unsave resource" : "Save resource"}><Bookmark size={14} fill={savedIds.has(resource.id) ? "currentColor" : "none"}/>{savedIds.has(resource.id) ? "Saved · Unsave" : "Save for later"}</button></div>;
     })}</div>}
   </div>;
 }
