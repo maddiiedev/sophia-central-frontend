@@ -28,14 +28,14 @@ export function WalletPage() {
     try {
       const [balanceResult, referralResult, statsResult, transactionResult] = await Promise.all([
         apiRequest<number>('/points/my-wallet/balance'),
-        apiRequest<ReferralCodeResponse>('/referrals/generate-code', { method: 'POST', body: JSON.stringify({}) }),
-        apiRequest<ReferralStats>(`/referrals/${encodeURIComponent(user.id)}/referrals`),
+        user.role === 'student' ? apiRequest<ReferralCodeResponse>('/referrals/generate-code', { method: 'POST', body: JSON.stringify({}) }) : Promise.resolve(null),
+        user.role === 'student' ? apiRequest<ReferralStats>(`/referrals/${encodeURIComponent(user.id)}/referrals`) : Promise.resolve(null),
         apiRequest<PointTransaction[]>(`/points/my-wallet/transactions?limit=8`),
       ]);
       setBalance(typeof balanceResult === 'number' ? balanceResult : Number(balanceResult));
-      setCode(referralResult.code || '');
-      setShareLink(`${window.location.origin}/onboarding?ref=${encodeURIComponent(referralResult.code || '')}`);
-      setStats(statsResult);
+      setCode(referralResult?.code || '');
+      setShareLink(referralResult?.code ? `${window.location.origin}/onboarding?ref=${encodeURIComponent(referralResult.code)}` : '');
+      setStats(user.role === 'student' ? statsResult : null);
       setTransactions(Array.isArray(transactionResult) ? transactionResult : []);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load wallet details. Please try again.');
@@ -99,7 +99,7 @@ export function WalletPage() {
       </OverviewCard>
     </div>
 
-    <OverviewCard title="Referral program" action="Invite your community">
+    {user?.role === 'student' && <OverviewCard title="Referral program" action="Invite other students">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6121D0]">Your personal referral code</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] px-4 py-3 font-mono text-xl font-bold tracking-wider text-[#091F5B]">{loading ? 'Loading…' : code || 'Not available'}</span><button type="button" onClick={() => void copyCode()} disabled={!code} aria-label="Copy referral code" className="rounded-xl border border-[#DCE4EF] bg-white p-3 text-[#6121D0] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-50"><Copy size={17}/></button></div><p className="mt-2 text-sm text-[#4B5563]">{stats ? `${stats.successfulReferrals} successful referrals · ${stats.totalBonusEarned} points earned` : 'Invite friends to join your academic community.'}</p></div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -108,7 +108,7 @@ export function WalletPage() {
         </div>
       </div>
       {stats && <div className="mt-5 grid gap-3 sm:grid-cols-3"><div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs text-[#5C6982]">Codes generated</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{stats.totalGenerated}</p></div><div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs text-[#5C6982]">Successful referrals</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{stats.successfulReferrals}</p></div><div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs text-[#5C6982]">Referral points</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{stats.totalBonusEarned}</p></div></div>}
-    </OverviewCard>
+    </OverviewCard>}
 
     {showRedeemInfo && <div role="dialog" aria-modal="true" aria-labelledby="redeem-title" className="fixed inset-0 z-50 flex items-center justify-center bg-[#091F5B]/50 p-4"><div className="w-full max-w-md rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-xl"><div className="flex items-center gap-3"><span className="rounded-xl bg-[#F3F0FF] p-3 text-[#6121D0]"><Gift size={20}/></span><div><h2 id="redeem-title" className="text-xl font-bold text-[#091F5B]">Redeem Wisdom Points</h2><p className="text-sm text-[#5C6982]">Available balance: {balance ?? '—'}</p></div></div><p className="mt-4 text-sm leading-6 text-[#374151]">The points balance and activity are connected, but the reward catalogue and redemption endpoint are not yet enabled. No points have been deducted. This button will become a complete redemption flow when reward options are configured.</p><button type="button" onClick={() => setShowRedeemInfo(false)} className="mt-5 w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white transition hover:bg-[#2C36D9]">Close</button></div></div>}
   </div>;

@@ -12,6 +12,7 @@ type RegisterPayload = {
   faculty?: string;
   department?: string;
   academicHandle: string;
+  referralCode?: string;
   socialHandle?: string;
   socialLinks?: { linkedin?: string; instagram?: string; twitter?: string };
 };
