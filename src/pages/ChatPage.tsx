@@ -38,7 +38,9 @@ export function ChatPage() {
   const [onlineContactIds, setOnlineContactIds] = useState<Set<string>>(() => new Set());
   const [recipient, setRecipient] = useState('');
   const [contactSearch, setContactSearch] = useState('');
-  const filteredContacts = contacts.filter(contact => `${contact.academicHandle} ${contact.role}`.toLowerCase().includes(contactSearch.trim().replace(/^@/, '').toLowerCase()));
+  const [contactSearchLoading, setContactSearchLoading] = useState(true);
+  const [contactSearchError, setContactSearchError] = useState('');
+  const contactSearchSequenceRef = useRef(0);
   const selectedContact = contacts.find(contact => contact.id === recipient);
   const recipientDeleted = Boolean(selectedContact?.isDeleted);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -88,11 +90,22 @@ export function ChatPage() {
     try { setBlockedUsers(await chatApi.blocks()); } catch { /* Block controls remain unavailable if the server request fails. */ }
   }, []);
 
-  const loadContacts = useCallback(async () => {
+  const loadContacts = useCallback(async (search = '') => {
+    const sequence = ++contactSearchSequenceRef.current;
+    setContactSearchLoading(true);
+    setContactSearchError('');
     try {
-      const result = await chatApi.contacts();
+      const result = await chatApi.contacts(search);
+      if (sequence !== contactSearchSequenceRef.current) return;
       setContacts(Array.isArray(result) ? result : []);
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not load contacts.'); }
+    } catch (e) {
+      if (sequence === contactSearchSequenceRef.current) {
+        setContacts([]);
+        setContactSearchError(e instanceof Error ? e.message : 'Could not search users. Please try again.');
+      }
+    } finally {
+      if (sequence === contactSearchSequenceRef.current) setContactSearchLoading(false);
+    }
   }, []);
 
   const loadMessages = useCallback(async (quiet = false) => {
@@ -160,7 +173,11 @@ export function ChatPage() {
     }
   };
 
-  useEffect(() => { void loadContacts(); void loadBlocks(); }, [loadContacts, loadBlocks]);
+  useEffect(() => { void loadBlocks(); }, [loadBlocks]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadContacts(contactSearch); }, contactSearch.trim() ? 250 : 0);
+    return () => window.clearTimeout(timer);
+  }, [contactSearch, loadContacts]);
   useEffect(() => { try { window.localStorage.setItem('sophis-chat-muted-group', String(mutedGroup)); } catch { /* Preference is optional. */ } }, [mutedGroup]);
   useEffect(() => { try { window.localStorage.setItem('sophis-chat-muted-direct', String(mutedDirect)); } catch { /* Preference is optional. */ } }, [mutedDirect]);
   useEffect(() => {
@@ -385,10 +402,10 @@ export function ChatPage() {
       <label className="mb-1 block text-xs font-semibold text-slate-600" htmlFor="chat-contact-search">Find a student or lecturer</label>
       <input id="chat-contact-search" type="search" value={contactSearch} onChange={event => setContactSearch(event.target.value)} placeholder="Search username (e.g. @username)" className="mb-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-[#25B866] focus:ring-2 focus:ring-[#25B866]/10" />
       <div className="max-h-36 overflow-y-auto rounded-xl border border-slate-200 bg-white" role="listbox" aria-label="Available private conversations">
-        {filteredContacts.length ? filteredContacts.map(contact => <button key={contact.id} type="button" role="option" aria-selected={recipient === contact.id} onClick={() => { setRecipient(contact.id); setError(''); }} className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-emerald-50 ${recipient === contact.id ? 'bg-emerald-50' : ''}`}>
+        {contactSearchLoading ? <p className="px-3 py-4 text-center text-xs text-slate-500">{contactSearch.trim() ? 'Searching usernames…' : 'Loading available accounts…'}</p> : contactSearchError ? <p role="alert" className="px-3 py-4 text-center text-xs text-rose-600">{contactSearchError}</p> : contacts.length ? contacts.map(contact => <button key={contact.id} type="button" role="option" aria-selected={recipient === contact.id} onClick={() => { setRecipient(contact.id); setError(''); }} className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 text-left last:border-b-0 hover:bg-emerald-50 ${recipient === contact.id ? 'bg-emerald-50' : ''}`}>
           <span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-800">{contact.isDeleted ? 'Deleted user' : `@${contact.academicHandle}`}</span><span className="block text-[11px] capitalize text-slate-500">{contact.isDeleted ? 'Previous conversation · read only' : contact.role}</span></span>
           {!contact.isDeleted && <span className={`shrink-0 text-[10px] font-semibold ${onlineContactIds.has(contact.id) ? 'text-emerald-600' : 'text-slate-400'}`}>{onlineContactIds.has(contact.id) ? 'Online' : 'Start chat'}</span>}
-        </button>) : <p className="px-3 py-4 text-center text-xs text-slate-500">{contacts.length ? 'No usernames match your search.' : 'No eligible contacts yet. Users need an academic username and an active student or lecturer account to use Private DM.'}</p>}
+        </button>) : <p className="px-3 py-4 text-center text-xs text-slate-500">{contactSearch.trim() ? `No student or lecturer account found for “${contactSearch.trim().startsWith('@') ? contactSearch.trim() : `@${contactSearch.trim()}`}”. Check the username and try again.` : 'No searchable student or lecturer accounts are available right now.'}</p>}
       </div>
       {selectedContact && <p className="mt-2 text-xs text-slate-500">Conversation with <strong className="text-slate-700">@{selectedContact.academicHandle}</strong> · Messages are private to this conversation.</p>}
     </div>}

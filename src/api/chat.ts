@@ -12,7 +12,7 @@ export const chatApi = {
     source.onmessage = () => onRefresh();
     return () => source.close();
   },
-  contacts: () => apiRequest<ChatContact[]>('/chat/contacts'),
+  contacts: (search = '') => apiRequest<ChatContact[]>(`/chat/contacts${search.trim() ? `?search=${encodeURIComponent(search.trim().replace(/^@+/, ''))}` : ''}`),
   blocks: () => apiRequest<Array<{ userId: string; academicHandle: string | null }>>('/chat/blocks'),
   block: (userId: string) => apiRequest<{ success: boolean }>(`/chat/blocks/${encodeURIComponent(userId)}`, { method: 'POST' }),
   unblock: (userId: string) => apiRequest<{ success: boolean }>(`/chat/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
