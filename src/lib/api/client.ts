@@ -2,40 +2,82 @@ import { appConfig } from '../../config/env';
 
 export type ApiRequestOptions = RequestInit;
 let csrfToken: string | null = null;
+let csrfRefresh: Promise<string> | null = null;
 
 export function setCsrfToken(token: string | null) { csrfToken = token; }
 
 function buildUrl(endpoint: string) {
-  const baseUrl = appConfig.apiBaseUrl.replace(/\/$/, '');
-  const normalized = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  return `${baseUrl}${normalized}`;
+  const baseUrl = appConfig.apiBaseUrl.endsWith('/') ? appConfig.apiBaseUrl.slice(0, -1) : appConfig.apiBaseUrl;
+  const normalized = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+  return baseUrl + normalized;
+}
+
+async function refreshCsrfToken(): Promise<string> {
+  if (!csrfRefresh) {
+    csrfRefresh = fetch(buildUrl('/auth/csrf'), {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    }).then(async (response) => {
+      if (!response.ok) throw new Error('Unable to initialize secure request validation. Please refresh and try again.');
+      const payload = await response.json();
+      const token = payload?.csrfToken ?? payload?.data?.csrfToken;
+      if (typeof token !== 'string' || !token) throw new Error('The server did not provide a valid security token. Please refresh and try again.');
+      csrfToken = token;
+      return token;
+    }).finally(() => { csrfRefresh = null; });
+  }
+  return csrfRefresh;
 }
 
 export async function apiRequest<T>(endpoint: string, options: ApiRequestOptions = {}, _legacyToken?: string | null): Promise<T> {
   const { headers, ...rest } = options;
   const method = (rest.method ?? 'GET').toUpperCase();
-  const requestHeaders: HeadersInit = {
-    Accept: 'application/json',
-    ...(rest.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-    ...(csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(method) ? { 'X-CSRF-Token': csrfToken } : {}),
-    ...headers,
+  const needsCsrf = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+  if (needsCsrf && !csrfToken) await refreshCsrfToken();
+
+  const send = async (): Promise<Response> => {
+    const requestHeaders: HeadersInit = {
+      Accept: 'application/json',
+      ...(rest.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(needsCsrf && csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+      ...headers,
+    };
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+    try {
+      return await fetch(buildUrl(endpoint), {
+        ...rest,
+        signal: rest.signal ?? controller.signal,
+        credentials: 'include',
+        headers: requestHeaders,
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error('The server took too long to respond. Please retry in a moment.');
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
   };
 
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 20000);
-  let response: Response;
-  try {
-    response = await fetch(buildUrl(endpoint), { ...rest, signal: rest.signal ?? controller.signal, credentials: 'include', headers: requestHeaders });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('The server took too long to respond. Please retry in a moment.');
+  let response = await send();
+  if (needsCsrf && response.status === 403) {
+    let isCsrfFailure = false;
+    try {
+      const payload = await response.clone().json();
+      const message = payload?.message;
+      isCsrfFailure = typeof message === 'string' && message.toLowerCase().includes('csrf validation failed');
+    } catch { /* retain the original response */ }
+    if (isCsrfFailure) {
+      await refreshCsrfToken();
+      response = await send();
     }
-    throw error;
-  } finally {
-    window.clearTimeout(timeoutId);
   }
+
   if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
+    let message = 'Request failed with status ' + response.status;
     try {
       const payload = await response.json();
       message = payload?.message ?? payload?.error ?? message;
