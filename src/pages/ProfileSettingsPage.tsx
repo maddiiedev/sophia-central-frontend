@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Camera, Save, Trash2 } from 'lucide-react';
+import { Camera, Save, LogOut } from 'lucide-react';
 import { useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
@@ -28,8 +28,8 @@ export function ProfileSettingsPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [savingField, setSavingField] = useState<keyof typeof form | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -41,7 +41,7 @@ export function ProfileSettingsPage() {
       studyLevel: user.studyLevel ?? '',
       coursesTaught: (user.coursesTaught ?? []).join(', '),
       bio: user.bio ?? '',
-      handle: user.handle ?? '',
+      handle: user.academicHandle ?? '',
     });
   }, [user]);
 
@@ -88,7 +88,7 @@ export function ProfileSettingsPage() {
         studyLevel: user.role === 'student' ? form.studyLevel.trim() : undefined,
         coursesTaught: user.role === 'lecturer' ? form.coursesTaught.split(',').map((course) => course.trim()).filter(Boolean) : undefined,
         bio: form.bio.trim(),
-        socialHandle: normalizeAcademicHandle(form.handle),
+        academicHandle: normalizeAcademicHandle(form.handle),
       });
       setMessage('Profile updated successfully.');
     } catch (cause) {
@@ -109,7 +109,7 @@ export function ProfileSettingsPage() {
       }
     }
     const payload: Record<string, unknown> = key === 'handle'
-      ? { socialHandle: normalizeAcademicHandle(value) }
+      ? { academicHandle: normalizeAcademicHandle(value) }
       : key === 'coursesTaught'
         ? { coursesTaught: value.split(',').map((course) => course.trim()).filter(Boolean) }
         : { [key]: value.trim() };
@@ -119,18 +119,6 @@ export function ProfileSettingsPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to save this field.');
     } finally { setSavingField(null); }
-  };
-
-  const deleteAccount = async () => {
-    if (!user) return;
-    setDeletingAccount(true); setError('');
-    try {
-      await apiRequest('/users/me', { method: 'DELETE' });
-      await logout().catch(() => undefined); // Always clear local auth state; the DELETE response clears the browser cookies.
-      navigate('/', { replace: true });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to delete your account. Please try again.');
-    } finally { setDeletingAccount(false); }
   };
 
   const fieldSaveButton = (key: keyof typeof form) => <button type="button" onClick={() => void saveField(key)} disabled={savingField !== null} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm font-semibold text-[#6121D0] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-50">{savingField === key ? 'Saving…' : <><Save size={14}/> Save</>}</button>;
@@ -194,8 +182,8 @@ export function ProfileSettingsPage() {
       <div className="mt-6 flex flex-wrap justify-end gap-3"><button type="button" onClick={() => void save()} disabled={saving || savingField !== null} className="rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-50">{saving ? 'Saving…' : 'Save all changes'}</button></div>
     </section>
 
-    <section className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 sm:p-6"><div className="flex items-start gap-3"><span className="rounded-xl bg-rose-100 p-3 text-rose-700"><Trash2 size={20}/></span><div className="min-w-0 flex-1"><h3 className="font-bold text-rose-900">Delete account</h3><p className="mt-1 text-sm leading-6 text-rose-800">Your account and personal records will be permanently deleted. Messages you have shared in conversations may remain available to other participants. You cannot recover this account after deletion.</p><button type="button" onClick={() => setDeleteConfirmOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"><Trash2 size={15}/> Delete my account</button></div></div></section>
+      <div className="flex items-start gap-4"><span className="rounded-xl bg-rose-50 p-3 text-rose-700"><LogOut size={20}/></span><div className="min-w-0 flex-1"><h3 className="font-bold text-[#091F5B]">Sign out</h3><p className="mt-1 text-sm text-[#4B5563]">Sign out of your Sophis Central account on this device.</p><button type="button" onClick={() => setConfirmSignOut(true)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"><LogOut size={16}/>Sign out</button></div></div>
+      {confirmSignOut && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !signingOut) setConfirmSignOut(false); }}><section role="dialog" aria-modal="true" aria-labelledby="signout-title" className="w-full max-w-md rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-2xl"><h3 id="signout-title" className="text-xl font-bold text-[#091F5B]">Sign out?</h3><p className="mt-2 text-sm leading-6 text-[#4B5563]">Are you sure you want to sign out of your Sophis Central account?</p><div className="mt-6 flex justify-end gap-3"><button type="button" disabled={signingOut} onClick={() => setConfirmSignOut(false)} className="rounded-xl border border-[#DCE4EF] px-4 py-2.5 text-sm font-semibold text-[#091F5B] disabled:opacity-50">Cancel</button><button type="button" disabled={signingOut} onClick={async () => { setSigningOut(true); try { await logout(); navigate('/login', { replace: true }); } finally { setSigningOut(false); setConfirmSignOut(false); } }} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50">{signingOut ? 'Signing out…' : 'Yes, sign out'}</button></div></section></div>}
 
-    {deleteConfirmOpen && <div role="dialog" aria-modal="true" aria-labelledby="delete-account-title" className="fixed inset-0 z-50 flex items-center justify-center bg-[#091F5B]/60 p-4"><div className="w-full max-w-lg rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-2xl"><div className="flex items-start gap-3"><span className="rounded-xl bg-rose-100 p-3 text-rose-700"><AlertTriangle size={22}/></span><div><h3 id="delete-account-title" className="text-xl font-bold text-[#091F5B]">Are you sure you want to delete your account?</h3><div className="mt-3 space-y-3 text-sm leading-6 text-[#4B5563]"><p>Your account and personal records will be permanently deleted.</p><p>Messages you have shared in conversations may remain available to other participants.</p><p>You cannot recover this account after deletion.</p></div></div></div>{error && <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}<div className="mt-6 flex flex-wrap justify-end gap-3"><button type="button" onClick={() => setDeleteConfirmOpen(false)} disabled={deletingAccount} className="rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 font-semibold text-[#091F5B] disabled:opacity-50">Cancel</button><button type="button" onClick={() => void deleteAccount()} disabled={deletingAccount} className="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-4 py-2.5 font-semibold text-white transition hover:bg-rose-800 disabled:opacity-50"><Trash2 size={15}/>{deletingAccount ? 'Deleting account…' : 'Yes, permanently delete'}</button></div></div></div>}
   </div>;
 }

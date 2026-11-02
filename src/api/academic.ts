@@ -36,6 +36,7 @@ export interface CompleteOnboardingPayload {
   studyLevel?: string;
   coursesTaught?: string[];
   bio?: string;
+  academicHandle?: string;
   socialHandle?: string;
 }
 

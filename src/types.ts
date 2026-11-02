@@ -21,6 +21,8 @@ export interface User {
   firstName?: string;
   lastName?: string;
   handle?: string;
+  academicHandle?: string;
+  socialHandle?: string;
   authProvider?: 'email' | 'google' | 'apple' | 'github' | 'linkedin' | 'instagram' | 'twitter';
   socialLinks?: { linkedin?: string; instagram?: string; twitter?: string };
 }
