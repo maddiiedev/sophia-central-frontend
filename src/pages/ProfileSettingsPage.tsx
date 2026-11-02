@@ -7,6 +7,15 @@ import { profileImageApi } from '../api/upload';
 import { AdminProfilePage } from './AdminProfilePage';
 import { apiRequest } from '../lib/api/client';
 
+const normalizeAcademicHandle = (value: string) => value.trim().replace(/^@+/, '').toLowerCase();
+const academicHandleError = (value: string) => {
+  const handle = normalizeAcademicHandle(value);
+  if (handle.length < 3) return 'Username must be at least 3 characters.';
+  if (handle.length > 30) return 'Username must be 30 characters or fewer.';
+  if (!/^[a-z0-9](?:[a-z0-9._]*[a-z0-9])$/.test(handle)) return 'Start and end with a letter or number; use only lowercase letters, numbers, periods, and underscores.';
+  return '';
+};
+
 export function ProfileSettingsPage() {
   const { user, completeOnboarding, refreshSession, logout } = useAuth();
   const navigate = useNavigate();
@@ -65,6 +74,12 @@ export function ProfileSettingsPage() {
   const save = async () => {
     setSaving(true); setMessage(''); setError('');
     try {
+      const handleError = academicHandleError(form.handle);
+      if (handleError) {
+        setError(handleError);
+        setSaving(false);
+        return;
+      }
       await completeOnboarding({
         institution: form.institution.trim(),
         faculty: form.faculty.trim(),
@@ -73,7 +88,7 @@ export function ProfileSettingsPage() {
         studyLevel: user.role === 'student' ? form.studyLevel.trim() : undefined,
         coursesTaught: user.role === 'lecturer' ? form.coursesTaught.split(',').map((course) => course.trim()).filter(Boolean) : undefined,
         bio: form.bio.trim(),
-        socialHandle: form.handle.trim(),
+        socialHandle: normalizeAcademicHandle(form.handle),
       });
       setMessage('Profile updated successfully.');
     } catch (cause) {
@@ -85,8 +100,16 @@ export function ProfileSettingsPage() {
     if (!user) return;
     setSavingField(key); setMessage(''); setError('');
     const value = form[key];
+    if (key === 'handle') {
+      const handleError = academicHandleError(value);
+      if (handleError) {
+        setError(handleError);
+        setSavingField(null);
+        return;
+      }
+    }
     const payload: Record<string, unknown> = key === 'handle'
-      ? { socialHandle: value.trim() }
+      ? { socialHandle: normalizeAcademicHandle(value) }
       : key === 'coursesTaught'
         ? { coursesTaught: value.split(',').map((course) => course.trim()).filter(Boolean) }
         : { [key]: value.trim() };
@@ -115,7 +138,18 @@ export function ProfileSettingsPage() {
   const textField = (key: keyof typeof form, label: string, placeholder = '') => <div key={key} className="flex items-end gap-2">
     <label className="block min-w-0 flex-1">
       <span className="mb-2 block text-sm font-semibold text-[#091F5B]">{label}</span>
-      <input value={form[key]} onChange={(event) => update(key, event.target.value)} placeholder={placeholder} className="brand-input" />
+      <input
+        value={form[key]}
+        onChange={(event) => update(key, key === 'handle' ? event.target.value.replace(/^@+/, '').toLowerCase() : event.target.value)}
+        placeholder={key === 'handle' ? 'username' : placeholder}
+        autoCapitalize={key === 'handle' ? 'none' : undefined}
+        autoComplete={key === 'handle' ? 'username' : undefined}
+        spellCheck={key === 'handle' ? false : undefined}
+        minLength={key === 'handle' ? 3 : undefined}
+        maxLength={key === 'handle' ? 30 : undefined}
+        className="brand-input"
+      />
+      {key === 'handle' && <span className="mt-1 block text-xs text-[#5C6982]">3–30 characters: lowercase letters, numbers, periods, or underscores. Any leading @ is removed.</span>}
     </label>
     {fieldSaveButton(key)}
   </div>;
