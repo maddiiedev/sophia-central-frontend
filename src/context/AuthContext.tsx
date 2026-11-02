@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSession = useCallback(async () => {
     const response = await authApi.me();
     setUser(await hydrateUser(response.user));
+    try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
   }, [hydrateUser]);
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await initializeCsrf();
     const response = await authApi.login({ identifier, password });
     setUser(await hydrateUser(response.user));
+    try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
   }, [initializeCsrf, hydrateUser]);
 
@@ -100,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } : undefined,
     });
     setUser(await hydrateUser(response.user));
+    try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
   }, [initializeCsrf, hydrateUser]);
 

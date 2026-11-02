@@ -13,7 +13,16 @@ export function ProtectedRoute({
   const location = useLocation();
 
   if (isLoading) return <div className="p-6 text-slate-300">Loading your workspace…</div>;
-  if (!isAuthenticated || !user) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!isAuthenticated || !user) {
+    let hasAuthenticatedBefore = false;
+    try {
+      hasAuthenticatedBefore = window.localStorage.getItem('sophis-central-has-authenticated') === 'true';
+    } catch {
+      // If browser storage is unavailable, use the first-visit registration path.
+    }
+    const redirectTo = location.pathname === '/library' && !hasAuthenticatedBefore ? '/onboarding' : '/login';
+    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+  }
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to={user.role === 'moderator' || user.role === 'admin' ? '/moderation' : '/dashboard'} replace />;
   }
