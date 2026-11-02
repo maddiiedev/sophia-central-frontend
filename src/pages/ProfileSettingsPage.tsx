@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Save, Trash2 } from 'lucide-react';
+import { AlertTriangle, Camera, Save, Trash2 } from 'lucide-react';
+import { useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
 import { AdminProfilePage } from './AdminProfilePage';
@@ -14,6 +15,9 @@ export function ProfileSettingsPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [savingField, setSavingField] = useState<keyof typeof form | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -38,11 +42,11 @@ export function ProfileSettingsPage() {
   const uploadPhoto = async (file?: File) => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setError('Choose a JPG, PNG, or WebP image.');
+      setError('Please choose a supported image file.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('Your profile image must be smaller than 5 MB.');
+      setError('Your profile image must be 5 MB or less.');
       return;
     }
     setUploadingPhoto(true);
@@ -120,19 +124,26 @@ export function ProfileSettingsPage() {
     <div><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">Your profile</h2><p className="mt-2 text-[#4B5563]">Edit each field and save it individually, or save all changes together.</p></div>
     <section className="glass-panel p-5 sm:p-7">
       <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:flex-row sm:items-center">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-2xl font-bold text-white shadow-sm">
-          {user.profileImage ? <img src={user.profileImage} alt="Profile picture" className="h-full w-full object-cover" /> : (user.firstName?.[0] || user.name?.[0] || 'U').toUpperCase()}
+        <div className="relative h-20 w-20 shrink-0">
+          <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-2xl font-bold text-white shadow-sm">
+            {user.profileImage ? <img src={user.profileImage} alt="Profile picture" className="h-full w-full object-cover" /> : (user.firstName?.[0] || user.name?.[0] || 'U').toUpperCase()}
+          </div>
+          <button type="button" aria-label="Change profile picture" title="Change profile picture" disabled={uploadingPhoto} onClick={() => setPhotoMenuOpen((open) => !open)} className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#6121D0] text-white shadow-md transition hover:bg-[#2C36D9] disabled:cursor-wait disabled:opacity-60">
+            {uploadingPhoto ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Camera size={15} />}
+          </button>
+          {photoMenuOpen && !uploadingPhoto && <div className="absolute left-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-xl border border-[#DCE4EF] bg-white py-1 shadow-xl">
+            <button type="button" onClick={() => { setPhotoMenuOpen(false); cameraInputRef.current?.click(); }} className="block w-full px-3 py-2.5 text-left text-sm font-medium text-[#091F5B] hover:bg-[#F8F5FF]">Take photo</button>
+            <button type="button" onClick={() => { setPhotoMenuOpen(false); galleryInputRef.current?.click(); }} className="block w-full px-3 py-2.5 text-left text-sm font-medium text-[#091F5B] hover:bg-[#F8F5FF]">Choose from gallery</button>
+          </div>}
+          <input ref={cameraInputRef} type="file" accept="image/*" capture="user" className="hidden" disabled={uploadingPhoto} onChange={(event) => { void uploadPhoto(event.target.files?.[0]); event.currentTarget.value = ''; }} />
+          <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingPhoto} onChange={(event) => { void uploadPhoto(event.target.files?.[0]); event.currentTarget.value = ''; }} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs uppercase tracking-wider text-[#5C6982]">Account identity</p>
           <p className="mt-1 font-semibold text-[#091F5B]">{user.name}</p>
           <p className="mt-1 text-sm text-[#4B5563]">{user.email}</p>
           <p className="mt-1 text-xs font-semibold capitalize text-[#6121D0]">{user.role} account</p>
-          <label className="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#6121D0] hover:border-[#6121D0]">
-            {uploadingPhoto ? 'Uploading photo…' : user.profileImage ? 'Change profile picture' : 'Upload profile picture'}
-            <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={uploadingPhoto} onChange={(event) => { void uploadPhoto(event.target.files?.[0]); event.currentTarget.value = ''; }} />
-          </label>
-          <p className="mt-2 text-xs text-[#5C6982]">JPG, PNG, or WebP · Maximum 5 MB</p>
+          {uploadingPhoto && <p className="mt-2 text-xs text-[#6121D0]" role="status">Uploading profile picture…</p>}
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
