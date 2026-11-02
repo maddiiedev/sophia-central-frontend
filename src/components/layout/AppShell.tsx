@@ -38,6 +38,7 @@ const studentNav = [
 const lecturerNav = [
   { label: 'Dashboard', href: '/lecturer', icon: LayoutGrid },
   { label: 'Resource library', href: '/library', icon: BookOpen },
+  { label: 'Saved resources', href: '/saved', icon: Bookmark },
   { label: 'Submit resource', href: '/upload', icon: Upload },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
 ];

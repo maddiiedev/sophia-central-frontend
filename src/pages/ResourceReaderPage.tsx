@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Bookmark, BookOpen, Download, FileText } from 'lucide-react';
+import { ArrowLeft, Bookmark, BookOpen, FileText } from 'lucide-react';
 import { resourcesApi } from '../api/resources';
 import { apiRequest } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
-import { getSavedResourceIds, setResourceSaved } from '../lib/savedResources';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
 import type { Resource } from '../types';
@@ -30,7 +29,10 @@ export function ResourceReaderPage() {
         const result = await resourcesApi.byId(id);
         if (active) {
           setResource(result as ResourceWithFile);
-          if (user) setSaved(getSavedResourceIds(user.id).includes(id));
+          if (user && ['student', 'lecturer'].includes(user.role)) {
+            const savedResources = await resourcesApi.saved();
+            if (active) setSaved(savedResources.some((item) => item.id === id));
+          }
         }
       } catch (err) {
         if (active) setError(err instanceof Error ? err.message : 'Unable to open this resource.');
@@ -53,12 +55,20 @@ export function ResourceReaderPage() {
     setFileAction(download ? 'download' : 'open');
     setError('');
     try {
-      const result = await resourcesApi.fileUrl(id, download);
       if (download) {
-        // The authenticated app endpoint returns a short-lived attachment URL; the browser handles the download.
-        window.location.assign(result.url);
+        if (saved) {
+          await resourcesApi.unsave(id);
+          setSaved(false);
+        } else {
+          await resourcesApi.save(id);
+          setSaved(true);
+        }
       } else {
-        setViewerUrl(result.url);
+        const result = await resourcesApi.fileUrl(id);
+        const officeFile = /\.(doc|docx|ppt|pptx)$/i.test(result.filename);
+        setViewerUrl(officeFile
+          ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(result.url)}`
+          : result.url);
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to access this resource file.');
@@ -82,12 +92,12 @@ export function ResourceReaderPage() {
     <article className="overflow-hidden rounded-3xl border border-[#DCE4EF] bg-white shadow-sm">
       <div className="border-b border-[#DCE4EF] bg-[#F8FAFD] p-6 sm:p-8">
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs"><span className="rounded-full bg-[#F3F0FF] px-3 py-1 font-semibold uppercase tracking-wide text-[#6121D0]">{resource.type.replace(/_/g, ' ')}</span><span className={`rounded-full px-3 py-1 font-semibold capitalize ${status === 'approved' ? 'bg-emerald-50 text-emerald-900' : status === 'rejected' ? 'bg-rose-50 text-rose-900' : 'bg-amber-50 text-amber-900'}`}>{status}</span></div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-2xl font-semibold text-[#091F5B] sm:text-3xl">{resource.title}</h2><p className="mt-3 text-sm text-[#5C6982]">{[resource.course, resource.topic, resource.level, resource.institution].filter(Boolean).join(' · ')}</p></div><div className="flex flex-wrap gap-2">{user?.role === 'student' && <button type="button" onClick={() => { if (!user) return; const next = !saved; setResourceSaved(user.id, id, next); setSaved(next); }} className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${saved ? 'border-[#6121D0] bg-[#F3F0FF] text-[#6121D0]' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#6121D0] hover:text-[#6121D0]'}`}><Bookmark size={16} fill={saved ? 'currentColor' : 'none'} /> {saved ? 'Saved' : 'Save resource'}</button>}{(user?.role === 'moderator' || user?.role === 'admin') && <button type="button" onClick={() => void updateDownloadRestriction()} disabled={restrictionBusy} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold disabled:opacity-50 ${resourceDownloadRestricted ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>{restrictionBusy ? 'Saving…' : resourceDownloadRestricted ? 'Allow downloads' : 'Restrict downloads'}</button>}</div></div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-2xl font-semibold text-[#091F5B] sm:text-3xl">{resource.title}</h2><p className="mt-3 text-sm text-[#5C6982]">{[resource.course, resource.topic, resource.level, resource.institution].filter(Boolean).join(' · ')}</p></div><div className="flex flex-wrap gap-2">{(user?.role === 'moderator' || user?.role === 'admin') && <button type="button" onClick={() => void updateDownloadRestriction()} disabled={restrictionBusy} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold disabled:opacity-50 ${resourceDownloadRestricted ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>{restrictionBusy ? 'Saving…' : resourceDownloadRestricted ? 'Allow downloads' : 'Restrict downloads'}</button>}</div></div>
       </div>
       <div className="space-y-6 p-6 sm:p-8">
         <section><h3 className="mb-2 flex items-center gap-2 font-semibold text-[#091F5B]"><BookOpen size={17} className="text-[#6121D0]" /> Resource details</h3><p className="whitespace-pre-wrap leading-7 text-[#374151]">{resource.description || 'No description was provided for this resource.'}</p></section>
         {resource.tags?.length ? <section><h3 className="mb-2 text-sm font-semibold text-[#091F5B]">Topics</h3><div className="flex flex-wrap gap-2">{resource.tags.map(tag => <span key={tag} className="rounded-full border border-[#DCE4EF] bg-[#F8FAFD] px-3 py-1 text-xs text-[#4B5563]">{tag}</span>)}</div></section> : null}
-        {hasFile ? <><div className="flex flex-wrap gap-3 border-t border-[#DCE4EF] pt-5"><button type="button" onClick={() => void accessFile(false)} disabled={Boolean(fileAction)} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-60"><BookOpen size={16} /> {fileAction === 'open' ? 'Opening in reader…' : viewerUrl ? 'Refresh in-app reader' : 'Read in app'}</button>{!downloadRestricted && <button type="button" onClick={() => void accessFile(true)} disabled={Boolean(fileAction)} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-3 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60"><Download size={16} /> {fileAction === 'download' ? 'Preparing…' : 'Download in app'}</button>}</div>{downloadRestricted && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Downloads are disabled for this restricted resource. You may read it here if your account has viewing permission.</p>}{viewerUrl && <section className="overflow-hidden rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD]"><div className="flex items-center gap-2 border-b border-[#DCE4EF] px-4 py-3 text-sm font-semibold text-[#091F5B]"><FileText size={16} className="text-[#6121D0]"/> In-app resource reader</div><iframe title={`Reader: ${resource.title}`} src={viewerUrl} className="h-[75vh] min-h-[420px] w-full bg-white" referrerPolicy="no-referrer" /></section>}</> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">This resource has no attached file. You can still review its details above.</p>}
+        {hasFile ? <><div className="flex flex-wrap gap-3 border-t border-[#DCE4EF] pt-5"><button type="button" onClick={() => void accessFile(false)} disabled={Boolean(fileAction)} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-60"><BookOpen size={16} /> {fileAction === 'open' ? 'Opening in reader…' : viewerUrl ? 'Refresh in-app reader' : 'Read in app'}</button>{!downloadRestricted && ['student', 'lecturer'].includes(user?.role || '') && <button type="button" onClick={() => void accessFile(true)} disabled={Boolean(fileAction)} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-3 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60"><Bookmark size={16} fill={saved ? 'currentColor' : 'none'} /> {fileAction === 'download' ? (saved ? 'Removing from your account…' : 'Saving to your account…') : saved ? 'Saved · Remove' : 'Download in app'}</button>}</div>{downloadRestricted && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Downloads are disabled for this restricted resource. You may read it here if your account has viewing permission.</p>}{viewerUrl && <section className="overflow-hidden rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD]"><div className="flex items-center gap-2 border-b border-[#DCE4EF] px-4 py-3 text-sm font-semibold text-[#091F5B]"><FileText size={16} className="text-[#6121D0]"/> In-app resource reader</div><iframe title={`Reader: ${resource.title}`} src={viewerUrl} className="h-[75vh] min-h-[420px] w-full bg-white" referrerPolicy="no-referrer" /></section>}</> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">This resource has no attached file. You can still review its details above.</p>}
       </div>
     </article>
   </div>;
