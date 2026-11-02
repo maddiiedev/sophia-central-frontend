@@ -10,6 +10,7 @@ type ResourceStatusTab = 'pending' | 'approved' | 'rejected';
 
 export function LecturerDashboardPage() {
   const { user } = useAuth();
+  const firstName = user?.firstName?.trim() || user?.name?.trim().split(/\s+/)[0] || 'there';
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [statusTab, setStatusTab] = useState<ResourceStatusTab>('pending');
   const { data: resources = [], isLoading, isError, refetch } = useQuery({
@@ -42,7 +43,7 @@ export function LecturerDashboardPage() {
   ];
 
   return <div className="space-y-6">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><SectionTitle eyebrow="Lecturer workspace" title="Instructor overview" /><div className="flex items-center gap-3"><Link to="/upload" className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2C36D9]"><UploadCloud size={16} /> Upload resource</Link><UserBadge /></div></div>
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><SectionTitle eyebrow="Lecturer workspace" title={`Welcome back, ${firstName}`} /><div className="flex items-center gap-3"><Link to="/upload" className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2C36D9]"><UploadCloud size={16} /> Upload resource</Link><UserBadge /></div></div>
     {showOnboarding && <div className="rounded-3xl border border-[#6121D0]/25 bg-[#6121D0]/10 p-5"><div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><div className="text-[10px] uppercase tracking-[0.22em] text-[#6121D0]">Lecturer workflow</div><h3 className="mt-2 text-2xl font-semibold text-[#091F5B]">Upload → submit → moderation</h3><p className="mt-2 text-sm text-[#4B5563]">Your submissions and review decisions are shown here. Only approved resources appear in the shared library.</p></div><button type="button" onClick={() => setShowOnboarding(false)} className="rounded-xl border border-[#6121D0]/30 bg-white px-4 py-2 text-sm font-semibold text-[#6121D0] hover:bg-[#F3F0FF]">Dismiss</button></div></div>}
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => <div key={stat.label} className="glass-panel p-4"><div className="text-[10px] uppercase tracking-[0.2em] text-[#5C6982]">{stat.label}</div><div className="mt-4 text-3xl font-semibold text-[#091F5B]">{stat.value}</div><div className="mt-1 text-sm text-[#5C6982]">{stat.helper}</div></div>)}</div>
     <OverviewCard title="My resource review history" action={String(resources.length) + ' total'}>
