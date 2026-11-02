@@ -37,6 +37,8 @@ export function ChatPage() {
   const [contacts, setContacts] = useState<ChatContact[]>([]);
   const [onlineContactIds, setOnlineContactIds] = useState<Set<string>>(() => new Set());
   const [recipient, setRecipient] = useState('');
+  const selectedContact = contacts.find(contact => contact.id === recipient);
+  const recipientDeleted = Boolean(selectedContact?.isDeleted);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
@@ -192,7 +194,7 @@ export function ChatPage() {
 
   const send = async () => {
     const value = text.trim();
-    if (!value || sending || (mode === 'direct' && !recipient)) return;
+    if (!value || sending || (mode === 'direct' && (!recipient || recipientDeleted))) return;
     setSending(true); setError('');
     try {
       const message = await chatApi.sendText(mode, value, mode === 'direct' ? recipient : undefined);
@@ -203,7 +205,7 @@ export function ChatPage() {
   };
 
   const sendSticker = async (stickerId: string) => {
-    if (sending || (mode === 'direct' && !recipient)) return;
+    if (sending || (mode === 'direct' && (!recipient || recipientDeleted))) return;
     setSending(true); setError('');
     try {
       const message = await chatApi.sendSticker(mode, stickerId, mode === 'direct' ? recipient : undefined);
@@ -275,7 +277,8 @@ export function ChatPage() {
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] p-4">
       <div><h2 className="font-bold text-[#091F5B]">{mode === 'group' ? 'Group chat room' : 'Private DM'}</h2><p className="text-xs text-[#64748B]">{mode === 'group' ? 'Your institution, faculty and department community' : 'Private conversations with students and lecturers'}</p><button type="button" onClick={() => mode === 'group' ? setMutedGroup(value => !value) : setMutedDirect(value => !value)} className="mt-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600">{(mode === 'group' ? mutedGroup : mutedDirect) ? 'Unmute notifications' : 'Mute notifications'}</button></div>
     </div>
-    {mode === 'direct' && <div className="border-b border-[#E5E7EB] px-4 py-3"><label className="mb-1 block text-xs font-semibold text-slate-600" htmlFor="chat-contact">Message a student or lecturer</label><select id="chat-contact" value={recipient} onChange={event => setRecipient(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"><option value="">Choose a contact</option>{contacts.map(contact => <option key={contact.id} value={contact.id}>@{contact.academicHandle} · {contact.role}{onlineContactIds.has(contact.id) ? ' · Online' : ''}</option>)}</select></div>}
+    {mode === 'direct' && <div className="border-b border-[#E5E7EB] px-4 py-3"><label className="mb-1 block text-xs font-semibold text-slate-600" htmlFor="chat-contact">Message a student or lecturer</label><select id="chat-contact" value={recipient} onChange={event => setRecipient(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"><option value="">Choose a contact</option>{contacts.map(contact => <option key={contact.id} value={contact.id}>{contact.isDeleted ? 'Deleted user · Previous conversation' : `@${contact.academicHandle} · ${contact.role}${onlineContactIds.has(contact.id) ? ' · Online' : ''}`}</option>)}</select></div>}
+    {recipientDeleted && <div className="mx-4 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">This account was deleted. Previous messages are preserved, but this conversation is read-only.</div>}
     {error && <div role="alert" className="mx-4 mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
     <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-4">
       {hasMore && !loading && <div className="text-center"><button type="button" onClick={() => void loadOlder()} disabled={loadingOlder} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-violet-700 disabled:opacity-50">{loadingOlder ? 'Loading older messages…' : 'Load older messages'}</button></div>}
@@ -283,7 +286,7 @@ export function ChatPage() {
         : mode === 'direct' && !recipient ? <p className="py-10 text-center text-sm text-slate-500">Choose a contact to start a conversation.</p>
         : messages.length === 0 ? <p className="py-10 text-center text-sm text-slate-500">No messages yet. Start the conversation.</p>
         : messages.map(message => <article key={message.id} className={`max-w-[85%] rounded-2xl border p-3 shadow-sm ${message.isOwn ? 'ml-auto border-[#DCD6FF] bg-[#F3F0FF]' : 'mr-auto border-slate-200 bg-white'}`}>
-          <div className="mb-1 flex items-center gap-2 text-[11px] text-slate-500"><strong className="text-slate-700">@{message.senderHandle}</strong><time>{new Date(message.createdAt).toLocaleString()}</time>{message.editedAt && <span>edited</span>}</div>
+          <div className="mb-1 flex items-center gap-2 text-[11px] text-slate-500"><strong className="text-slate-700">{message.senderId ? `@${message.senderHandle}` : 'Deleted user'}</strong><time>{new Date(message.createdAt).toLocaleString()}</time>{message.editedAt && <span>edited</span>}</div>
           {message.isDeleted ? <p className="text-sm italic text-slate-500">This message was deleted.</p>
             : message.contentType === 'voice' && message.voiceUrl ? <audio controls preload="none" src={message.voiceUrl} className="max-w-full" />
             : message.contentType === 'sticker' ? <div className="flex min-w-24 flex-col items-center rounded-xl bg-white/80 px-4 py-3"><span className="text-5xl">{STICKERS.find(sticker => sticker.id === message.stickerId)?.emoji ?? '✨'}</span><span className="mt-1 text-xs font-semibold text-slate-600">{STICKERS.find(sticker => sticker.id === message.stickerId)?.label ?? 'Sticker'}</span></div>
@@ -299,13 +302,13 @@ export function ChatPage() {
           <button type="button" onClick={() => { setShowStickers(true); setShowEmoji(false); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${showStickers ? 'bg-[#E8F8EE] text-[#087443]' : 'text-slate-500'}`}>Stickers</button>
         </div>
         {showEmoji && <div className="flex flex-wrap gap-2">{EMOJI.map(emoji => <button key={emoji} type="button" onClick={() => { setText(value => value + emoji); messageInputRef.current?.focus(); }} className="rounded-lg p-2 text-xl hover:bg-slate-100" aria-label={`Add ${emoji}`}>{emoji}</button>)}</div>}
-        {showStickers && <div className="grid grid-cols-4 gap-2">{STICKERS.map(sticker => <button key={sticker.id} type="button" onClick={() => void sendSticker(sticker.id)} disabled={sending || (mode === 'direct' && !recipient)} className="flex flex-col items-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 hover:border-violet-300 hover:bg-violet-50 disabled:opacity-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-medium text-slate-600">{sticker.label}</span></button>)}</div>}
+        {showStickers && <div className="grid grid-cols-4 gap-2">{STICKERS.map(sticker => <button key={sticker.id} type="button" onClick={() => void sendSticker(sticker.id)} disabled={sending || (mode === 'direct' && (!recipient || recipientDeleted))} className="flex flex-col items-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 hover:border-violet-300 hover:bg-violet-50 disabled:opacity-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-medium text-slate-600">{sticker.label}</span></button>)}</div>}
       </div>}
       <div className="flex items-end gap-2 rounded-[28px] border border-slate-200 bg-[#F7F8FA] px-2 py-1.5 focus-within:border-[#25B866]">
         <button type="button" onClick={() => { if (showEmoji || showStickers) { setShowEmoji(false); setShowStickers(false); messageInputRef.current?.focus(); } else { setShowEmoji(true); setShowStickers(false); } }} className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200" aria-label={showEmoji || showStickers ? 'Close emoji and sticker panel and open keyboard' : 'Open emoji and sticker panel'} title={showEmoji || showStickers ? 'Open keyboard' : 'Emoji and stickers'}>
           {showEmoji || showStickers ? <Keyboard size={23}/> : <Smile size={25}/>}
         </button>
-        <textarea ref={messageInputRef} value={text} onFocus={() => { setShowEmoji(false); setShowStickers(false); }} onChange={event => setText(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder="Message" rows={1} className="max-h-28 min-h-10 min-w-0 flex-1 resize-y border-0 bg-transparent px-1 py-2.5 text-[15px] outline-none focus:ring-0" />
+        <textarea ref={messageInputRef} value={text} onFocus={() => { setShowEmoji(false); setShowStickers(false); }} onChange={event => setText(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder={recipientDeleted ? 'This conversation is read-only' : 'Message'} disabled={recipientDeleted} rows={1} className="max-h-28 min-h-10 min-w-0 flex-1 resize-y border-0 bg-transparent px-1 py-2.5 text-[15px] outline-none focus:ring-0" />
         <button type="button" onClick={() => recording ? stopRecording() : void startRecording()} disabled={sending || (mode === 'direct' && !recipient)} className={`mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${recording ? 'bg-rose-600 text-white' : 'bg-[#20C76A] text-white hover:bg-[#17B85D]'} disabled:opacity-50`} aria-label={recording ? 'Stop recording' : 'Record voice message'} title={recording ? 'Stop recording' : 'Record voice message'}>{recording ? <span className="text-xs font-bold">Stop</span> : <Mic size={22} fill="currentColor"/>}</button>
         {text.trim() && <button type="button" onClick={() => void send()} disabled={sending || (mode === 'direct' && !recipient)} className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6121D0] text-white disabled:opacity-50" aria-label="Send message" title="Send message"><Send size={18}/></button>}
       </div>
