@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, Mic, Send, Smile } from 'lucide-react';
+import { Keyboard, Mic, Pause, Play, Send, Smile, Square } from 'lucide-react';
 import { chatApi, type ChatContact, type ChatMessage } from '../api/chat';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -57,10 +57,17 @@ export function ChatPage() {
   const [mutedGroup, setMutedGroup] = useState(() => { try { return window.localStorage.getItem('sophis-chat-muted-group') === 'true'; } catch { return false; } });
   const [mutedDirect, setMutedDirect] = useState(() => { try { return window.localStorage.getItem('sophis-chat-muted-direct') === 'true'; } catch { return false; } });
   const [recording, setRecording] = useState(false);
+  const [recordingPaused, setRecordingPaused] = useState(false);
+  const [voicePreview, setVoicePreview] = useState<Blob | null>(null);
+  const [voicePreviewUrl, setVoicePreviewUrl] = useState('');
+  const [waveform, setWaveform] = useState<number[]>(Array.from({ length: 36 }, () => 3));
   const listRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const waveformFrameRef = useRef<number | null>(null);
   const preserveScrollRef = useRef<{ height: number; top: number } | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const requestSequenceRef = useRef(0);
@@ -231,36 +238,83 @@ export function ChatPage() {
     catch (e) { setError(e instanceof Error ? e.message : 'Message could not be deleted.'); }
   };
 
+  const releaseRecordingResources = () => {
+    if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
+    waveformFrameRef.current = null;
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    analyserRef.current = null;
+    const context = audioContextRef.current;
+    audioContextRef.current = null;
+    if (context && context.state !== 'closed') void context.close();
+  };
+
+  const animateWaveform = () => {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+    const values = new Uint8Array(analyser.frequencyBinCount);
+    let lastPaint = 0;
+    const draw = (time: number) => {
+      if (!analyserRef.current) return;
+      if (time - lastPaint >= 75) {
+        analyser.getByteFrequencyData(values);
+        const bars = Array.from({ length: 36 }, (_, index) => {
+          const value = values[Math.floor(index * values.length / 36)] ?? 0;
+          return Math.max(3, Math.min(28, Math.round(value / 255 * 28)));
+        });
+        setWaveform(bars);
+        lastPaint = time;
+      }
+      waveformFrameRef.current = requestAnimationFrame(draw);
+    };
+    waveformFrameRef.current = requestAnimationFrame(draw);
+  };
+
   const startRecording = async () => {
     try {
       if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
         throw new Error('Microphone access requires a secure browser connection. Open Sophis Central directly at https://sophiscentral.vercel.app and try again.');
       }
+      setError('');
+      if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl);
+      setVoicePreview(null);
+      setVoicePreviewUrl('');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'].find(type => MediaRecorder.isTypeSupported(type));
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       const chunks: BlobPart[] = [];
+      const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioContextClass) {
+        const context = new AudioContextClass();
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 128;
+        context.createMediaStreamSource(stream).connect(analyser);
+        audioContextRef.current = context;
+        analyserRef.current = analyser;
+        void context.resume();
+      }
       recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
-      recorder.onstop = async () => {
+      recorder.onstop = () => {
         const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
+        releaseRecordingResources();
+        setRecording(false);
+        setRecordingPaused(false);
+        setWaveform(Array.from({ length: 36 }, () => 3));
         if (!blob.size) return;
-        if (blob.size > 12 * 1024 * 1024) { setError('Recording exceeds the 12 MB limit.'); return; }
-        setSending(true);
-        try {
-          const mime = blob.type.split(';')[0] || 'audio/webm';
-          const upload = await chatApi.voiceUpload(mime, blob.size);
-          const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': upload.contentType }, body: blob });
-          if (!response.ok) throw new Error('Voice upload failed. Please try again.');
-          const message = await chatApi.sendVoice(mode, upload.key, mode === 'direct' ? recipient : undefined);
-          shouldAutoScrollRef.current = true;
-          setMessages(current => [...current, message]); playSophisTone('send');
-        } catch (e) { setError(e instanceof Error ? e.message : 'Voice message could not be sent.'); }
-        finally { setSending(false); }
+        if (blob.size > 12 * 1024 * 1024) {
+          setError('Recording exceeds the 12 MB limit. Please record a shorter message.');
+          return;
+        }
+        const previewUrl = URL.createObjectURL(blob);
+        setVoicePreview(blob);
+        setVoicePreviewUrl(previewUrl);
       };
-      recorderRef.current = recorder; recorder.start(); setRecording(true);
+      recorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      setRecordingPaused(false);
+      animateWaveform();
     } catch (e) {
       const errorName = e instanceof DOMException ? e.name : '';
       if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError' || errorName === 'SecurityError') {
@@ -271,15 +325,53 @@ export function ChatPage() {
     }
   };
 
-  const stopRecording = () => {
-    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
-    setRecording(false);
+  const toggleRecordingPause = () => {
+    const recorder = recorderRef.current;
+    if (!recorder) return;
+    if (recorder.state === 'recording') {
+      recorder.pause();
+      setRecordingPaused(true);
+      if (waveformFrameRef.current !== null) cancelAnimationFrame(waveformFrameRef.current);
+      waveformFrameRef.current = null;
+    } else if (recorder.state === 'paused') {
+      recorder.resume();
+      setRecordingPaused(false);
+      animateWaveform();
+    }
+  };
+
+  const finishRecording = () => {
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop();
+  };
+
+  const sendVoicePreview = async () => {
+    if (!voicePreview || sending || (mode === 'direct' && (!recipient || recipientDeleted))) return;
+    setSending(true);
+    setError('');
+    try {
+      const mime = voicePreview.type.split(';')[0] || 'audio/webm';
+      const upload = await chatApi.voiceUpload(mime, voicePreview.size);
+      const response = await fetch(upload.uploadUrl, { method: 'PUT', headers: { 'Content-Type': upload.contentType }, body: voicePreview });
+      if (!response.ok) throw new Error('Voice upload failed. Please try again.');
+      const message = await chatApi.sendVoice(mode, upload.key, mode === 'direct' ? recipient : undefined);
+      shouldAutoScrollRef.current = true;
+      setMessages(current => [...current, message]);
+      if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl);
+      setVoicePreview(null);
+      setVoicePreviewUrl('');
+      playSophisTone('send');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Voice message could not be sent.');
+    } finally {
+      setSending(false);
+    }
   };
 
   useEffect(() => () => {
-    if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
-    streamRef.current?.getTracks().forEach(track => track.stop());
-  }, []);
+    if (recorderRef.current?.state !== 'inactive' && recorderRef.current) recorderRef.current.stop();
+    releaseRecordingResources();
+    if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl);
+  }, [voicePreviewUrl]);
 
   if (user?.role !== 'student' && user?.role !== 'lecturer') {
     return <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">Chat is available to students and lecturers only.</div>;
@@ -331,10 +423,22 @@ export function ChatPage() {
           {showEmoji || showStickers ? <Keyboard size={23}/> : <Smile size={25}/>}
         </button>
         <textarea ref={messageInputRef} value={text} onFocus={() => { setShowEmoji(false); setShowStickers(false); }} onChange={event => setText(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder={recipientDeleted ? 'This conversation is read-only' : 'Message'} disabled={recipientDeleted} rows={1} className="max-h-28 min-h-10 min-w-0 flex-1 resize-y border-0 bg-transparent px-0.5 py-2.5 text-[15px] outline-none focus:ring-0" />
-        <button type="button" onClick={() => recording ? stopRecording() : void startRecording()} disabled={sending || (mode === 'direct' && !recipient)} className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${recording ? 'bg-rose-600 text-white' : 'bg-[#20C76A] text-white hover:bg-[#17B85D]'} disabled:opacity-50`} aria-label={recording ? 'Stop recording' : 'Record voice message'} title={recording ? 'Stop recording' : 'Record voice message'}>{recording ? <span className="text-xs font-bold">Stop</span> : <Mic size={22} fill="currentColor"/>}</button>
-        {text.trim() && <button type="button" onClick={() => void send()} disabled={sending || (mode === 'direct' && !recipient)} className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6121D0] text-white disabled:opacity-50" aria-label="Send message" title="Send message"><Send size={18}/></button>}
+        {!recording && !voicePreview && <button type="button" onClick={() => void startRecording()} disabled={sending || (mode === 'direct' && (!recipient || recipientDeleted))} className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#20C76A] text-white hover:bg-[#17B85D] disabled:opacity-50" aria-label="Record voice message" title="Record voice message"><Mic size={22} fill="currentColor"/></button>}
+        {recording && <div className="mb-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-2 py-1.5">
+          <span className="shrink-0 text-[11px] font-semibold text-rose-600">{recordingPaused ? 'Paused' : 'Recording'}</span>
+          <div className="flex h-8 min-w-0 flex-1 items-center justify-center gap-[2px]" role="img" aria-label={recordingPaused ? 'Voice recording paused' : 'Live microphone frequency waveform'}>
+            {waveform.map((height, index) => <span key={index} className="w-[3px] rounded-full bg-emerald-500 transition-[height] duration-75" style={{ height: `${recordingPaused ? 3 : height}px` }}/>)}
+          </div>
+          <button type="button" onClick={toggleRecordingPause} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700" aria-label={recordingPaused ? 'Resume recording' : 'Pause recording'} title={recordingPaused ? 'Resume recording' : 'Pause recording'}>{recordingPaused ? <Play size={15}/> : <Pause size={15}/>}</button>
+          <button type="button" onClick={finishRecording} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-600 text-white" aria-label="Finish recording and preview" title="Finish recording"><Square size={13} fill="currentColor"/></button>
+        </div>}
+        {voicePreview && <div className="mb-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-2xl bg-white px-2 py-1.5">
+          <audio controls preload="metadata" src={voicePreviewUrl} className="h-9 min-w-0 flex-1" aria-label="Preview voice recording before sending"/>
+          <button type="button" onClick={() => void sendVoicePreview()} disabled={sending || (mode === 'direct' && (!recipient || recipientDeleted))} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6121D0] text-white disabled:opacity-50" aria-label="Send voice recording" title="Send voice recording">{sending ? <span className="text-[10px]">...</span> : <Send size={17}/>}</button>
+        </div>}
+        {!recording && !voicePreview && text.trim() && <button type="button" onClick={() => void send()} disabled={sending || (mode === 'direct' && !recipient)} className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#6121D0] text-white disabled:opacity-50" aria-label="Send message" title="Send message"><Send size={18}/></button>}
       </div>
-      <p className="mt-2 text-[10px] text-slate-400">Enter to send · Shift + Enter for a new line · Voice recordings up to 12 MB</p>
+      <p className="mt-2 text-[10px] text-slate-400">{recording ? 'Pause or resume your recording, then finish to listen before sending.' : voicePreview ? 'Listen to your recording and review it before sending.' : 'Enter to send · Shift + Enter for a new line · Voice recordings up to 12 MB'}</p>
     </div>
   </section>;
 }
