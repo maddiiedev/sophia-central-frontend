@@ -8,6 +8,28 @@ type Mode = 'group' | 'direct';
 const EMOJI = ['😀', '😂', '🥹', '😊', '😍', '👍', '👏', '🙏', '❤️', '🎉', '🔥', '💯'];
 const STICKERS = [{id:'celebrate',emoji:'🎉',label:'Celebrate'},{id:'thank-you',emoji:'🙏',label:'Thank you'},{id:'well-done',emoji:'👏',label:'Well done'},{id:'studying',emoji:'📚',label:'Studying'},{id:'thinking',emoji:'🤔',label:'Thinking'},{id:'laughing',emoji:'😂',label:'Laughing'},{id:'encouragement',emoji:'💪',label:'You got this'},{id:'hello',emoji:'👋',label:'Hello'}];
 
+function playSophisTone(kind: 'send' | 'receive') {
+  try {
+    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    const now = context.currentTime;
+    const notes = kind === 'send' ? [{ f: 659.25, t: 0, d: 0.075 }, { f: 987.77, t: 0.065, d: 0.11 }] : [{ f: 783.99, t: 0, d: 0.09 }, { f: 587.33, t: 0.085, d: 0.13 }];
+    for (const note of notes) {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(note.f, now + note.t);
+      gain.gain.setValueAtTime(0.0001, now + note.t);
+      gain.gain.exponentialRampToValueAtTime(0.11, now + note.t + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + note.t + note.d);
+      oscillator.connect(gain); gain.connect(context.destination);
+      oscillator.start(now + note.t); oscillator.stop(now + note.t + note.d + 0.015);
+    }
+    window.setTimeout(() => { void context.close(); }, 500);
+  } catch { /* Sound is a convenience; it must never interrupt messaging. */ }
+}
+
 export function ChatPage() {
   const { user } = useAuth();
   const location = useLocation();
@@ -27,6 +49,9 @@ export function ChatPage() {
   const [editText, setEditText] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<Array<{ userId: string; academicHandle: string | null }>>([]);
+  const [mutedGroup, setMutedGroup] = useState(() => { try { return window.localStorage.getItem('sophis-chat-muted-group') === 'true'; } catch { return false; } });
+  const [mutedDirect, setMutedDirect] = useState(() => { try { return window.localStorage.getItem('sophis-chat-muted-direct') === 'true'; } catch { return false; } });
   const [recording, setRecording] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
@@ -35,6 +60,7 @@ export function ChatPage() {
   const preserveScrollRef = useRef<{ height: number; top: number } | null>(null);
   const shouldAutoScrollRef = useRef(true);
   const requestSequenceRef = useRef(0);
+  const knownMessageIdsRef = useRef<Set<string> | null>(null);
   const activeConversationRef = useRef(`${mode}:${recipient}`);
   activeConversationRef.current = `${mode}:${recipient}`;
 
@@ -45,6 +71,10 @@ export function ChatPage() {
     } catch {
       // Presence is supplementary; chat remains usable if this request fails.
     }
+  }, []);
+
+  const loadBlocks = useCallback(async () => {
+    try { setBlockedUsers(await chatApi.blocks()); } catch { /* Block controls remain unavailable if the server request fails. */ }
   }, []);
 
   const loadContacts = useCallback(async () => {
@@ -65,13 +95,18 @@ export function ChatPage() {
       if (quiet) {
         const container = listRef.current;
         shouldAutoScrollRef.current = !!container && container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+        const incoming = (result.items ?? []).filter(message => !message.isOwn && !message.isDeleted && knownMessageIdsRef.current?.has(message.id) === false);
+        if (knownMessageIdsRef.current && incoming.length && !((mode === 'group' && mutedGroup) || (mode === 'direct' && mutedDirect))) playSophisTone('receive');
         setMessages(current => {
           const merged = new Map(current.map(message => [message.id, message]));
           for (const message of result.items ?? []) merged.set(message.id, message);
           return [...merged.values()].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         });
+        if (!knownMessageIdsRef.current) knownMessageIdsRef.current = new Set();
+        for (const message of result.items ?? []) knownMessageIdsRef.current.add(message.id);
       } else {
         setMessages(result.items ?? []);
+        knownMessageIdsRef.current = new Set((result.items ?? []).map(message => message.id));
         setHasMore(result.hasMore ?? false);
         setNextBefore(result.nextBefore ?? null);
       }
@@ -114,7 +149,9 @@ export function ChatPage() {
     }
   };
 
-  useEffect(() => { void loadContacts(); }, [loadContacts]);
+  useEffect(() => { void loadContacts(); void loadBlocks(); }, [loadContacts, loadBlocks]);
+  useEffect(() => { try { window.localStorage.setItem('sophis-chat-muted-group', String(mutedGroup)); } catch { /* Preference is optional. */ } }, [mutedGroup]);
+  useEffect(() => { try { window.localStorage.setItem('sophis-chat-muted-direct', String(mutedDirect)); } catch { /* Preference is optional. */ } }, [mutedDirect]);
   useEffect(() => {
     let active = true;
     const sendHeartbeat = async () => {
@@ -160,7 +197,7 @@ export function ChatPage() {
     try {
       const message = await chatApi.sendText(mode, value, mode === 'direct' ? recipient : undefined);
       shouldAutoScrollRef.current = true;
-      setMessages(current => [...current, message]); setText(''); setShowEmoji(false);
+      setMessages(current => [...current, message]); setText(''); setShowEmoji(false); playSophisTone('send');
     } catch (e) { setError(e instanceof Error ? e.message : 'Message could not be sent.'); }
     finally { setSending(false); }
   };
@@ -171,7 +208,7 @@ export function ChatPage() {
     try {
       const message = await chatApi.sendSticker(mode, stickerId, mode === 'direct' ? recipient : undefined);
       shouldAutoScrollRef.current = true;
-      setMessages(current => [...current, message]); setShowStickers(false);
+      setMessages(current => [...current, message]); setShowStickers(false); playSophisTone('send');
     } catch (e) { setError(e instanceof Error ? e.message : 'Sticker could not be sent.'); }
     finally { setSending(false); }
   };
@@ -212,7 +249,7 @@ export function ChatPage() {
           if (!response.ok) throw new Error('Voice upload failed. Please try again.');
           const message = await chatApi.sendVoice(mode, upload.key, mode === 'direct' ? recipient : undefined);
           shouldAutoScrollRef.current = true;
-          setMessages(current => [...current, message]);
+          setMessages(current => [...current, message]); playSophisTone('send');
         } catch (e) { setError(e instanceof Error ? e.message : 'Voice message could not be sent.'); }
         finally { setSending(false); }
       };
@@ -236,7 +273,7 @@ export function ChatPage() {
 
   return <section className="mx-auto flex h-[calc(100vh-150px)] min-h-[520px] max-w-5xl flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] p-4">
-      <div><h2 className="font-bold text-[#091F5B]">{mode === 'group' ? 'Group chat room' : 'Private DM'}</h2><p className="text-xs text-[#64748B]">{mode === 'group' ? 'Your institution, faculty and department community' : 'Private conversations with students and lecturers'}</p></div>
+      <div><h2 className="font-bold text-[#091F5B]">{mode === 'group' ? 'Group chat room' : 'Private DM'}</h2><p className="text-xs text-[#64748B]">{mode === 'group' ? 'Your institution, faculty and department community' : 'Private conversations with students and lecturers'}</p><button type="button" onClick={() => mode === 'group' ? setMutedGroup(value => !value) : setMutedDirect(value => !value)} className="mt-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600">{(mode === 'group' ? mutedGroup : mutedDirect) ? 'Unmute notifications' : 'Mute notifications'}</button></div>
     </div>
     {mode === 'direct' && <div className="border-b border-[#E5E7EB] px-4 py-3"><label className="mb-1 block text-xs font-semibold text-slate-600" htmlFor="chat-contact">Message a student or lecturer</label><select id="chat-contact" value={recipient} onChange={event => setRecipient(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"><option value="">Choose a contact</option>{contacts.map(contact => <option key={contact.id} value={contact.id}>@{contact.academicHandle} · {contact.role}{onlineContactIds.has(contact.id) ? ' · Online' : ''}</option>)}</select></div>}
     {error && <div role="alert" className="mx-4 mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}

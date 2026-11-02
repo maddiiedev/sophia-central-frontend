@@ -13,6 +13,9 @@ export const chatApi = {
     return () => source.close();
   },
   contacts: () => apiRequest<ChatContact[]>('/chat/contacts'),
+  blocks: () => apiRequest<Array<{ userId: string; academicHandle: string | null }>>('/chat/blocks'),
+  block: (userId: string) => apiRequest<{ success: boolean }>(`/chat/blocks/${encodeURIComponent(userId)}`, { method: 'POST' }),
+  unblock: (userId: string) => apiRequest<{ success: boolean }>(`/chat/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   presence: () => apiRequest<Array<{ id: string; online: boolean }>>('/chat/presence'),
   heartbeat: () => apiRequest<{ success: boolean }>('/chat/presence/heartbeat'),
   groupHistory: (limit = 40, before?: string) => apiRequest<ChatPage>(`/chat/group/messages?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
