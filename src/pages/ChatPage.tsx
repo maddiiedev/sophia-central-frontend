@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Keyboard, Mic, Send, Smile } from 'lucide-react';
 import { chatApi, type ChatContact, type ChatMessage } from '../api/chat';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +29,7 @@ export function ChatPage() {
   const [showStickers, setShowStickers] = useState(false);
   const [recording, setRecording] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const preserveScrollRef = useRef<{ height: number; top: number } | null>(null);
@@ -124,8 +126,9 @@ export function ChatPage() {
     return () => { active = false; window.clearInterval(timer); };
   }, [loadPresence]);
   useEffect(() => {
-    if (location.pathname === '/chat/group' && user?.role === 'student') setMode('group');
-    else if (location.pathname === '/messages') setMode('direct');
+    // Each navigation item opens a dedicated room; switching rooms happens through the sidebar.
+    setMode(location.pathname === '/chat/group' && user?.role === 'student' ? 'group' : 'direct');
+    setRecipient('');
   }, [location.pathname, user?.role]);
   useEffect(() => {
     setMessages([]); setHasMore(false); setNextBefore(null); setLoadingOlder(false);
@@ -233,11 +236,7 @@ export function ChatPage() {
 
   return <section className="mx-auto flex h-[calc(100vh-150px)] min-h-[520px] max-w-5xl flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E7EB] p-4">
-      <div><h2 className="font-bold text-[#091F5B]">Academic chat</h2><p className="text-xs text-[#64748B]">Connect with your academic community</p></div>
-      <div className="flex gap-2">
-        {user.role === 'student' && <button onClick={() => setMode('group')} className={`rounded-lg px-3 py-2 text-sm font-semibold ${mode === 'group' ? 'bg-[#6121D0] text-white' : 'bg-slate-100 text-slate-700'}`}>Group Chat</button>}
-        <button onClick={() => setMode('direct')} className={`rounded-lg px-3 py-2 text-sm font-semibold ${mode === 'direct' ? 'bg-[#6121D0] text-white' : 'bg-slate-100 text-slate-700'}`}>Messages</button>
-      </div>
+      <div><h2 className="font-bold text-[#091F5B]">{mode === 'group' ? 'Group chat room' : 'Private DM'}</h2><p className="text-xs text-[#64748B]">{mode === 'group' ? 'Your institution, faculty and department community' : 'Private conversations with students and lecturers'}</p></div>
     </div>
     {mode === 'direct' && <div className="border-b border-[#E5E7EB] px-4 py-3"><label className="mb-1 block text-xs font-semibold text-slate-600" htmlFor="chat-contact">Message a student or lecturer</label><select id="chat-contact" value={recipient} onChange={event => setRecipient(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800"><option value="">Choose a contact</option>{contacts.map(contact => <option key={contact.id} value={contact.id}>@{contact.academicHandle} · {contact.role}{onlineContactIds.has(contact.id) ? ' · Online' : ''}</option>)}</select></div>}
     {error && <div role="alert" className="mx-4 mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
@@ -257,13 +256,21 @@ export function ChatPage() {
         </article>)}
     </div>
     <div className="border-t border-[#E5E7EB] bg-white p-3">
-      {showEmoji && <div className="mb-2 flex flex-wrap gap-2">{EMOJI.map(emoji => <button key={emoji} onClick={() => setText(value => value + emoji)} className="rounded-lg p-2 text-xl hover:bg-slate-100" aria-label={`Add ${emoji}`}>{emoji}</button>)}</div>}
-      {showStickers && <div className="mb-3 grid grid-cols-4 gap-2">{STICKERS.map(sticker => <button key={sticker.id} type="button" onClick={() => void sendSticker(sticker.id)} disabled={sending || (mode === 'direct' && !recipient)} className="flex flex-col items-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 hover:border-violet-300 hover:bg-violet-50 disabled:opacity-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-medium text-slate-600">{sticker.label}</span></button>)}</div>}
-      <div className="flex items-end gap-2">
-        <div className="flex gap-1"><button onClick={() => { setShowEmoji(value => !value); setShowStickers(false); }} className="rounded-xl border border-slate-200 px-3 py-3 text-lg" aria-label="Choose emoji">😊</button><button onClick={() => { setShowStickers(value => !value); setShowEmoji(false); }} className="rounded-xl border border-slate-200 px-3 py-3 text-lg" aria-label="Choose sticker">✨</button></div>
-        <textarea value={text} onChange={event => setText(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder="Write a message…" rows={1} className="max-h-28 min-h-11 flex-1 resize-y rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-violet-400" />
-        <button onClick={() => recording ? stopRecording() : void startRecording()} disabled={sending || (mode === 'direct' && !recipient)} className={`rounded-xl border px-3 py-3 text-sm font-semibold ${recording ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-200 text-slate-700'}`} aria-label={recording ? 'Stop recording' : 'Record voice message'}>{recording ? 'Stop' : '🎙️'}</button>
-        <button onClick={() => void send()} disabled={sending || !text.trim() || (mode === 'direct' && !recipient)} className="rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{sending ? '…' : 'Send'}</button>
+      {(showEmoji || showStickers) && <div className="mb-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="mb-2 flex gap-2 border-b border-slate-100 pb-2">
+          <button type="button" onClick={() => { setShowEmoji(true); setShowStickers(false); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${showEmoji ? 'bg-[#E8F8EE] text-[#087443]' : 'text-slate-500'}`}>Emoji</button>
+          <button type="button" onClick={() => { setShowStickers(true); setShowEmoji(false); }} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${showStickers ? 'bg-[#E8F8EE] text-[#087443]' : 'text-slate-500'}`}>Stickers</button>
+        </div>
+        {showEmoji && <div className="flex flex-wrap gap-2">{EMOJI.map(emoji => <button key={emoji} type="button" onClick={() => { setText(value => value + emoji); messageInputRef.current?.focus(); }} className="rounded-lg p-2 text-xl hover:bg-slate-100" aria-label={`Add ${emoji}`}>{emoji}</button>)}</div>}
+        {showStickers && <div className="grid grid-cols-4 gap-2">{STICKERS.map(sticker => <button key={sticker.id} type="button" onClick={() => void sendSticker(sticker.id)} disabled={sending || (mode === 'direct' && !recipient)} className="flex flex-col items-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 hover:border-violet-300 hover:bg-violet-50 disabled:opacity-50"><span className="text-3xl">{sticker.emoji}</span><span className="mt-1 text-[10px] font-medium text-slate-600">{sticker.label}</span></button>)}</div>}
+      </div>}
+      <div className="flex items-end gap-2 rounded-[28px] border border-slate-200 bg-[#F7F8FA] px-2 py-1.5 focus-within:border-[#25B866]">
+        <button type="button" onClick={() => { if (showEmoji || showStickers) { setShowEmoji(false); setShowStickers(false); messageInputRef.current?.focus(); } else { setShowEmoji(true); setShowStickers(false); } }} className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-200" aria-label={showEmoji || showStickers ? 'Close emoji and sticker panel and open keyboard' : 'Open emoji and sticker panel'} title={showEmoji || showStickers ? 'Open keyboard' : 'Emoji and stickers'}>
+          {showEmoji || showStickers ? <Keyboard size={23}/> : <Smile size={25}/>}
+        </button>
+        <textarea ref={messageInputRef} value={text} onFocus={() => { setShowEmoji(false); setShowStickers(false); }} onChange={event => setText(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder="Message" rows={1} className="max-h-28 min-h-10 min-w-0 flex-1 resize-y border-0 bg-transparent px-1 py-2.5 text-[15px] outline-none focus:ring-0" />
+        <button type="button" onClick={() => recording ? stopRecording() : void startRecording()} disabled={sending || (mode === 'direct' && !recipient)} className={`mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${recording ? 'bg-rose-600 text-white' : 'bg-[#20C76A] text-white hover:bg-[#17B85D]'} disabled:opacity-50`} aria-label={recording ? 'Stop recording' : 'Record voice message'} title={recording ? 'Stop recording' : 'Record voice message'}>{recording ? <span className="text-xs font-bold">Stop</span> : <Mic size={22} fill="currentColor"/>}</button>
+        {text.trim() && <button type="button" onClick={() => void send()} disabled={sending || (mode === 'direct' && !recipient)} className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6121D0] text-white disabled:opacity-50" aria-label="Send message" title="Send message"><Send size={18}/></button>}
       </div>
       <p className="mt-2 text-[10px] text-slate-400">Enter to send · Shift + Enter for a new line · Voice recordings up to 12 MB</p>
     </div>

@@ -32,14 +32,14 @@ const studentNav = [
   { label: 'AI Tutor', href: '/ai', icon: BrainCircuit },
   { label: 'Wallet', href: '/wallet', icon: WalletCards },
   { label: 'Group Chat', href: '/chat/group', icon: MessageCircle },
-  { label: 'Messages', href: '/messages', icon: MessageCircle },
+  { label: 'Private DM', href: '/messages', icon: MessageCircle },
 ];
 
 const lecturerNav = [
   { label: 'Dashboard', href: '/lecturer', icon: LayoutGrid },
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'Submit resource', href: '/upload', icon: Upload },
-  { label: 'Messages', href: '/messages', icon: MessageCircle },
+  { label: 'Private DM', href: '/messages', icon: MessageCircle },
 ];
 
 const moderatorNav = [
@@ -94,10 +94,10 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         </NavLink>
       ))}
       {[
-        ...(user?.role === 'student' || user?.role === 'lecturer' ? [{ label: 'Contact support', href: '/support', icon: LifeBuoy }] : []),
+        ...(user?.role === 'lecturer' ? [{ label: 'Analytics', href: '/lecturer/analytics', icon: ChartNoAxesCombined }] : []),
         { label: 'Profile', href: '/profile', icon: UserCircle },
         { label: 'Settings', href: '/settings', icon: Settings },
-        ...(user?.role === 'lecturer' ? [{ label: 'Analytics', href: '/lecturer/analytics', icon: ChartNoAxesCombined }] : []),
+        ...(user?.role === 'student' || user?.role === 'lecturer' ? [{ label: 'Contact support', href: '/support', icon: LifeBuoy }] : []),
       ].map(({ label, href, icon: Icon }) => (
         <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />
