@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { BrainCircuit, SendHorizontal, Bookmark } from 'lucide-react';
+import { BrainCircuit, SendHorizontal, Download } from 'lucide-react';
 import { OverviewCard, SectionTitle } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
 import { resourcesApi } from '../api/resources';
 import { useAuth } from '../context/AuthContext';
-import { getSavedResourceIds } from '../lib/savedResources';
 import type { Resource } from '../types';
 
 export function AITutorPage() {
@@ -12,16 +11,15 @@ export function AITutorPage() {
   const [answer, setAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const [savedResources, setSavedResources] = useState<Resource[]>([]);
+  const [downloadedResources, setDownloadedResources] = useState<Resource[]>([]);
   const [selectedResourceId, setSelectedResourceId] = useState('');
 
   useEffect(() => {
     let active = true;
     if (!user) return;
-    void resourcesApi.list().then((resources) => {
-      const savedIds = new Set(getSavedResourceIds(user.id));
-      if (active) setSavedResources(resources.filter((resource) => savedIds.has(resource.id) && (resource.moderationStatus === 'approved' || resource.isVerified === true)));
-    }).catch(() => { if (active) setSavedResources([]); });
+    void resourcesApi.downloaded().then((resources) => {
+      if (active) setDownloadedResources(resources.filter((resource) => resource.moderationStatus === 'approved' || resource.isVerified === true));
+    }).catch(() => { if (active) setDownloadedResources([]); });
     return () => { active = false; };
   }, [user?.id]);
 
@@ -48,12 +46,12 @@ export function AITutorPage() {
       <div className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm">
         <label className="block text-sm font-semibold text-[#091F5B]"><span className="mb-2 block">Your question</span><textarea value={question} onChange={event => setQuestion(event.target.value)} placeholder="Ask Sophis a study question..." className="min-h-28 w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 font-normal text-[#091F5B] outline-none placeholder:text-[#71809A] focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/20"/></label>
         <div className="mt-4 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-3">
-          <label htmlFor="ai-saved-resource" className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#091F5B]"><Bookmark size={16} className="text-[#6121D0]"/>Add material from saved resources <span className="font-normal text-[#71809A]">(optional)</span></label>
-          <select id="ai-saved-resource" value={selectedResourceId} onChange={(event) => setSelectedResourceId(event.target.value)} className="w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm text-[#091F5B] outline-none focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/20">
-            <option value="">Ask without a saved resource</option>
-            {savedResources.map((resource) => <option key={resource.id} value={resource.id}>{resource.title}</option>)}
+          <label htmlFor="ai-downloaded-resource" className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#091F5B]"><Download size={16} className="text-[#6121D0]"/>Add material from downloaded resources <span className="font-normal text-[#71809A]">(optional)</span></label>
+          <select id="ai-downloaded-resource" value={selectedResourceId} onChange={(event) => setSelectedResourceId(event.target.value)} className="w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm text-[#091F5B] outline-none focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/20">
+            <option value="">Ask without adding a material</option>
+            {downloadedResources.map((resource) => <option key={resource.id} value={resource.id}>{resource.title}</option>)}
           </select>
-          <p className="mt-2 text-xs text-[#5C6982]">Choose a saved resource to include it as context for Sophis AI’s search, analysis, and response.</p>
+          <p className="mt-2 text-xs text-[#5C6982]">Adding a downloaded resource is optional. Ask Sophis AI with your question alone, or select a downloaded material to provide extra context for its search, analysis, and response.</p>
         </div>
         <button type="button" onClick={handleAsk} disabled={isLoading || !question.trim()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#2C36D9] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"><SendHorizontal size={16}/>{isLoading ? 'Thinking…' : 'Ask Sophis'}</button>
         {answer && <div role="status" aria-live="polite" className="mt-5 whitespace-pre-wrap rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 text-sm leading-7 text-[#1F2937]">{answer}</div>}
