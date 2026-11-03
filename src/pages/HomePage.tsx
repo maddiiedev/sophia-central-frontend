@@ -21,13 +21,29 @@ export default function HomePage() {
 
       <main>
         <section className="brand-gradient relative overflow-hidden text-white">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-            <div className="relative z-10 page-shell max-w-4xl">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.05fr_0.95fr] md:gap-8 lg:px-8 lg:py-24">
+            <div className="relative z-10 page-shell max-w-3xl">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-blue-100 sm:text-sm">Your academic community, connected</p>
               <h1 className="max-w-4xl text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">Your academic resources. One central destination.</h1>
               <p className="mt-5 max-w-3xl text-base leading-7 text-blue-50 sm:text-lg">Find course materials, research papers, past questions, and final-year projects in one organized academic platform.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link to="/onboarding" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-[#2C36D9]">Create an account <ArrowRight size={18} /></Link>
                 <Link to="/login" className="inline-flex items-center justify-center rounded-xl border border-white/70 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10">Already a member? Sign in</Link>
+              </div>
+            </div>
+            <div className="relative mx-auto w-full max-w-xl md:ml-auto">
+              <div aria-hidden="true" className="absolute -inset-3 rounded-[2rem] bg-white/10 blur-xl" />
+              <img
+                src="/images/students-collaborating.jpg"
+                alt="Two university students collaborating on coursework at a laptop"
+                width="520"
+                height="453"
+                fetchPriority="high"
+                className="relative aspect-[1.15/1] w-full rounded-3xl border border-white/25 object-cover shadow-2xl"
+              />
+              <div className="absolute -bottom-4 left-4 right-4 rounded-2xl border border-white/30 bg-white/95 p-4 text-[#091F5B] shadow-xl sm:left-8 sm:right-8">
+                <p className="text-sm font-bold">Learn together. Achieve more.</p>
+                <p className="mt-1 text-xs leading-5 text-[#4B5563]">A shared home for students, lecturers, and academic resources.</p>
               </div>
             </div>
           </div>
