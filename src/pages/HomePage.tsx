@@ -34,7 +34,7 @@ export default function HomePage() {
             <div className="relative mx-auto w-full max-w-xl md:ml-auto">
               <div aria-hidden="true" className="absolute -inset-3 rounded-[2rem] bg-white/10 blur-xl" />
               <img
-                src="/images/students-collaborating.jpg"
+                src="/images/students-collaborating.png"
                 alt="Two university students collaborating on coursework at a laptop"
                 width="520"
                 height="453"
