@@ -61,18 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { active = false; };
   }, [clearSession, initializeCsrf, refreshSession]);
 
-  useEffect(() => {
-    if (!user) return;
-
-    const logoutOnPageExit = () => {
-      // keepalive lets the browser finish the authenticated logout request while the document is unloading.
-      void authApi.logout({ keepalive: true }).catch(() => undefined);
-      clearSession();
-    };
-
-    window.addEventListener('pagehide', logoutOnPageExit);
-    return () => window.removeEventListener('pagehide', logoutOnPageExit);
-  }, [user, clearSession]);
+  // Do not log out on pagehide/unload. Browser page lifecycle events also fire when
+  // a tab is closed after a successful sign-in or enters the back-forward cache.
+  // The session cookie is browser-session scoped; explicit logout owns invalidation.
 
   const login = useCallback(async (identifier: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
