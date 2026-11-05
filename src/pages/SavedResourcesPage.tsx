@@ -8,12 +8,13 @@ import { EmptyState } from '../components/states/EmptyState';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
 
-type Section = 'downloaded' | 'saved';
+type Section = 'downloaded' | 'saved' | 'submissions';
 
 export function SavedResourcesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [section, setSection] = useState<Section>('downloaded');
+  const mineQuery = useQuery({ queryKey: ['my-resource-submissions', user?.id], queryFn: () => resourcesApi.mine(), enabled: Boolean(user), staleTime: 0 });
   const savedQuery = useQuery({
     queryKey: ['saved-resources', user?.id],
     queryFn: () => resourcesApi.saved(),
@@ -27,13 +28,13 @@ export function SavedResourcesPage() {
     staleTime: 0,
   });
 
-  if (savedQuery.isLoading || downloadedQuery.isLoading) return <LoadingState message="Loading your resources..." />;
-  if (savedQuery.isError || downloadedQuery.isError) {
-    const error = savedQuery.error ?? downloadedQuery.error;
-    return <ErrorState message={error instanceof Error ? error.message : 'Unable to load your resources.'} onRetry={() => { void savedQuery.refetch(); void downloadedQuery.refetch(); }} />;
+  if (savedQuery.isLoading || downloadedQuery.isLoading || mineQuery.isLoading) return <LoadingState message="Loading your resources..." />;
+  if (savedQuery.isError || downloadedQuery.isError || mineQuery.isError) {
+    const error = savedQuery.error ?? downloadedQuery.error ?? mineQuery.error;
+    return <ErrorState message={error instanceof Error ? error.message : 'Unable to load your resources.'} onRetry={() => { void savedQuery.refetch(); void downloadedQuery.refetch(); void mineQuery.refetch(); }} />;
   }
 
-  const resources = section === 'downloaded' ? downloadedQuery.data ?? [] : savedQuery.data ?? [];
+  const resources = section === 'downloaded' ? downloadedQuery.data ?? [] : section === 'saved' ? savedQuery.data ?? [] : mineQuery.data ?? [];
   const unsave = async (id: string) => {
     try {
       await resourcesApi.unsave(id);
@@ -52,11 +53,12 @@ export function SavedResourcesPage() {
     <div className="flex flex-wrap gap-2" role="tablist" aria-label="My resources sections">
       <button type="button" role="tab" aria-selected={section === 'downloaded'} onClick={() => setSection('downloaded')} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${section === 'downloaded' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}><Download size={16}/> Downloaded resources ({downloadedQuery.data?.length ?? 0})</button>
       <button type="button" role="tab" aria-selected={section === 'saved'} onClick={() => setSection('saved')} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${section === 'saved' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}><Bookmark size={16}/> Saved resources ({savedQuery.data?.length ?? 0})</button>
+      <button type="button" role="tab" aria-selected={section === 'submissions'} onClick={() => setSection('submissions')} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${section === 'submissions' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}>My submissions ({mineQuery.data?.length ?? 0})</button>
     </div>
     {resources.length === 0
-      ? <div className="rounded-2xl border border-[#DCE4EF] bg-white p-5"><EmptyState title={section === 'downloaded' ? 'No downloaded resources yet' : 'No saved resources yet'} description={section === 'downloaded' ? 'Open a resource in the library and choose Download and view to keep it in your account.' : 'Save resources from the library or resource page to keep them here without downloading them.'}/></div>
+      ? <div className="rounded-2xl border border-[#DCE4EF] bg-white p-5"><EmptyState title={section === 'downloaded' ? 'No downloaded resources yet' : section === 'saved' ? 'No saved resources yet' : 'No contributions yet'} description={section === 'downloaded' ? 'Open a resource in the library and choose Download and view to keep it in your account.' : section === 'saved' ? 'Save resources from the library or resource page to keep them here without downloading them.' : 'Your submitted materials and moderation decisions will appear here.'}/></div>
       : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{resources.map(resource => <article key={resource.id} className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between"><span className="rounded-full bg-[#F3F0FF] px-3 py-1 text-xs font-semibold capitalize text-[#6121D0]">{resource.type.replace(/_/g, ' ')}</span>{section === 'downloaded' ? <Download size={17} className="text-[#6121D0]"/> : <Bookmark size={17} className="text-[#6121D0]"/>}</div>
+        <div className="flex items-center justify-between"><span className="rounded-full bg-[#F3F0FF] px-3 py-1 text-xs font-semibold capitalize text-[#6121D0]">{resource.type.replace(/_/g, ' ')}</span>{section === 'submissions' && <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold capitalize text-amber-800">{String(resource.moderationStatus || 'pending')}</span>}{section === 'downloaded' ? <Download size={17} className="text-[#6121D0]"/> : <Bookmark size={17} className="text-[#6121D0]"/>}</div>
         <h3 className="mt-4 text-lg font-semibold text-[#091F5B]">{resource.title}</h3>
         <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#4B5563]">{resource.description || 'Open this resource to continue studying.'}</p>
         <p className="mt-4 text-xs text-[#5C6982]">{resource.course || 'Academic resource'}{resource.topic ? ` · ${resource.topic}` : ''}</p>

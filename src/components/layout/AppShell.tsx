@@ -28,6 +28,7 @@ import { notificationsApi } from '../../api/notifications';
 const studentNav = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
   { label: 'Academic & research materials', href: '/library', icon: BookOpen },
+  { label: 'Contribute resource', href: '/upload', icon: Upload },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'AI Tutor', href: '/ai', icon: BrainCircuit },
   { label: 'Wallet', href: '/wallet', icon: WalletCards },

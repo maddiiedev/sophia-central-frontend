@@ -1,142 +1,41 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Bookmark, FileText, FlaskConical, Search, X } from 'lucide-react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { BookOpen, Search, Upload, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { resourcesApi } from '../api/resources';
-import { apiRequest } from '../lib/api/client';
-import { useAuth } from '../context/AuthContext';
-
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
-import { EmptyState } from '../components/states/EmptyState';
-import type { Resource } from '../types';
-
-type MaterialFilter = 'academic' | 'research';
-type AcademicResource = Resource & {
-  uploader?: { faculty?: string; department?: string; institution?: string; name?: string; firstName?: string; lastName?: string };
-};
-
-function academicValue(resource: Resource, key: 'faculty' | 'department' | 'institution') {
-  const academic = resource as AcademicResource;
-  if (key === 'institution') return String(academic.uploader?.institution || resource.institution || '').trim();
-  return String(academic.uploader?.[key] || '').trim();
-}
 
 export function LibraryPage() {
-  const { isAuthenticated, user } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const [materialFilter, setMaterialFilter] = useState<MaterialFilter>('academic');
-  const [query, setQuery] = useState('');
-  const [submittedQuery, setSubmittedQuery] = useState('');
+  const [q, setQ] = useState('');
   const [course, setCourse] = useState('');
   const [topic, setTopic] = useState('');
-  const [researchType, setResearchType] = useState('');
-  const [researchDate, setResearchDate] = useState('');
-  const [institution, setInstitution] = useState('');
-  const [faculty, setFaculty] = useState('');
-  const [department, setDepartment] = useState('');
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (searchParams.get('departmentOnly') === '1' && user) {
-      setInstitution(user.institution ?? '');
-      setFaculty(user.faculty ?? '');
-      setDepartment(user.department ?? '');
-    }
-  }, [searchParams, user?.id]);
-
-  useEffect(() => {
-    if (searchParams.get('focusSearch') !== '1') return;
-    const initialQuery = searchParams.get('q') ?? '';
-    setQuery(initialQuery);
-    setSubmittedQuery(initialQuery);
-    window.requestAnimationFrame(() => {
-      searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      searchInputRef.current?.focus();
-    });
-  }, [searchParams]);
-
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['resources', 'approved-library'],
-    queryFn: () => resourcesApi.list(),
-    enabled: isAuthenticated,
+  const [license, setLicense] = useState('');
+  const [page, setPage] = useState(1);
+  const query = useQuery({
+    queryKey: ['public-academic-library', q, course, topic, license, page],
+    queryFn: () => resourcesApi.publicList({ q, course, topic, license, page, limit: 18 }),
     staleTime: 60_000,
   });
-
-  useEffect(() => {
-    if (!user) return;
-    let active = true;
-    void resourcesApi.saved().then((saved) => {
-      if (active) setSavedIds(new Set(saved.map((item) => item.id)));
-    }).catch(() => undefined);
-    return () => { active = false; };
-  }, [user?.id]);
-
-  const institutions = useMemo(() => Array.from(new Set((data ?? []).map((item) => academicValue(item, 'institution')).filter(Boolean))).sort(), [data]);
-  const faculties = useMemo(() => Array.from(new Set((data ?? []).filter((item) => !institution || academicValue(item, 'institution') === institution).map((item) => academicValue(item, 'faculty')).filter(Boolean))).sort(), [data, institution]);
-  const departments = useMemo(() => Array.from(new Set((data ?? []).filter((item) => (!institution || academicValue(item, 'institution') === institution) && (!faculty || academicValue(item, 'faculty') === faculty)).map((item) => academicValue(item, 'department')).filter(Boolean))).sort(), [data, institution, faculty]);
-
-  const activeQuery = submittedQuery || query;
-
-  const filteredResources = useMemo(() => {
-    if (!data) return [];
-    const normalized = activeQuery.trim().toLowerCase();
-    return data.filter((resource) => {
-      const status = String(resource.moderationStatus || (resource.isVerified ? 'approved' : 'pending')).toLowerCase();
-      // Defensive UI guard; the backend also enforces approved-only library access.
-      const reviewerAccess = user?.role === 'moderator' || user?.role === 'admin';
-      if (status !== 'approved' && !reviewerAccess) return false;
-      if (searchParams.get('departmentOnly') === '1' && (!user?.department || academicValue(resource, 'department').toLowerCase() !== user.department.trim().toLowerCase())) return false;
-      const isResearch = /research|paper|journal|thesis|dissertation/i.test([resource.type, resource.title, resource.course, resource.topic].filter(Boolean).join(' '));
-      if (materialFilter === 'research' && !isResearch) return false;
-      if (materialFilter === 'academic' && isResearch) return false;
-      if (institution && academicValue(resource, 'institution') !== institution) return false;
-      if (faculty && academicValue(resource, 'faculty') !== faculty) return false;
-      if (department && academicValue(resource, 'department') !== department) return false;
-      if (normalized && ![resource.title, resource.description, resource.course, resource.topic, academicValue(resource, 'institution'), ...(resource.tags ?? []), academicValue(resource, 'faculty'), academicValue(resource, 'department'), (resource as AcademicResource).uploader?.name, (resource as AcademicResource).uploader?.firstName, (resource as AcademicResource).uploader?.lastName].filter(Boolean).join(' ').toLowerCase().includes(normalized)) return false;
-      if (materialFilter === 'academic') {
-        if (course && !String(resource.course ?? '').toLowerCase().includes(course.trim().toLowerCase())) return false;
-        if (topic && !String(resource.topic ?? '').toLowerCase().includes(topic.trim().toLowerCase())) return false;
-      } else {
-        if (topic && !String(resource.topic ?? '').toLowerCase().includes(topic.trim().toLowerCase())) return false;
-        if (researchType && !String(resource.type ?? '').toLowerCase().includes(researchType.trim().toLowerCase())) return false;
-        if (researchDate && resource.createdAt && new Date(resource.createdAt).toISOString().slice(0, 10) !== researchDate) return false;
-      }
-      return true;
-    });
-  }, [data, materialFilter, activeQuery, course, topic, researchType, researchDate, institution, faculty, department, user, searchParams]);
-
-  if (isLoading) return <LoadingState message="Loading approved academic and research materials..." />;
-  if (isError) return <ErrorState message={error instanceof Error ? error.message : 'Unable to load approved resources.'} onRetry={() => void refetch()} />;
-
-  const selectClass = 'w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm text-[#091F5B] outline-none transition focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/15';
-
-  return <div className="space-y-6">
-    <div className="rounded-3xl border border-[#2C36D9]/20 bg-[#2C36D9] p-5 text-white sm:p-7">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[10px] uppercase tracking-[0.2em] text-white/85">Sophis Central · {user?.institution || 'Academic library'}</p><h2 className="mt-2 text-2xl font-semibold text-white">{materialFilter === 'academic' ? 'Academic materials' : 'Research materials'}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-white/90">{user?.role === 'moderator' || user?.role === 'admin' ? 'Review lecturer submissions across the platform, including materials awaiting moderation.' : materialFilter === 'academic' ? 'Browse moderator-approved course notes and past questions by school, faculty, department, course or topic.' : 'Browse approved research papers by academic community, topic, research type and date.'}</p></div>{(user?.role === 'student' || user?.role === 'lecturer') && <Link to="/saved" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"><Bookmark size={16} /> Saved resources</Link>}</div>
-      <form className="mt-5 flex flex-col gap-2 rounded-2xl border border-white/30 bg-white p-2 sm:flex-row sm:items-center" role="search" onSubmit={(event) => { event.preventDefault(); const submitted = query.trim(); setSubmittedQuery(submitted); if (submitted) void apiRequest('/analytics/search-event', { method: 'POST', body: JSON.stringify({ query: submitted }) }).catch(() => undefined); }}>
-        <label className="flex min-w-0 flex-1 items-center gap-3 px-2 py-2"><Search size={18} className="shrink-0 text-[#6121D0]" /><input ref={searchInputRef} value={query} onChange={(event) => { setQuery(event.target.value); if (!event.target.value) setSubmittedQuery(''); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); const submitted = query.trim(); setSubmittedQuery(submitted); if (submitted) void apiRequest('/analytics/search-event', { method: 'POST', body: JSON.stringify({ query: submitted }) }).catch(() => undefined); } }} placeholder="Search course title, lecturer, department, faculty or topic…" aria-label="Search approved resources" className="w-full bg-transparent text-sm text-[#091F5B] outline-none placeholder:text-[#5C6982]" /></label>
-        {query && <button type="button" onClick={() => { setQuery(''); setSubmittedQuery(''); }} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DCE4EF] px-3 py-2.5 text-sm font-semibold text-[#091F5B] hover:bg-[#F8FAFD]" aria-label="Clear search"><X size={15}/> Clear</button>}
-        <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#6121D0] focus:ring-offset-2"><Search size={16}/> Search</button>
-      </form>
-    </div>
-
-    <div className="flex flex-wrap items-center gap-2" aria-label="Material type"><button type="button" onClick={() => setMaterialFilter('academic')} aria-pressed={materialFilter === 'academic'} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${materialFilter === 'academic' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9] hover:text-[#6121D0]'}`}>Academic materials</button><button type="button" onClick={() => setMaterialFilter('research')} aria-pressed={materialFilter === 'research'} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${materialFilter === 'research' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9] hover:text-[#6121D0]'}`}>Research materials</button><span className="ml-auto self-center text-xs font-medium text-[#5C6982]">{filteredResources.length} {(user?.role === 'moderator' || user?.role === 'admin') ? 'resource' : 'approved result'}{filteredResources.length === 1 ? '' : 's'}</span></div>
-
-    <section aria-label="Filter approved resources" className="grid gap-3 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:grid-cols-2 xl:grid-cols-3">
-      <select value={institution} onChange={(event) => { setInstitution(event.target.value); setFaculty(''); setDepartment(''); }} className={selectClass} aria-label="Filter by school or institution"><option value="">All schools / institutions</option>{institutions.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-      <select value={faculty} onChange={(event) => { setFaculty(event.target.value); setDepartment(''); }} className={selectClass} aria-label="Filter by faculty"><option value="">All faculties</option>{faculties.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-      <select value={department} onChange={(event) => setDepartment(event.target.value)} className={selectClass} aria-label="Filter by department"><option value="">All departments</option>{departments.map((value) => <option key={value} value={value}>{value}</option>)}</select>
-      {materialFilter === 'academic' ? <><input value={course} onChange={(event) => setCourse(event.target.value)} placeholder="Filter course" className={selectClass} aria-label="Filter by course" /><input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Filter topic" className={selectClass} aria-label="Filter by topic" /></> : <><input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Filter research topic" className={selectClass} aria-label="Filter by research topic" /><select value={researchType} onChange={(event) => setResearchType(event.target.value)} className={selectClass} aria-label="Filter by research type"><option value="">All research types</option><option value="research_paper">Research paper</option><option value="thesis">Thesis</option><option value="dissertation">Dissertation</option><option value="journal">Journal</option></select><input type="date" value={researchDate} onChange={(event) => setResearchDate(event.target.value)} aria-label="Filter research by date" className={selectClass} /></>}
+  const input = 'w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm text-[#091F5B] outline-none focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/15';
+  return <main className="mx-auto max-w-7xl space-y-6">
+    <section className="rounded-3xl bg-[#2C36D9] p-6 text-white sm:p-9">
+      <p className="text-xs font-semibold uppercase tracking-[.2em] text-white/80">Sophis Central · Open academic community</p>
+      <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Learn openly. Share knowledge.</h2>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-white/90">Explore approved academic notes, past questions, research, projects and learning materials shared by students and lecturers. Browse freely without creating an account.</p>
+      <div className="mt-5 flex flex-wrap gap-3"><Link to="/onboarding" className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#2C36D9]">Join the community</Link><Link to="/login" className="rounded-xl border border-white/50 px-4 py-3 text-sm font-semibold text-white">Sign in to contribute</Link></div>
     </section>
-
-    {filteredResources.length === 0 ? <EmptyState title="No approved resources found" description="Try a different keyword, academic section, filter, or category." /> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filteredResources.map((resource) => {
-      const research = /research|paper|journal|thesis|dissertation/i.test([resource.type, resource.title].join(' '));
-      const facultyValue = academicValue(resource, 'faculty');
-      const departmentValue = academicValue(resource, 'department');
-      return <div key={resource.id} className="relative rounded-2xl border border-[#DCE4EF] bg-white transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><button type="button" onClick={() => navigate(`/resource/${encodeURIComponent(resource.id)}`)} className="group w-full rounded-2xl p-5 pb-16 text-left focus:outline-none focus:ring-2 focus:ring-[#2C36D9]"><div className="mb-4 flex items-center justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-2 rounded-full bg-[#F3F0FF] px-3 py-1 text-xs font-semibold text-[#6121D0]">{research ? <FlaskConical size={14} /> : <FileText size={14} />}{research ? 'Research' : 'Academic'}</span>{(user?.role === 'moderator' || user?.role === 'admin') && <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${String(resource.moderationStatus || 'pending').toLowerCase() === 'approved' ? 'bg-emerald-50 text-emerald-800' : String(resource.moderationStatus || 'pending').toLowerCase() === 'rejected' ? 'bg-rose-50 text-rose-800' : 'bg-amber-50 text-amber-800'}`}>{String(resource.moderationStatus || 'pending')}</span>}</div><BookOpen size={17} className="text-[#5C6982] transition group-hover:text-[#6121D0]" /></div><h3 className="text-lg font-semibold text-[#091F5B]">{resource.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-[#4B5563]">{resource.description || 'Open this resource to view its details.'}</p><div className="mt-4 flex flex-wrap gap-2 text-xs text-[#5C6982]">{resource.course && <span>{resource.course}</span>}{resource.topic && <span>· {resource.topic}</span>}{academicValue(resource, 'institution') && <span>· {academicValue(resource, 'institution')}</span>}{facultyValue && <span>· {facultyValue}</span>}{departmentValue && <span>· {departmentValue}</span>}</div><div className="mt-5 flex items-center gap-2 border-t border-[#DCE4EF] pt-3 text-sm font-semibold text-[#6121D0] group-hover:text-[#2C36D9]"><BookOpen size={15} /> Open resource <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></div></button><button type="button" onClick={async (event) => { event.stopPropagation(); try { if (savedIds.has(resource.id)) { await resourcesApi.unsave(resource.id); setSavedIds((current) => { const next = new Set(current); next.delete(resource.id); return next; }); } else { await resourcesApi.save(resource.id); setSavedIds((current) => new Set(current).add(resource.id)); } } catch { /* The reader displays detailed API errors if the resource cannot be saved. */ } }} className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-xs font-semibold text-[#6121D0] hover:border-[#6121D0]" aria-label={savedIds.has(resource.id) ? "Unsave resource" : "Save resource"}><Bookmark size={14} fill={savedIds.has(resource.id) ? "currentColor" : "none"}/>{savedIds.has(resource.id) ? "Saved · Unsave" : "Save for later"}</button></div>;
-    })}</div>}
-  </div>;
+    <section className="grid gap-3 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Search and filter public resources">
+      <label className="relative sm:col-span-2"><span className="sr-only">Search resources</span><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6121D0]"/><input className={input+' pl-10'} value={q} onChange={e=>{setQ(e.target.value);setPage(1)}} placeholder="Search titles, topics, courses…"/></label>
+      <input className={input} value={course} onChange={e=>{setCourse(e.target.value);setPage(1)}} placeholder="Course / subject"/>
+      <input className={input} value={topic} onChange={e=>{setTopic(e.target.value);setPage(1)}} placeholder="Topic"/>
+      <select className={input+' sm:col-span-2 lg:col-span-1'} value={license} onChange={e=>{setLicense(e.target.value);setPage(1)}}><option value="">All licences</option><option value="CC-BY-4.0">Creative Commons BY 4.0</option><option value="CC-BY-SA-4.0">Creative Commons BY-SA 4.0</option><option value="CC0-1.0">CC0 1.0</option><option value="ALL-RIGHTS-RESERVED">All rights reserved</option></select>
+      <div className="flex items-center justify-end text-xs text-[#5C6982] sm:col-span-2 lg:col-span-3">{query.data?.total ?? 0} approved resources</div>
+    </section>
+    {query.isLoading ? <LoadingState message="Loading the public academic library…"/> : query.isError ? <ErrorState message={query.error instanceof Error ? query.error.message : 'Unable to load public resources.'} onRetry={()=>void query.refetch()}/> : <>
+      {query.data?.items.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{query.data.items.map(item=><article key={item.id} className="rounded-2xl border border-[#DCE4EF] bg-white p-5 transition hover:border-[#6121D0]"><div className="flex items-center gap-2 text-xs font-semibold text-[#6121D0]"><FileText size={15}/>{String(item.type).replace(/_/g,' ')}</div><h3 className="mt-3 text-lg font-bold text-[#091F5B]">{item.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-[#4B5563]">{item.description || 'Open this resource for details.'}</p><p className="mt-3 text-xs text-[#5C6982]">{[item.course,item.topic,item.institution,item.level].filter(Boolean).join(' · ')}</p><div className="mt-4 border-t border-[#DCE4EF] pt-3"><p className="text-xs text-[#5C6982]">Licence: {String(item.license || 'Not specified')}</p><p className="mt-1 text-xs text-[#5C6982]">Attribution: {String(item.attribution || 'See resource details')}</p><Link to={`/open-resource/${encodeURIComponent(item.id)}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0]"><BookOpen size={15}/> View resource</Link></div></article>)}</div> : <div className="rounded-2xl border border-dashed border-[#DCE4EF] p-10 text-center"><BookOpen className="mx-auto text-[#6121D0]" size={28}/><h3 className="mt-3 font-semibold text-[#091F5B]">No matching public resources yet</h3><p className="mt-1 text-sm text-[#5C6982]">Try another search or check back as the community contributes.</p></div>}
+      <div className="flex items-center justify-between"><button disabled={page<=1} onClick={()=>setPage(p=>p-1)} className="rounded-xl border border-[#DCE4EF] px-4 py-2 text-sm font-semibold disabled:opacity-40">Previous</button><span className="text-sm text-[#5C6982]">Page {query.data?.page ?? page} of {query.data?.totalPages ?? 1}</span><button disabled={page>=(query.data?.totalPages ?? 1)} onClick={()=>setPage(p=>p+1)} className="rounded-xl border border-[#DCE4EF] px-4 py-2 text-sm font-semibold disabled:opacity-40">Next</button></div>
+    </>}
+    <section className="rounded-2xl border border-[#DCE4EF] p-5"><div className="flex items-start gap-3"><Upload className="mt-1 text-[#6121D0]"/><div><h3 className="font-bold text-[#091F5B]">Have useful academic material?</h3><p className="mt-1 text-sm leading-6 text-[#5C6982]">Students and lecturers can contribute material they have the legal right to share. Every submission is reviewed before it appears publicly.</p><Link to="/login" className="mt-3 inline-block text-sm font-semibold text-[#6121D0]">Sign in to submit a contribution →</Link></div></div></section>
+  </main>;
 }
