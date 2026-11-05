@@ -1,5 +1,3 @@
-
-import { appConfig } from '../config/env';
 import { apiRequest } from '../lib/api/client';
 import { resourcesApi } from './resources';
 import { moderationApi } from './moderation';
@@ -20,13 +18,7 @@ export const aiService = {
     resourceId?: string;
     sessionId?: string;
   }) {
-    if (appConfig.useMockData) {
-      return {
-        answer:
-          'Here is a strong revision plan: review key definitions, solve 10 focused practice questions, and revisit weak topics with lecture notes before your next study block.',
-      };
-    }
-
+    // AI requests must always reach the authenticated backend. Never substitute a canned mock answer.
     const response = await apiRequest<AiChatResponse>(
       '/ai/chat',
       {
