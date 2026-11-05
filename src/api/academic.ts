@@ -49,6 +49,7 @@ export interface AcademicCatalogueSubmissionPayload {
   name: string;
   parentInstitutionId?: string;
   parentFacultyId?: string;
+  parentFacultySubmissionId?: string;
   state?: string;
   city?: string;
   ownership?: 'Federal' | 'State' | 'Private';

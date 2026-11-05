@@ -49,7 +49,70 @@ export function ProfileOnboardingPage() {
   const facultyName = useManualFaculty ? facultyManual.trim() : selectedFaculty?.name ?? '';
   const canContinue = () => { if (step === 1) return useManualInstitution ? Boolean(institutionManual.trim()) : Boolean(institutionId); if (step === 2) return Boolean((useManualFaculty ? facultyManual.trim() : facultyId) && (department === '__manual__' ? departmentManual.trim() : department.trim())); if (isLecturer) return step === 3 ? coursesTaught.length > 0 : step === 4; return Boolean(programme.trim() && studyLevel); };
   const addCourse = (value: string) => { const clean = value.trim(); if (!clean || coursesTaught.includes(clean)) return; setCoursesTaught((current) => [...current, clean]); setCourseInput(''); };
-  const save = async () => { if (!canContinue()) return; setSaving(true); setError(''); setCatalogueNotice(''); try { const departmentName = department === '__manual__' ? departmentManual.trim() : department.trim(); const pending: string[] = []; if (useManualInstitution && institutionName) { await academicApi.submitCatalogueEntry({ entryType: 'institution', name: institutionName }); pending.push('institution'); } else if (selectedInstitution) { if (useManualFaculty && facultyName) { await academicApi.submitCatalogueEntry({ entryType: 'faculty', name: facultyName, parentInstitutionId: selectedInstitution.id }); pending.push('faculty'); } else if (selectedFaculty && departmentName && (department === '__manual__' || departments.every((item) => item.name.toLowerCase() !== departmentName.toLowerCase()))) { await academicApi.submitCatalogueEntry({ entryType: 'department', name: departmentName, parentFacultyId: selectedFaculty.id }); pending.push('department'); } } if (pending.length) setCatalogueNotice('Your new ' + pending.join(' and ') + ' entry has been submitted for moderator/admin review. Your profile can still be completed.'); await completeOnboarding({ institution: institutionName, faculty: facultyName, department: departmentName, programme: isLecturer ? undefined : programme.trim(), studyLevel: isLecturer ? undefined : studyLevel, coursesTaught: isLecturer ? coursesTaught : undefined }); navigate(isLecturer ? '/lecturer' : '/dashboard', { replace: true }); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save your academic profile.'); } finally { setSaving(false); } };
+  const save = async () => {
+    if (!canContinue()) return;
+    setSaving(true);
+    setError('');
+    setCatalogueNotice('');
+    try {
+      const departmentName = department === '__manual__' ? departmentManual.trim() : department.trim();
+      const pending: string[] = [];
+
+      if (useManualInstitution && institutionName) {
+        await academicApi.submitCatalogueEntry({ entryType: 'institution', name: institutionName });
+        pending.push('institution');
+      } else if (selectedInstitution) {
+        if (useManualFaculty && facultyName) {
+          const facultySubmission = await academicApi.submitCatalogueEntry({
+            entryType: 'faculty',
+            name: facultyName,
+            parentInstitutionId: selectedInstitution.id,
+          }) as { id: string };
+
+          pending.push('faculty');
+
+          if (departmentName) {
+            await academicApi.submitCatalogueEntry({
+              entryType: 'department',
+              name: departmentName,
+              parentInstitutionId: selectedInstitution.id,
+              parentFacultySubmissionId: facultySubmission.id,
+            });
+            pending.push('department');
+          }
+        } else if (selectedFaculty && departmentName && (
+          department === '__manual__' ||
+          departments.every((item) => item.name.toLowerCase() !== departmentName.toLowerCase())
+        )) {
+          await academicApi.submitCatalogueEntry({
+            entryType: 'department',
+            name: departmentName,
+            parentInstitutionId: selectedInstitution.id,
+            parentFacultyId: selectedFaculty.id,
+          });
+          pending.push('department');
+        }
+      }
+
+      if (pending.length) {
+        setCatalogueNotice('Your new ' + pending.join(' and ') + ' entr' + (pending.length > 1 ? 'ies have' : 'y has') + ' been submitted for moderator/admin review. Your profile can still be completed.');
+      }
+
+      await completeOnboarding({
+        institution: institutionName,
+        faculty: facultyName,
+        department: departmentName,
+        programme: isLecturer ? undefined : programme.trim(),
+        studyLevel: isLecturer ? undefined : studyLevel,
+        coursesTaught: isLecturer ? coursesTaught : undefined,
+      });
+      navigate(isLecturer ? '/lecturer' : '/dashboard', { replace: true });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to save your academic profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!user) return null;
   const stepLabel = isLecturer ? 'Lecturer' : 'Student';
