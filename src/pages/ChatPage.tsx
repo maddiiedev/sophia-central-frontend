@@ -192,6 +192,23 @@ export function ChatPage() {
 
   const [voicePreview, setVoicePreview] = useState<Blob | null>(null);
   const [voicePreviewUrl, setVoicePreviewUrl] = useState('');
+  const [voicePreviewTarget, setVoicePreviewTarget] = useState<{
+    mode: Mode;
+    pathname: string;
+    recipientId: string | null;
+  } | null>(null);
+  const recordingTargetRef = useRef<{
+    mode: Mode;
+    pathname: string;
+    recipientId: string | null;
+  } | null>(null);
+  const previewBelongsToCurrentChat = Boolean(
+    voicePreview &&
+      voicePreviewTarget &&
+      voicePreviewTarget.mode === mode &&
+      voicePreviewTarget.pathname === location.pathname &&
+      voicePreviewTarget.recipientId === (mode === 'direct' ? recipient || null : null),
+  );
   const [previewPlaying, setPreviewPlaying] = useState(false);
 
   const [waveform, setWaveform] = useState<number[]>(
@@ -723,7 +740,13 @@ export function ChatPage() {
 
       setVoicePreview(null);
       setVoicePreviewUrl('');
+      setVoicePreviewTarget(null);
       setPreviewPlaying(false);
+      recordingTargetRef.current = {
+        mode,
+        pathname: location.pathname,
+        recipientId: mode === 'direct' ? recipient || null : null,
+      };
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -782,9 +805,17 @@ export function ChatPage() {
         }
 
         const previewUrl = URL.createObjectURL(blob);
+        const target = recordingTargetRef.current;
+
+        if (!target) {
+          URL.revokeObjectURL(previewUrl);
+          return;
+        }
 
         setVoicePreview(blob);
         setVoicePreviewUrl(previewUrl);
+        setVoicePreviewTarget(target);
+        recordingTargetRef.current = null;
       };
 
       recorderRef.current = recorder;
@@ -866,6 +897,7 @@ export function ChatPage() {
 
     setVoicePreview(null);
     setVoicePreviewUrl('');
+    setVoicePreviewTarget(null);
     setPreviewPlaying(false);
   };
 
@@ -889,6 +921,7 @@ export function ChatPage() {
   const sendVoicePreview = async () => {
     if (
       !voicePreview ||
+      !previewBelongsToCurrentChat ||
       sending ||
       (mode === 'direct' && (!recipient || recipientDeleted))
     ) {
@@ -936,6 +969,7 @@ export function ChatPage() {
 
       setVoicePreview(null);
       setVoicePreviewUrl('');
+      setVoicePreviewTarget(null);
       setPreviewPlaying(false);
 
       playSophisTone('send');
@@ -1475,7 +1509,7 @@ export function ChatPage() {
 
         <div className="flex items-end gap-1.5 rounded-[28px] border border-slate-300 bg-slate-100 px-3 py-1.5 focus-within:border-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:focus-within:border-emerald-400">
           {/* Text entry and voice recording/preview are mutually exclusive modes. */}
-          {!recording && !voicePreview && (
+          {!recording && !previewBelongsToCurrentChat && (
             <>
               <button
                 type="button"
@@ -1537,7 +1571,7 @@ export function ChatPage() {
                 <button
                   type="button"
                   onPointerDown={event => {
-                    if (recording || voicePreview || sending || (mode === 'direct' && (!recipient || recipientDeleted))) return;
+                    if (recording || previewBelongsToCurrentChat || sending || (mode === 'direct' && (!recipient || recipientDeleted))) return;
                     event.preventDefault();
                     micHeldRef.current = true;
                     try {
@@ -1598,7 +1632,7 @@ export function ChatPage() {
             </div>
           )}
 
-          {voicePreview && (
+          {voicePreview && previewBelongsToCurrentChat && (
             <div className="mb-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-2xl bg-white px-2 py-1.5 dark:bg-slate-700">
               <audio
                 ref={previewAudioRef}
@@ -1650,7 +1684,7 @@ export function ChatPage() {
             </div>
           )}
 
-          {!recording && !voicePreview && text.trim() && (
+          {!recording && !previewBelongsToCurrentChat && text.trim() && (
             <button
               type="button"
               onClick={() => void send()}
@@ -1670,7 +1704,7 @@ export function ChatPage() {
         <p className="mt-2 text-[10px] text-slate-600 dark:text-slate-300">
           {recording
             ? 'Keep holding the microphone while recording; release it to preview.'
-            : voicePreview
+            : previewBelongsToCurrentChat
               ? 'Play, discard, or send your voice recording. Text entry returns after you discard or send.'
               : 'Enter to send · Shift + Enter for a new line · Press and hold the microphone to record'}
         </p>
