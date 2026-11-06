@@ -71,6 +71,8 @@ function playSophisTone(kind: 'send' | 'receive') {
 function VoiceMessagePlayer({ src }: { src: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const togglePlayback = async () => {
     const audio = audioRef.current;
@@ -88,26 +90,70 @@ function VoiceMessagePlayer({ src }: { src: string }) {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+  };
+
+  // A compact waveform-style frequency signal. Its played portion follows
+  // the audio element's actual playback position.
+  const bars = Array.from({ length:  40 }, (_, index) => {
+    const envelope = 0.35 + 0.65 * Math.abs(Math.sin(index * 0.47) * Math.cos(index * 0.19));
+    return Math.round(5 + envelope * 19);
+  });
+  const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
+
   return (
-    <div className="flex items-center">
+    <div className="flex min-w-[210px] max-w-[280px] items-center gap-2">
       <audio
         ref={audioRef}
         src={src}
-        preload="none"
+        preload="metadata"
         className="hidden"
+        onLoadedMetadata={event => setDuration(event.currentTarget.duration || 0)}
+        onDurationChange={event => setDuration(event.currentTarget.duration || 0)}
+        onTimeUpdate={event => setCurrentTime(event.currentTarget.currentTime)}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
+        onEnded={() => {
+          setPlaying(false);
+          setCurrentTime(0);
+        }}
       />
       <button
         type="button"
         onClick={() => void togglePlayback()}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-violet-800 transition hover:bg-white dark:bg-slate-700 dark:text-violet-200 dark:hover:bg-slate-600"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/80 text-violet-800 transition hover:bg-white dark:bg-slate-700 dark:text-violet-200 dark:hover:bg-slate-600"
         aria-label={playing ? "Pause voice message" : "Play voice message"}
         title={playing ? "Pause voice message" : "Play voice message"}
       >
         {playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}
       </button>
+      <div className="min-w-0 flex-1">
+        <div
+          className="flex h-8 items-center justify-between gap-[2px]"
+          role="img"
+          aria-label={`Voice message waveform, ${formatTime(currentTime)} of ${formatTime(duration)} played`}
+        >
+          {bars.map((height, index) => (
+            <span
+              key={index}
+              className={`w-[3px] shrink-0 rounded-full transition-colors duration-100 ${
+                index / bars.length <= progress
+                  ? 'bg-violet-700 dark:bg-violet-300'
+                  : 'bg-violet-300 dark:bg-slate-500'
+              }`}
+              style={{ height: `${height}px` }}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between text-[10px] font-medium tabular-nums text-violet-800 dark:text-violet-200">
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
     </div>
   );
 }
