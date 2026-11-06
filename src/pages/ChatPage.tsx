@@ -1279,7 +1279,7 @@ export function ChatPage() {
             ← Recent conversations
           </button>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+            <p className="inline-block max-w-full truncate rounded-md bg-violet-100 px-2 py-0.5 text-sm font-semibold text-violet-950 dark:bg-violet-950/60 dark:text-violet-200">
               {selectedContact?.isDeleted
                 ? 'Deleted user'
                 : selectedContact
