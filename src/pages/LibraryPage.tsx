@@ -21,7 +21,7 @@ export function LibraryPage() {
   return <main className="mx-auto max-w-7xl space-y-6">
     <section className="rounded-3xl bg-[#2C36D9] p-6 text-white sm:p-9">
       <p className="text-xs font-semibold uppercase tracking-[.2em] text-white/80">Sophis Central · Open academic community</p>
-      <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Learn openly. Share knowledge.</h2>
+      <h2 className="mt-3 text-3xl font-bold !text-white sm:text-4xl">Learn openly. Share knowledge.</h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-white/90">Explore approved academic notes, past questions, research, projects and learning materials shared by students and lecturers. Browse freely without creating an account.</p>
       <div className="mt-5 flex flex-wrap gap-3"><Link to="/onboarding" className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#2C36D9]">Join the community</Link><Link to="/login" className="rounded-xl border border-white/50 px-4 py-3 text-sm font-semibold text-white">Sign in to contribute</Link></div>
     </section>
