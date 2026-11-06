@@ -106,7 +106,7 @@ function VoiceMessagePlayer({ src }: { src: string }) {
   const progress = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
 
   return (
-    <div className="flex min-w-[210px] max-w-[280px] items-center gap-2">
+    <div className="flex w-full min-w-0 max-w-[280px] items-center gap-2">
       <audio
         ref={audioRef}
         src={src}
@@ -133,14 +133,14 @@ function VoiceMessagePlayer({ src }: { src: string }) {
       </button>
       <div className="min-w-0 flex-1">
         <div
-          className="flex h-8 items-center justify-between gap-[2px]"
+          className="flex h-8 min-w-0 w-full items-center gap-[2px] overflow-hidden"
           role="img"
           aria-label={`Voice message waveform, ${formatTime(currentTime)} of ${formatTime(duration)} played`}
         >
           {bars.map((height, index) => (
             <span
               key={index}
-              className={`w-[3px] shrink-0 rounded-full transition-colors duration-100 ${
+              className={`h-auto min-w-0 max-w-[3px] flex-1 rounded-full transition-colors duration-100 ${
                 index / bars.length <= progress
                   ? 'bg-violet-700 dark:bg-violet-300'
                   : 'bg-violet-300 dark:bg-slate-500'
@@ -1057,7 +1057,7 @@ export function ChatPage() {
   return (
     <section className="mx-auto flex h-[calc(100vh-110px)] min-h-[640px] max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
       {/* Chat header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-slate-700 dark:bg-slate-900">
         <div>
           <h2 className="font-bold text-slate-900 dark:text-white">
             {mode === 'group' ? 'Group chat room' : 'Private DM'}
@@ -1111,7 +1111,7 @@ export function ChatPage() {
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
                     recipient === item.contact.id
                       ? 'bg-violet-100 dark:bg-violet-950/60'
-                      : 'bg-white hover:bg-violet-50 dark:bg-slate-900 dark:hover:bg-slate-800'
+                      : 'bg-violet-50 hover:bg-violet-100 dark:bg-slate-900 dark:hover:bg-slate-800'
                   }`}
                 >
                   <span className="min-w-0 flex-1">
@@ -1203,12 +1203,12 @@ export function ChatPage() {
                       }}
                       className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 text-left last:border-b-0 dark:border-slate-700 ${
                         selected
-                          ? 'bg-emerald-50 text-slate-900 dark:bg-slate-700 dark:text-white'
-                          : 'bg-white text-slate-900 hover:bg-emerald-50 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
+                          ? 'bg-violet-100 text-violet-950 dark:bg-violet-950/60 dark:text-white'
+                          : 'bg-violet-50 text-slate-900 hover:bg-violet-100 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
                       }`}
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-slate-900 dark:text-purple-300">
+                        <span className="inline-block max-w-full truncate rounded-md bg-violet-100 px-2 py-0.5 text-sm font-semibold text-violet-950 dark:bg-violet-950/60 dark:text-purple-200">
                           {contact.isDeleted
                             ? 'Deleted user'
                             : `@${contact.academicHandle}`}
@@ -1254,7 +1254,7 @@ export function ChatPage() {
           {selectedContact && (
             <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
               Conversation with{' '}
-              <strong className="font-semibold text-slate-900 dark:text-white">
+              <strong className="inline-block rounded-md bg-violet-100 px-2 py-0.5 font-semibold text-violet-950 dark:bg-violet-950/60 dark:text-violet-200">
                 @{selectedContact.academicHandle}
               </strong>{' '}
               · Messages are private to this conversation.
@@ -1264,7 +1264,7 @@ export function ChatPage() {
       )}
 
       {mode === 'direct' && recipient && (
-        <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center gap-3 border-b border-violet-200 bg-violet-100 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
           <button
             type="button"
             onClick={() => {
@@ -1345,7 +1345,7 @@ export function ChatPage() {
               className={`w-fit max-w-[85%] min-w-0 rounded-2xl border p-3 shadow-sm ${
                 message.isOwn
                   ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-800 dark:bg-[#31234B] dark:text-white'
-                  : 'mr-auto border-slate-200 bg-white text-slate-900 dark:border-white dark:bg-slate-800 dark:text-purple-300'
+                  : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-slate-800 dark:text-purple-300'
               }`}
             >
               <div
