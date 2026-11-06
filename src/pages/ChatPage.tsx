@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Mic, Pause, Play, Send, Smile, Trash2 } from 'lucide-react';
-import { chatApi, type ChatContact, type ChatMessage } from '../api/chat';
+import { chatApi, type ChatContact, type ChatInboxItem, type ChatMessage } from '../api/chat';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -78,6 +78,8 @@ export function ChatPage() {
       : 'direct';
 
   const [contacts, setContacts] = useState<ChatContact[]>([]);
+  const [inbox, setInbox] = useState<ChatInboxItem[]>([]);
+  const knownInboxMessageIdsRef = useRef<Set<string> | null>(null);
   const [onlineContactIds, setOnlineContactIds] = useState<Set<string>>(() => new Set());
 
   const [recipient, setRecipient] = useState('');
@@ -215,6 +217,35 @@ export function ChatPage() {
     }
   }, []);
 
+  const loadInbox = useCallback(async () => {
+    try {
+      const result = await chatApi.inbox();
+      const nextInbox = Array.isArray(result) ? result : [];
+      const previousIds = knownInboxMessageIdsRef.current;
+
+      const incoming = previousIds
+        ? nextInbox.filter(item =>
+            !item.lastMessage.isOwn && !previousIds.has(item.lastMessage.id),
+          )
+        : [];
+
+      const hasUnfocusedIncoming = incoming.some(
+        item => mode !== 'direct' || recipient !== item.contact.id,
+      );
+
+      if (hasUnfocusedIncoming && !mutedDirect) {
+        playSophisTone('receive');
+      }
+
+      knownInboxMessageIdsRef.current = new Set(
+        nextInbox.map(item => item.lastMessage.id),
+      );
+      setInbox(nextInbox);
+    } catch {
+      // Keep the conversation composer usable if inbox summaries are temporarily unavailable.
+    }
+  }, [mode, recipient, mutedDirect]);
+
   const loadMessages = useCallback(
     async (quiet = false) => {
       const requestSequence = quiet
@@ -255,6 +286,10 @@ export function ChatPage() {
             playSophisTone('receive');
           }
 
+          if (mode === 'direct' && recipient && incoming.length) {
+            void chatApi.markRead(recipient).then(loadInbox).catch(() => undefined);
+          }
+
           setMessages(current => {
             const merged = new Map(current.map(message => [message.id, message]));
 
@@ -284,6 +319,10 @@ export function ChatPage() {
 
           setHasMore(result.hasMore ?? false);
           setNextBefore(result.nextBefore ?? null);
+
+          if (mode === 'direct' && recipient) {
+            void chatApi.markRead(recipient).then(loadInbox).catch(() => undefined);
+          }
         }
 
         setError('');
@@ -297,7 +336,7 @@ export function ChatPage() {
         }
       }
     },
-    [mode, recipient, mutedGroup, mutedDirect],
+    [mode, recipient, mutedGroup, mutedDirect, loadInbox],
   );
 
   const loadOlder = async () => {
@@ -356,7 +395,8 @@ export function ChatPage() {
 
   useEffect(() => {
     void loadBlocks();
-  }, [loadBlocks]);
+    void loadInbox();
+  }, [loadBlocks, loadInbox]);
 
   useEffect(() => {
     const timer = window.setTimeout(
@@ -417,6 +457,17 @@ export function ChatPage() {
     setShowStickers(false);
   }, [location.pathname, user?.role]);
 
+  // Notification links can open a specific private conversation directly.
+  useEffect(() => {
+    const userId = new URLSearchParams(location.search).get('userId');
+    if (!userId) return;
+
+    setRecipient(userId);
+    setContactSearch('');
+    setShowContactDropdown(false);
+    setError('');
+  }, [location.search]);
+
   useEffect(() => {
     setMessages([]);
     setHasMore(false);
@@ -431,16 +482,18 @@ export function ChatPage() {
   useEffect(() => {
     return chatApi.subscribe(() => {
       void loadMessages(true);
+      void loadInbox();
     });
-  }, [loadMessages]);
+  }, [loadMessages, loadInbox]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
       void loadMessages(true);
+      void loadInbox();
     }, 30000);
 
     return () => window.clearInterval(timer);
-  }, [loadMessages]);
+  }, [loadMessages, loadInbox]);
 
   useEffect(() => {
     const container = listRef.current;
@@ -487,6 +540,7 @@ export function ChatPage() {
       shouldAutoScrollRef.current = true;
 
       setMessages(current => [...current, message]);
+      void loadInbox();
       setText('');
       setShowEmoji(false);
 
@@ -519,6 +573,7 @@ export function ChatPage() {
       shouldAutoScrollRef.current = true;
 
       setMessages(current => [...current, message]);
+      void loadInbox();
       setShowStickers(false);
 
       playSophisTone('send');
@@ -1022,6 +1077,64 @@ export function ChatPage() {
                 @{selectedContact.academicHandle}
               </strong>{' '}
               · Messages are private to this conversation.
+            </p>
+          )}
+        </div>
+      )}
+
+      {mode === 'direct' && (
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+              Recent conversations
+            </h3>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+              {inbox.length} conversation{inbox.length === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          {inbox.length ? (
+            <div className="flex max-h-36 flex-col gap-1 overflow-y-auto">
+              {inbox.map(item => (
+                <button
+                  key={item.contact.id}
+                  type="button"
+                  onClick={() => {
+                    setRecipient(item.contact.id);
+                    setContactSearch('');
+                    setShowContactDropdown(false);
+                    setError('');
+                  }}
+                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
+                    recipient === item.contact.id
+                      ? 'bg-violet-100 dark:bg-violet-950/60'
+                      : 'bg-white hover:bg-violet-50 dark:bg-slate-900 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="truncate text-xs font-semibold text-slate-900 dark:text-white">
+                        {item.contact.isDeleted ? 'Deleted user' : `@${item.contact.academicHandle}`}
+                      </span>
+                      {item.unreadCount > 0 && (
+                        <span className="shrink-0 rounded-full bg-violet-700 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[11px] text-slate-600 dark:text-slate-300">
+                      {item.lastMessage.isOwn ? 'You: ' : ''}{item.lastMessage.preview}
+                    </span>
+                  </span>
+                  <time className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">
+                    {new Date(item.lastMessage.createdAt).toLocaleDateString()}
+                  </time>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-lg bg-white px-3 py-3 text-center text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+              Your private conversations will appear here when you send or receive messages.
             </p>
           )}
         </div>

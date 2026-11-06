@@ -4,6 +4,20 @@ import { appConfig } from '../config/env';
 export type ChatContact = { id: string; academicHandle: string; role: 'student' | 'lecturer'; institution?: string; faculty?: string; department?: string; isDeleted?: boolean };
 export type ChatMessage = { id: string; kind: 'group' | 'direct'; senderId: string | null; senderHandle: string; contentType: 'text' | 'voice' | 'sticker'; text: string | null; voiceUrl: string | null; stickerId?: string | null; isDeleted: boolean; editedAt: string | null; createdAt: string; isOwn: boolean };
 export type ChatPage = { items: ChatMessage[]; hasMore: boolean; nextBefore: string | null };
+export type ChatInboxItem = {
+  contact: ChatContact;
+  lastMessage: {
+    id: string;
+    senderHandle: string;
+    contentType: 'text' | 'voice' | 'sticker';
+    text: string | null;
+    preview: string;
+    createdAt: string;
+    isOwn: boolean;
+    isDeleted: boolean;
+  };
+  unreadCount: number;
+};
 
 export const chatApi = {
   subscribe: (onRefresh: () => void) => {
@@ -17,7 +31,9 @@ export const chatApi = {
   block: (userId: string) => apiRequest<{ success: boolean }>(`/chat/blocks/${encodeURIComponent(userId)}`, { method: 'POST' }),
   unblock: (userId: string) => apiRequest<{ success: boolean }>(`/chat/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   presence: () => apiRequest<Array<{ id: string; online: boolean }>>('/chat/presence'),
-  heartbeat: () => apiRequest<{ success: boolean }>('/chat/presence/heartbeat'),
+  inbox: () => apiRequest<ChatInboxItem[]>('/chat/inbox'),
+  markRead: (userId: string) => apiRequest<{ success: boolean; lastReadAt: string }>(`/chat/direct/${encodeURIComponent(userId)}/read`, { method: 'POST' }),
+  heartbeat: () => apiRequest<{ success: boolean }>('/chat/presence/heartbeat', { method: 'POST' }),
   groupHistory: (limit = 40, before?: string) => apiRequest<ChatPage>(`/chat/group/messages?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
   directHistory: (userId: string, limit = 40, before?: string) => apiRequest<ChatPage>(`/chat/direct/${encodeURIComponent(userId)}/messages?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`),
   sendText: (kind: 'group' | 'direct', text: string, recipientId?: string) => apiRequest<ChatMessage>('/chat/messages', { method: 'POST', body: JSON.stringify({ kind, text, ...(recipientId ? { recipientId } : {}) }) }),
