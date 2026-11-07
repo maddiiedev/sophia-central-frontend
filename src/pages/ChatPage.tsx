@@ -1344,22 +1344,22 @@ export function ChatPage() {
               key={message.id}
               className={`w-fit max-w-[85%] min-w-0 rounded-2xl border p-3 shadow-sm ${
                 message.isOwn
-                  ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-800 dark:bg-[#31234B] dark:text-white'
-                  : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-blue-800 dark:bg-slate-800 dark:text-purple-300'
+                  ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-800 dark:bg-violet-950/70 dark:text-violet-100'
+                  : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100'
               }`}
             >
               <div
                 className={`mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] ${
                   message.isOwn
                     ? 'text-violet-800 dark:text-violet-200'
-                    : 'text-slate-600 dark:text-purple-300'
+                    : 'text-slate-600 dark:text-slate-300'
                 }`}
               >
                 <strong
                   className={`font-bold ${
                     message.isOwn
-                      ? 'text-violet-950 dark:text-white'
-                      : 'text-slate-900 dark:text-purple-300'
+                      ? 'text-violet-950 dark:text-violet-100'
+                      : 'text-slate-900 dark:text-slate-100'
                   }`}
                 >
                   {message.senderId
@@ -1371,7 +1371,7 @@ export function ChatPage() {
                   className={
                     message.isOwn
                       ? 'text-violet-800 dark:text-violet-200'
-                      : 'text-slate-600 dark:text-purple-300'
+                      : 'text-slate-600 dark:text-slate-300'
                   }
                 >
                   {new Date(message.createdAt).toLocaleString()}
@@ -1382,7 +1382,7 @@ export function ChatPage() {
                     className={
                       message.isOwn
                         ? 'text-violet-800 dark:text-violet-200'
-                        : 'text-slate-600 dark:text-purple-300'
+                        : 'text-slate-600 dark:text-slate-300'
                     }
                   >
                     edited
@@ -1391,7 +1391,7 @@ export function ChatPage() {
               </div>
 
               {message.isDeleted ? (
-                <p className="text-sm italic text-slate-600 dark:text-purple-300">
+                <p className="text-sm italic text-slate-600 dark:text-slate-300">
                   This message was deleted.
                 </p>
               ) : message.contentType === 'voice' && message.voiceUrl ? (
@@ -1434,8 +1434,8 @@ export function ChatPage() {
                 <p
                   className={`whitespace-pre-wrap break-words text-sm ${
                     message.isOwn
-                      ? 'text-violet-950 dark:text-white'
-                      : 'text-slate-900 dark:text-purple-300'
+                      ? 'text-violet-950 dark:text-violet-100'
+                      : 'text-slate-900 dark:text-slate-100'
                   }`}
                 >
                   {message.text}
