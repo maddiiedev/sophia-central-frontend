@@ -176,7 +176,7 @@ export function ChatPage() {
   const [recipient, setRecipient] = useState('');
   const [contactSearch, setContactSearch] = useState('');
   const [showContactDropdown, setShowContactDropdown] = useState(false);
-  const [contactSearchLoading, setContactSearchLoading] = useState(true);
+  const [contactSearchLoading, setContactSearchLoading] = useState(false);
   const [contactSearchError, setContactSearchError] = useState('');
 
   const contactSearchSequenceRef = useRef(0);
@@ -327,6 +327,12 @@ export function ChatPage() {
 
   const loadContacts = useCallback(async (search = '') => {
     const sequence = ++contactSearchSequenceRef.current;
+    if (!search.trim()) {
+      setContacts([]);
+      setContactSearchLoading(false);
+      setContactSearchError('');
+      return;
+    }
 
     setContactSearchLoading(true);
     setContactSearchError('');
@@ -532,12 +538,24 @@ export function ChatPage() {
     void loadInbox();
   }, [loadBlocks, loadInbox]);
   useEffect(() => {
-    const timer = window.setTimeout(
-      () => {
-        void loadContacts(contactSearch);
-      },
-      contactSearch.trim() ? 250 : 0,
-    );
+    const query = contactSearch.trim();
+    // Invalidate an older in-flight search immediately when the query changes.
+    contactSearchSequenceRef.current += 1;
+    if (!query) {
+      setContacts([]);
+      setContactSearchLoading(false);
+      setContactSearchError('');
+      setShowContactDropdown(false);
+      return;
+    }
+
+    setContacts([]);
+    setContactSearchLoading(true);
+    setContactSearchError('');
+
+    const timer = window.setTimeout(() => {
+      void loadContacts(query);
+    }, 250);
 
     return () => window.clearTimeout(timer);
   }, [contactSearch, loadContacts]);
@@ -1190,16 +1208,17 @@ export function ChatPage() {
             id="chat-contact-search"
             type="search"
             value={contactSearch}
-            onFocus={() => setShowContactDropdown(true)}
+            onFocus={() => setShowContactDropdown(Boolean(contactSearch.trim()))}
             onChange={event => {
-              setContactSearch(event.target.value);
-              setShowContactDropdown(true);
+              const value = event.target.value;
+              setContactSearch(value);
+              setShowContactDropdown(Boolean(value.trim()));
             }}
             placeholder="Search username (e.g. @username)"
             className="chat-search-input mb-2 w-full rounded-xl border border-[#D7DEEA] bg-[#F3F6FC] px-3 py-2.5 text-sm text-[#091F5B] outline-none placeholder:text-[#71809A] focus:border-[#2C36D9] focus:ring-2 focus:ring-[#2C36D9]/20 dark:border-[#475569] dark:bg-[#172033] dark:text-white dark:placeholder:text-[#94A3B8] dark:focus:border-[#8B7AE8]"
           />
 
-          {showContactDropdown && (
+          {showContactDropdown && contactSearch.trim() && (
             <div
               className="max-h-36 overflow-y-auto rounded-xl border border-[#DCE4EF] bg-white dark:border-[#475569] dark:bg-[#172033]"
               role="listbox"
@@ -1209,7 +1228,7 @@ export function ChatPage() {
                 <p className="px-3 py-4 text-center text-xs text-[#4B5563] dark:text-[#CBD5E1]">
                   {contactSearch.trim()
                     ? 'Searching usernames…'
-                    : 'Loading available accounts…'}
+                    : 'Searching usernames…'}
                 </p>
               ) : contactSearchError ? (
                 <p
@@ -1278,7 +1297,7 @@ export function ChatPage() {
                           ? contactSearch.trim()
                           : `@${contactSearch.trim()}`
                       }”. Check the username and try again.`
-                    : 'No searchable student or lecturer accounts are available right now.'}
+                    : 'Type a username to search for a student or lecturer.'}
                 </p>
               )}
             </div>
@@ -1479,7 +1498,7 @@ export function ChatPage() {
                   <button
                     type="button"
                     onClick={() => setExpandedDeletedMessageId(current => current === message.id ? null : message.id)}
-                    className="block rounded-md px-1 py-0.5 text-left text-sm italic text-[#4B5563] transition hover:bg-[#E8EDF5] hover:text-[#091F5B] focus:outline-none focus:ring-2 focus:ring-[#2C36D9] dark:text-[#CBD5E1] dark:hover:bg-[#26314A] dark:hover:text-white"
+                    className="deleted-message-trigger block border-0 bg-transparent p-0 text-left text-sm italic text-[#4B5563] dark:text-[#CBD5E1]"
                     aria-expanded={expandedDeletedMessageId === message.id}
                     aria-label="Show options for deleted message"
                   >

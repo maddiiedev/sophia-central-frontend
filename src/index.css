@@ -579,3 +579,22 @@ html[data-theme='dark'] .app-shell .chat-page textarea.chat-edit-input {
     background-color: #E9D5FF !important;
   }
 }
+
+
+/* Deleted-message label is intentionally plain text: no selection highlight,
+   button border, focus ring, or tap flash in Group Chat or Private DM. */
+.app-shell .chat-page button.deleted-message-trigger,
+.app-shell .chat-page button.deleted-message-trigger:hover,
+.app-shell .chat-page button.deleted-message-trigger:focus,
+.app-shell .chat-page button.deleted-message-trigger:focus-visible,
+.app-shell .chat-page button.deleted-message-trigger:active {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
