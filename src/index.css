@@ -538,3 +538,44 @@ html[data-theme='dark'] .app-shell .chat-page textarea.chat-edit-input {
   background-color: #0B1120 !important;
   color: #F8FAFC !important;
 }
+
+
+/* Explicit desktop-only dark-mode contrast for the chat header and Recent conversations.
+   These scoped selectors intentionally outrank the app-wide dark-theme compatibility rules. */
+@media (min-width: 1024px) {
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-header] {
+    background-color: #F3E8FF !important;
+    border-color: #D8B4FE !important;
+  }
+
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-header-title] {
+    color: #2E1065 !important;
+  }
+
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-header-subtitle] {
+    color: #4C1D95 !important;
+  }
+
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-recent-panel] {
+    background-color: #F3E8FF !important;
+    border-color: #D8B4FE !important;
+  }
+
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-recent-heading],
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-recent-username] {
+    color: #2E1065 !important;
+  }
+
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-recent-preview] {
+    color: #4C1D95 !important;
+  }
+
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-recent-panel] button {
+    background-color: #FAF7FF !important;
+  }
+
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-recent-panel] button:hover,
+  html[data-theme='dark'] .app-shell .chat-page [data-chat-desktop-recent-panel] button:focus-visible {
+    background-color: #E9D5FF !important;
+  }
+}

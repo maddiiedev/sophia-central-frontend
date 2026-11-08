@@ -1090,13 +1090,13 @@ export function ChatPage() {
   return (
     <section className="chat-page mx-auto flex h-[calc(100vh-110px)] min-h-[640px] max-w-6xl flex-col overflow-hidden rounded-2xl border border-[#DCE4EF] bg-white text-[#091F5B] shadow-sm dark:border-[#334155] dark:bg-[#0F172A] dark:text-[#F1F5F9]">
       {/* Chat header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-[#334155] dark:bg-[#0F172A] lg:dark:border-violet-200 lg:dark:bg-violet-100">
+      <div data-chat-desktop-header className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-[#334155] dark:bg-[#0F172A] lg:dark:border-violet-200 lg:dark:bg-violet-100">
         <div>
-          <h2 className="font-bold text-[#091F5B] dark:!text-white lg:dark:!text-violet-950">
+          <h2 data-chat-desktop-header-title className="font-bold text-[#091F5B] dark:!text-white lg:dark:!text-violet-950">
             {mode === 'group' ? 'Group chat room' : 'Private DM'}
           </h2>
 
-          <p className="text-xs text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900">
+          <p data-chat-desktop-header-subtitle className="text-xs text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900">
             {mode === 'group'
               ? 'Your institution, faculty and department community'
               : 'Private conversations with students and lecturers'}
@@ -1119,9 +1119,9 @@ export function ChatPage() {
       </div>
 
       {mode === 'direct' && !recipient && (
-        <div className="border-b border-[#DCE4EF] bg-[#F3F6FC] px-4 py-3 dark:border-[#334155] dark:bg-[#0B1120] lg:dark:border-violet-200 lg:dark:bg-violet-100">
+        <div data-chat-desktop-recent-panel className="border-b border-[#DCE4EF] bg-[#F3F6FC] px-4 py-3 dark:border-[#334155] dark:bg-[#0B1120] lg:dark:border-violet-200 lg:dark:bg-violet-100">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[#1F2937] dark:text-[#E2E8F0] lg:dark:text-violet-950">
+            <h3 data-chat-desktop-recent-heading className="text-xs font-bold uppercase tracking-wide text-[#1F2937] dark:text-[#E2E8F0] lg:dark:text-violet-950">
               Recent conversations
             </h3>
             <span className="text-[10px] text-[#71809A] dark:text-[#94A3B8] lg:dark:text-violet-800">
@@ -1149,7 +1149,7 @@ export function ChatPage() {
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-xs font-semibold text-[#091F5B] dark:!text-white lg:dark:!text-violet-950">
+                      <span data-chat-desktop-recent-username className="truncate text-xs font-semibold text-[#091F5B] dark:!text-white lg:dark:!text-violet-950">
                         {item.contact.isDeleted ? 'Deleted user' : `@${item.contact.academicHandle}`}
                       </span>
                       {item.unreadCount > 0 && (
@@ -1158,7 +1158,7 @@ export function ChatPage() {
                         </span>
                       )}
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900">
+                    <span data-chat-desktop-recent-preview className="mt-0.5 block truncate text-[11px] text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900">
                       {item.lastMessage.isOwn ? 'You: ' : ''}{item.lastMessage.preview}
                     </span>
                   </span>
