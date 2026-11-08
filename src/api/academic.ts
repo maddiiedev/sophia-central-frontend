@@ -48,6 +48,7 @@ export interface AcademicCatalogueSubmissionPayload {
   entryType: 'institution' | 'faculty' | 'department';
   name: string;
   parentInstitutionId?: string;
+  parentInstitutionSubmissionId?: string;
   parentFacultyId?: string;
   parentFacultySubmissionId?: string;
   state?: string;
