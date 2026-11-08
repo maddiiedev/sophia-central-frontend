@@ -372,3 +372,49 @@ html[data-theme='dark'] .app-shell .sidebar-nav-link.is-active {
   color: #E9D5FF !important;
   box-shadow: inset 0 0 0 1px rgba(196, 181, 253, 0.25);
 }
+
+/* Chat-only theme alignment: keep every control consistent across Group Chat,
+   Private DM, desktop and mobile without changing other app screens. */
+.app-shell .chat-page input.chat-search-input {
+  background-color: #F8FAFD !important;
+  border-color: #D7DEEA !important;
+  color: #091F5B !important;
+}
+.app-shell .chat-page input.chat-search-input::placeholder {
+  color: #71809A !important;
+}
+.app-shell .chat-page textarea.chat-message-input {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #091F5B !important;
+}
+.app-shell .chat-page textarea.chat-message-input::placeholder {
+  color: #71809A !important;
+}
+html[data-theme='dark'] .app-shell .chat-page input.chat-search-input {
+  background-color: #0B1120 !important;
+  border-color: #475569 !important;
+  color: #F1F5F9 !important;
+}
+html[data-theme='dark'] .app-shell .chat-page input.chat-search-input::placeholder {
+  color: #94A3B8 !important;
+}
+html[data-theme='dark'] .app-shell .chat-page textarea.chat-message-input {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #F1F5F9 !important;
+}
+html[data-theme='dark'] .app-shell .chat-page textarea.chat-message-input::placeholder {
+  color: #94A3B8 !important;
+}
+
+.app-shell .chat-page textarea.chat-edit-input {
+  background-color: #FFFFFF !important;
+  border-color: #D7DEEA !important;
+  color: #091F5B !important;
+}
+html[data-theme='dark'] .app-shell .chat-page textarea.chat-edit-input {
+  background-color: #0B1120 !important;
+  border-color: #475569 !important;
+  color: #F1F5F9 !important;
+}

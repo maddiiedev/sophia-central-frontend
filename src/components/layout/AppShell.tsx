@@ -71,6 +71,24 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [mobileNavOpen]);
+
+  useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
     let active = true;
     const refreshUnread = async () => {
@@ -125,7 +143,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         </aside>
 
         <main className="min-w-0 flex-1 bg-white">
-          <header className="sticky top-0 z-30 border-b border-[#E5E7EB] bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
+          <header className={`sticky top-0 ${mobileNavOpen ? "z-[60]" : "z-30"} border-b border-[#E5E7EB] bg-white/95 px-4 py-3 backdrop-blur sm:px-6`}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <button type="button" onClick={() => setMobileNavOpen((open) => !open)} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] lg:hidden" aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileNavOpen}>{mobileNavOpen ? <X size={18} /> : <Menu size={18} />}</button>
@@ -143,8 +161,27 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
                 </button>
               </div>
             </div>
-            {mobileNavOpen && <div className="mt-4 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm lg:hidden">{nav}</div>}
           </header>
+          {mobileNavOpen && (
+            <>
+              <button
+                type="button"
+                aria-label="Close navigation menu"
+                onClick={() => setMobileNavOpen(false)}
+                className="fixed inset-0 z-40 cursor-default bg-slate-950/45 lg:hidden"
+              />
+              <div
+                id="mobile-main-navigation"
+                className="fixed inset-x-3 bottom-3 top-[76px] z-50 overflow-y-auto overscroll-contain rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xl lg:hidden"
+              >
+                <div className="mb-3 flex items-center justify-between border-b border-[#E5E7EB] pb-3">
+                  <span className="text-sm font-bold text-[#091F5B]">Navigation</span>
+                  <button type="button" onClick={() => setMobileNavOpen(false)} className="rounded-lg p-2 text-[#4B5563] hover:bg-[#F3F6FC]" aria-label="Close navigation"><X size={18} /></button>
+                </div>
+                {nav}
+              </div>
+            </>
+          )}
           <div className="page-shell bg-white p-4 sm:p-6">{children}</div>
         </main>
       </div>

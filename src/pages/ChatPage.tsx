@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Mic, Pause, Play, Send, Smile, Trash2 } from 'lucide-react';
 import { chatApi, type ChatContact, type ChatInboxItem, type ChatMessage } from '../api/chat';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 type Mode = 'group' | 'direct';
@@ -125,7 +125,7 @@ function VoiceMessagePlayer({ src }: { src: string }) {
       <button
         type="button"
         onClick={() => void togglePlayback()}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/80 text-violet-800 transition hover:bg-white dark:bg-slate-700 dark:text-violet-200 dark:hover:bg-slate-600"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/80 text-violet-800 transition hover:bg-white dark:bg-[#26314A] dark:text-[#D8CCFF] dark:hover:bg-[#334155]"
         aria-label={playing ? "Pause voice message" : "Play voice message"}
         title={playing ? "Pause voice message" : "Play voice message"}
       >
@@ -143,13 +143,13 @@ function VoiceMessagePlayer({ src }: { src: string }) {
               className={`h-auto min-w-0 max-w-[3px] flex-1 rounded-full transition-colors duration-100 ${
                 index / bars.length <= progress
                   ? 'bg-violet-700 dark:bg-violet-300'
-                  : 'bg-violet-300 dark:bg-slate-500'
+                  : 'bg-violet-300 dark:bg-[#94A3B8]'
               }`}
               style={{ height: `${height}px` }}
             />
           ))}
         </div>
-        <div className="flex justify-between text-[10px] font-medium tabular-nums text-violet-800 dark:text-violet-200">
+        <div className="flex justify-between text-[10px] font-medium tabular-nums text-violet-800 dark:text-[#D8CCFF]">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
@@ -161,6 +161,7 @@ function VoiceMessagePlayer({ src }: { src: string }) {
 export function ChatPage() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const mode: Mode =
     location.pathname === '/chat/group' && user?.role === 'student'
@@ -210,6 +211,13 @@ export function ChatPage() {
 
   const [editing, setEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
+  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
+  const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
+  const [forwardSearch, setForwardSearch] = useState('');
+  const [forwarding, setForwarding] = useState(false);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [showEmoji, setShowEmoji] = useState(false);
   const [showStickers, setShowStickers] = useState(false);
@@ -280,6 +288,22 @@ export function ChatPage() {
 
   const activeConversationRef = useRef(`${mode}:${recipient}`);
   activeConversationRef.current = `${mode}:${recipient}`;
+
+  useEffect(() => {
+    if (!selectedMessage && !forwardDialogOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedMessage(null);
+        setForwardDialogOpen(false);
+      }
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [selectedMessage, forwardDialogOpen]);
+
+  useEffect(() => () => {
+    if (longPressTimerRef.current !== null) window.clearTimeout(longPressTimerRef.current);
+  }, []);
 
   const loadPresence = useCallback(async () => {
     try {
@@ -641,6 +665,7 @@ export function ChatPage() {
         mode,
         value,
         mode === 'direct' ? recipient : undefined,
+        replyTarget?.id,
       );
 
       shouldAutoScrollRef.current = true;
@@ -648,6 +673,7 @@ export function ChatPage() {
       setMessages(current => [...current, message]);
       void loadInbox();
       setText('');
+      setReplyTarget(null);
       setShowEmoji(false);
 
       playSophisTone('send');
@@ -674,11 +700,13 @@ export function ChatPage() {
         mode,
         stickerId,
         mode === 'direct' ? recipient : undefined,
+        replyTarget?.id,
       );
 
       shouldAutoScrollRef.current = true;
 
       setMessages(current => [...current, message]);
+      setReplyTarget(null);
       void loadInbox();
       setShowStickers(false);
 
@@ -998,11 +1026,13 @@ export function ChatPage() {
         mode,
         upload.key,
         mode === 'direct' ? recipient : undefined,
+        replyTarget?.id,
       );
 
       shouldAutoScrollRef.current = true;
 
       setMessages(current => [...current, message]);
+      setReplyTarget(null);
 
       if (previewAudioRef.current) {
         previewAudioRef.current.pause();
@@ -1055,15 +1085,15 @@ export function ChatPage() {
   }
 
   return (
-    <section className="mx-auto flex h-[calc(100vh-110px)] min-h-[640px] max-w-6xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+    <section className="chat-page mx-auto flex h-[calc(100vh-110px)] min-h-[640px] max-w-6xl flex-col overflow-hidden rounded-2xl border border-[#DCE4EF] bg-white text-[#091F5B] shadow-sm dark:border-[#334155] dark:bg-[#0F172A] dark:text-[#F1F5F9]">
       {/* Chat header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-[#334155] dark:bg-[#0F172A]">
         <div>
-          <h2 className="font-bold text-slate-900 dark:!text-white">
+          <h2 className="font-bold text-[#091F5B] dark:!text-white">
             {mode === 'group' ? 'Group chat room' : 'Private DM'}
           </h2>
 
-          <p className="text-xs text-slate-600 dark:text-slate-300">
+          <p className="text-xs text-[#4B5563] dark:text-[#CBD5E1]">
             {mode === 'group'
               ? 'Your institution, faculty and department community'
               : 'Private conversations with students and lecturers'}
@@ -1076,7 +1106,7 @@ export function ChatPage() {
                 ? setMutedGroup(value => !value)
                 : setMutedDirect(value => !value)
             }
-            className="mt-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            className="mt-2 rounded-lg border border-[#D7DEEA] bg-white px-3 py-1.5 text-xs font-semibold text-[#1F2937] transition-colors hover:bg-[#F8FAFD] focus:outline-none focus:ring-2 focus:ring-[#2C36D9]/20 dark:border-[#475569] dark:bg-[#172033] dark:text-[#F1F5F9] dark:hover:bg-[#26314A]"
           >
             {(mode === 'group' ? mutedGroup : mutedDirect)
               ? 'Unmute notifications'
@@ -1086,12 +1116,12 @@ export function ChatPage() {
       </div>
 
       {mode === 'direct' && !recipient && (
-        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-950">
+        <div className="border-b border-[#DCE4EF] bg-[#F3F6FC] px-4 py-3 dark:border-[#334155] dark:bg-[#0B1120]">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#1F2937] dark:text-[#E2E8F0]">
               Recent conversations
             </h3>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] text-[#71809A] dark:text-[#94A3B8]">
               {inbox.length} conversation{inbox.length === 1 ? '' : 's'}
             </span>
           </div>
@@ -1110,13 +1140,13 @@ export function ChatPage() {
                   }}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
                     recipient === item.contact.id
-                      ? 'bg-violet-100 dark:bg-violet-950/60'
-                      : 'bg-violet-50 hover:bg-violet-100 dark:bg-slate-900 dark:hover:bg-slate-800'
+                      ? 'bg-violet-100 dark:bg-[#31234B]'
+                      : 'bg-violet-50 hover:bg-[#F3F0FF] dark:bg-[#0F172A] dark:hover:bg-[#26314A]'
                   }`}
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-xs font-semibold text-slate-900 dark:!text-white">
+                      <span className="truncate text-xs font-semibold text-[#091F5B] dark:!text-white">
                         {item.contact.isDeleted ? 'Deleted user' : `@${item.contact.academicHandle}`}
                       </span>
                       {item.unreadCount > 0 && (
@@ -1125,18 +1155,18 @@ export function ChatPage() {
                         </span>
                       )}
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-slate-600 dark:text-slate-300">
+                    <span className="mt-0.5 block truncate text-[11px] text-[#4B5563] dark:text-[#CBD5E1]">
                       {item.lastMessage.isOwn ? 'You: ' : ''}{item.lastMessage.preview}
                     </span>
                   </span>
-                  <time className="shrink-0 text-[10px] text-slate-500 dark:text-slate-400">
+                  <time className="shrink-0 text-[10px] text-[#71809A] dark:text-[#94A3B8]">
                     {new Date(item.lastMessage.createdAt).toLocaleDateString()}
                   </time>
                 </button>
               ))}
             </div>
           ) : (
-            <p className="rounded-lg bg-white px-3 py-3 text-center text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+            <p className="rounded-lg bg-white px-3 py-3 text-center text-xs text-[#71809A] dark:bg-[#0F172A] dark:text-[#94A3B8]">
               Your private conversations will appear here when you send or receive messages.
             </p>
           )}
@@ -1145,9 +1175,9 @@ export function ChatPage() {
 
       {/* Private conversation search */}
       {mode === 'direct' && !recipient && (
-        <div className="border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="border-b border-[#DCE4EF] bg-white px-4 py-3 dark:border-[#334155] dark:bg-[#0F172A]">
           <label
-            className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+            className="mb-1 block text-xs font-semibold text-[#1F2937] dark:text-[#E2E8F0]"
             htmlFor="chat-contact-search"
           >
             Find a student or lecturer
@@ -1163,17 +1193,17 @@ export function ChatPage() {
               setShowContactDropdown(true);
             }}
             placeholder="Search username (e.g. @username)"
-            className="mb-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400 dark:focus:border-emerald-400"
+            className="chat-search-input mb-2 w-full rounded-xl border border-[#D7DEEA] bg-[#F3F6FC] px-3 py-2.5 text-sm text-[#091F5B] outline-none placeholder:text-[#71809A] focus:border-[#2C36D9] focus:ring-2 focus:ring-[#2C36D9]/20 dark:border-[#475569] dark:bg-[#172033] dark:text-white dark:placeholder:text-[#94A3B8] dark:focus:border-[#8B7AE8]"
           />
 
           {showContactDropdown && (
             <div
-              className="max-h-36 overflow-y-auto rounded-xl border border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-800"
+              className="max-h-36 overflow-y-auto rounded-xl border border-[#DCE4EF] bg-white dark:border-[#475569] dark:bg-[#172033]"
               role="listbox"
               aria-label="Available private conversations"
             >
               {contactSearchLoading ? (
-                <p className="px-3 py-4 text-center text-xs text-slate-600 dark:text-slate-300">
+                <p className="px-3 py-4 text-center text-xs text-[#4B5563] dark:text-[#CBD5E1]">
                   {contactSearch.trim()
                     ? 'Searching usernames…'
                     : 'Loading available accounts…'}
@@ -1201,20 +1231,20 @@ export function ChatPage() {
                         setShowContactDropdown(false);
                         setError('');
                       }}
-                      className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 text-left last:border-b-0 dark:border-slate-700 ${
+                      className={`flex w-full items-center justify-between gap-3 border-b border-[#E5E7EB] px-3 py-2.5 text-left last:border-b-0 dark:border-[#334155] ${
                         selected
-                          ? 'bg-violet-100 text-violet-950 dark:bg-violet-950/60 dark:text-white'
-                          : 'bg-violet-50 text-slate-900 hover:bg-violet-100 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700'
+                          ? 'bg-violet-100 text-violet-950 dark:bg-[#31234B] dark:text-white'
+                          : 'bg-violet-50 text-[#091F5B] hover:bg-[#F3F0FF] dark:bg-[#172033] dark:text-[#F1F5F9] dark:hover:bg-[#26314A]'
                       }`}
                     >
                       <span className="min-w-0">
-                        <span className="inline-block max-w-full truncate rounded-md bg-violet-100 px-2 py-0.5 text-sm font-semibold text-violet-950 dark:bg-violet-950/60 dark:text-purple-200">
+                        <span className="inline-block max-w-full truncate rounded-md bg-violet-100 px-2 py-0.5 text-sm font-semibold text-violet-950 dark:bg-[#31234B] dark:text-[#F3E8FF]">
                           {contact.isDeleted
                             ? 'Deleted user'
                             : `@${contact.academicHandle}`}
                         </span>
 
-                        <span className="block text-[11px] capitalize text-slate-600 dark:text-purple-300">
+                        <span className="block text-[11px] capitalize text-[#4B5563] dark:text-[#DBEAFE]">
                           {contact.isDeleted
                             ? 'Previous conversation · read only'
                             : contact.role}
@@ -1226,7 +1256,7 @@ export function ChatPage() {
                           className={`shrink-0 text-[10px] font-semibold ${
                             onlineContactIds.has(contact.id)
                               ? 'text-emerald-700 dark:text-emerald-300'
-                              : 'text-slate-500 dark:text-slate-400'
+                              : 'text-[#71809A] dark:text-[#94A3B8]'
                           }`}
                         >
                           {onlineContactIds.has(contact.id)
@@ -1238,7 +1268,7 @@ export function ChatPage() {
                   );
                 })
               ) : (
-                <p className="px-3 py-4 text-center text-xs text-slate-600 dark:text-slate-300">
+                <p className="px-3 py-4 text-center text-xs text-[#4B5563] dark:text-[#CBD5E1]">
                   {contactSearch.trim()
                     ? `No student or lecturer account found for “${
                         contactSearch.trim().startsWith('@')
@@ -1252,9 +1282,9 @@ export function ChatPage() {
           )}
 
           {selectedContact && (
-            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+            <p className="mt-2 text-xs text-[#4B5563] dark:text-[#CBD5E1]">
               Conversation with{' '}
-              <strong className="inline-block rounded-md bg-violet-100 px-2 py-0.5 font-semibold text-violet-950 dark:bg-violet-950/60 dark:text-violet-200">
+              <strong className="inline-block rounded-md bg-violet-100 px-2 py-0.5 font-semibold text-violet-950 dark:bg-[#31234B] dark:text-[#D8CCFF]">
                 @{selectedContact.academicHandle}
               </strong>{' '}
               · Messages are private to this conversation.
@@ -1264,7 +1294,7 @@ export function ChatPage() {
       )}
 
       {mode === 'direct' && recipient && (
-        <div className="flex items-center gap-3 border-b border-violet-200 bg-violet-100 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center gap-3 border-b border-violet-200 bg-violet-100 px-4 py-3 dark:border-[#334155] dark:bg-[#0F172A]">
           <button
             type="button"
             onClick={() => {
@@ -1274,19 +1304,19 @@ export function ChatPage() {
               setShowContactDropdown(false);
               setError('');
             }}
-            className="rounded-lg px-3 py-2 text-sm font-semibold text-violet-800 transition hover:bg-violet-50 dark:text-violet-200 dark:hover:bg-slate-800"
+            className="rounded-lg px-3 py-2 text-sm font-semibold text-violet-800 transition hover:bg-[#F3F0FF] dark:text-[#D8CCFF] dark:hover:bg-[#26314A]"
           >
             ← Recent conversations
           </button>
           <div className="min-w-0">
-            <p className="inline-block max-w-full truncate rounded-md bg-violet-100 px-2 py-0.5 text-sm font-semibold text-violet-950 dark:bg-violet-950/60 dark:text-violet-200">
+            <p className="inline-block max-w-full truncate rounded-md bg-violet-100 px-2 py-0.5 text-sm font-semibold text-violet-950 dark:bg-[#31234B] dark:text-[#D8CCFF]">
               {selectedContact?.isDeleted
                 ? 'Deleted user'
                 : selectedContact
                   ? `@${selectedContact.academicHandle}`
                   : 'Private conversation'}
             </p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] text-[#71809A] dark:text-[#94A3B8]">
               Private conversation
             </p>
           </div>
@@ -1311,7 +1341,7 @@ export function ChatPage() {
       {(mode === 'group' || recipient) && (
       <div
         ref={listRef}
-        className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4 dark:bg-slate-950"
+        className="flex-1 space-y-3 overflow-y-auto bg-[#F3F6FC] p-4 dark:bg-[#0B1120]"
       >
         {hasMore && !loading && (
           <div className="text-center">
@@ -1319,7 +1349,7 @@ export function ChatPage() {
               type="button"
               onClick={() => void loadOlder()}
               disabled={loadingOlder}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-violet-800 hover:bg-violet-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-violet-200 dark:hover:bg-slate-700"
+              className="rounded-lg border border-[#D7DEEA] bg-white px-3 py-2 text-xs font-semibold text-violet-800 hover:bg-[#F3F0FF] disabled:opacity-50 dark:border-[#475569] dark:bg-[#172033] dark:text-[#D8CCFF] dark:hover:bg-[#26314A]"
             >
               {loadingOlder ? 'Loading older messages…' : 'Load older messages'}
             </button>
@@ -1327,39 +1357,72 @@ export function ChatPage() {
         )}
 
         {loading ? (
-          <p className="py-10 text-center text-sm text-slate-600 dark:text-slate-300">
+          <p className="py-10 text-center text-sm text-[#4B5563] dark:text-[#CBD5E1]">
             Loading messages…
           </p>
         ) : mode === 'direct' && !recipient ? (
-          <p className="py-10 text-center text-sm text-slate-600 dark:text-slate-300">
+          <p className="py-10 text-center text-sm text-[#4B5563] dark:text-[#CBD5E1]">
             Choose a contact to start a conversation.
           </p>
         ) : messages.length === 0 ? (
-          <p className="py-10 text-center text-sm text-slate-600 dark:text-slate-300">
+          <p className="py-10 text-center text-sm text-[#4B5563] dark:text-[#CBD5E1]">
             No messages yet. Start the conversation.
           </p>
         ) : (
           messages.map(message => (
             <article
               key={message.id}
+              onPointerDown={event => {
+                if (event.pointerType === 'mouse' || message.isDeleted || editing === message.id) return;
+                longPressStartRef.current = { x: event.clientX, y: event.clientY };
+                if (longPressTimerRef.current !== null) window.clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = window.setTimeout(() => {
+                  setSelectedMessage(message);
+                  longPressTimerRef.current = null;
+                }, 520);
+              }}
+              onPointerMove={event => {
+                const start = longPressStartRef.current;
+                if (!start) return;
+                if (Math.abs(event.clientX - start.x) > 12 || Math.abs(event.clientY - start.y) > 12) {
+                  if (longPressTimerRef.current !== null) window.clearTimeout(longPressTimerRef.current);
+                  longPressTimerRef.current = null;
+                  longPressStartRef.current = null;
+                }
+              }}
+              onPointerUp={() => {
+                if (longPressTimerRef.current !== null) window.clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+                longPressStartRef.current = null;
+              }}
+              onPointerCancel={() => {
+                if (longPressTimerRef.current !== null) window.clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+                longPressStartRef.current = null;
+              }}
+              onContextMenu={event => {
+                if (message.isDeleted || editing === message.id) return;
+                event.preventDefault();
+                setSelectedMessage(message);
+              }}
               className={`w-fit max-w-[85%] min-w-0 rounded-2xl border p-3 shadow-sm ${
                 message.isOwn
-                  ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-violet-800 dark:bg-violet-950/70 dark:text-violet-100'
-                  : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100'
+                  ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-[#6D5AA8] dark:bg-[#31234B] dark:text-[#F3E8FF]'
+                  : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-[#334155] dark:bg-[#172033] dark:text-[#F1F5F9]'
               }`}
             >
               <div
                 className={`mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] ${
                   message.isOwn
-                    ? 'text-violet-800 dark:text-violet-200'
-                    : 'text-slate-600 dark:text-slate-300'
+                    ? 'text-violet-800 dark:text-[#D8CCFF]'
+                    : 'text-[#4B5563] dark:text-[#CBD5E1]'
                 }`}
               >
                 <strong
                   className={`font-bold ${
                     message.isOwn
-                      ? 'text-violet-950 dark:text-violet-100'
-                      : 'text-slate-900 dark:text-slate-100'
+                      ? 'text-violet-950 dark:text-[#F3E8FF]'
+                      : 'text-[#091F5B] dark:text-[#F1F5F9]'
                   }`}
                 >
                   {message.senderId
@@ -1370,8 +1433,8 @@ export function ChatPage() {
                 <time
                   className={
                     message.isOwn
-                      ? 'text-violet-800 dark:text-violet-200'
-                      : 'text-slate-600 dark:text-slate-300'
+                      ? 'text-violet-800 dark:text-[#D8CCFF]'
+                      : 'text-[#4B5563] dark:text-[#CBD5E1]'
                   }
                 >
                   {new Date(message.createdAt).toLocaleString()}
@@ -1381,8 +1444,8 @@ export function ChatPage() {
                   <span
                     className={
                       message.isOwn
-                        ? 'text-violet-800 dark:text-violet-200'
-                        : 'text-slate-600 dark:text-slate-300'
+                        ? 'text-violet-800 dark:text-[#D8CCFF]'
+                        : 'text-[#4B5563] dark:text-[#CBD5E1]'
                     }
                   >
                     edited
@@ -1390,19 +1453,29 @@ export function ChatPage() {
                 )}
               </div>
 
+              {message.quotedMessage && (
+                <div className="mb-2 rounded-lg border-l-4 border-violet-500 bg-white/70 px-2.5 py-2 text-xs dark:bg-[#0B1120]/70">
+                  <p className="font-semibold text-violet-800 dark:text-violet-200">
+                    {message.forwardedFromMessageId ? 'Forwarded from' : 'Replying to'} @{message.quotedMessage.senderHandle}
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-[#475569] dark:text-[#CBD5E1]">
+                    {message.quotedMessage.isDeleted ? 'This message was deleted' : message.quotedMessage.contentType === 'voice' ? 'Voice message' : message.quotedMessage.contentType === 'sticker' ? 'Sticker' : message.quotedMessage.text}
+                  </p>
+                </div>
+              )}
               {message.isDeleted ? (
-                <p className="text-sm italic text-slate-600 dark:text-slate-300">
+                <p className="text-sm italic text-[#4B5563] dark:text-[#CBD5E1]">
                   This message was deleted.
                 </p>
               ) : message.contentType === 'voice' && message.voiceUrl ? (
                 <VoiceMessagePlayer src={message.voiceUrl} />
               ) : message.contentType === 'sticker' ? (
-                <div className="flex min-w-24 flex-col items-center rounded-xl bg-white px-4 py-3 dark:bg-slate-700">
+                <div className="flex min-w-24 flex-col items-center rounded-xl bg-white px-4 py-3 dark:bg-[#26314A]">
                   <span className="text-5xl">
                     {STICKERS.find(sticker => sticker.id === message.stickerId)?.emoji ?? '✨'}
                   </span>
 
-                  <span className="mt-1 text-xs font-semibold text-slate-800 dark:text-slate-100">
+                  <span className="mt-1 text-xs font-semibold text-[#1F2937] dark:text-[#F1F5F9]">
                     {STICKERS.find(sticker => sticker.id === message.stickerId)?.label ?? 'Sticker'}
                   </span>
                 </div>
@@ -1411,20 +1484,20 @@ export function ChatPage() {
                   <textarea
                     value={editText}
                     onChange={event => setEditText(event.target.value)}
-                    className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-900 outline-none focus:border-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                    className="chat-edit-input w-full rounded-lg border border-[#D7DEEA] bg-white p-2 text-sm text-[#091F5B] outline-none focus:border-[#2C36D9] dark:border-[#475569] dark:bg-[#0B1120] dark:text-white"
                   />
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => void saveEdit(message.id)}
-                      className="text-xs font-semibold text-violet-800 hover:underline dark:text-violet-200"
+                      className="text-xs font-semibold text-violet-800 hover:underline dark:text-[#D8CCFF]"
                     >
                       Save
                     </button>
 
                     <button
                       onClick={() => setEditing(null)}
-                      className="text-xs font-medium text-slate-600 hover:underline dark:text-slate-300"
+                      className="text-xs font-medium text-[#4B5563] hover:underline dark:text-[#CBD5E1]"
                     >
                       Cancel
                     </button>
@@ -1434,8 +1507,8 @@ export function ChatPage() {
                 <p
                   className={`whitespace-pre-wrap break-words text-sm ${
                     message.isOwn
-                      ? 'text-violet-950 dark:text-violet-100'
-                      : 'text-slate-900 dark:text-slate-100'
+                      ? 'text-violet-950 dark:text-[#F3E8FF]'
+                      : 'text-[#091F5B] dark:text-[#F1F5F9]'
                   }`}
                 >
                   {message.text}
@@ -1454,17 +1527,11 @@ export function ChatPage() {
                       Date.now() - new Date(message.createdAt).getTime() >
                         15 * 60 * 1000
                     }
-                    className="font-semibold text-violet-800 hover:underline disabled:opacity-40 dark:text-violet-200"
+                    className="font-semibold text-violet-800 hover:underline disabled:opacity-40 dark:text-[#D8CCFF]"
                   >
                     Edit
                   </button>
 
-                  <button
-                    onClick={() => void remove(message.id)}
-                    className="font-semibold text-rose-700 hover:underline dark:text-rose-300"
-                  >
-                    Delete
-                  </button>
                 </div>
               )}
             </article>
@@ -1473,11 +1540,82 @@ export function ChatPage() {
       </div>
       )}
 
+      {selectedMessage && (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/35 p-3 sm:items-center" onClick={() => setSelectedMessage(null)}>
+          <div className="w-full max-w-sm rounded-2xl border border-[#DCE4EF] bg-white p-3 shadow-2xl dark:border-[#475569] dark:bg-[#172033]" onClick={event => event.stopPropagation()}>
+            <div className="mb-2 border-b border-[#E5E7EB] pb-2 dark:border-[#334155]">
+              <p className="text-xs font-bold text-[#091F5B] dark:text-white">Message actions</p>
+              <p className="mt-1 truncate text-xs text-[#64748B] dark:text-[#CBD5E1]">{selectedMessage.contentType === 'voice' ? 'Voice message' : selectedMessage.contentType === 'sticker' ? 'Sticker' : selectedMessage.text}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => { setReplyTarget(selectedMessage); setSelectedMessage(null); window.setTimeout(() => messageInputRef.current?.focus(), 0); }} className="rounded-xl bg-violet-50 px-3 py-3 text-sm font-semibold text-violet-900 hover:bg-violet-100 dark:bg-[#31234B] dark:text-violet-100">Reply</button>
+              {mode === 'group' && selectedMessage.senderId && selectedMessage.senderId !== user?.id && (
+                <button type="button" onClick={() => { setReplyTarget(selectedMessage); setSelectedMessage(null); navigate(`/messages?userId=${encodeURIComponent(selectedMessage.senderId!)}`); }} className="rounded-xl bg-violet-50 px-3 py-3 text-sm font-semibold text-violet-900 hover:bg-violet-100 dark:bg-[#31234B] dark:text-violet-100">Reply privately</button>
+              )}
+              <button type="button" onClick={() => setForwardDialogOpen(true)} className="rounded-xl bg-violet-50 px-3 py-3 text-sm font-semibold text-violet-900 hover:bg-violet-100 dark:bg-[#31234B] dark:text-violet-100">Forward</button>
+              {selectedMessage.contentType === 'text' && selectedMessage.text && (
+                <button type="button" onClick={() => { void navigator.clipboard.writeText(selectedMessage.text ?? '').then(() => setError('Message copied.')).catch(() => setError('Could not copy this message.')); setSelectedMessage(null); }} className="rounded-xl bg-violet-50 px-3 py-3 text-sm font-semibold text-violet-900 hover:bg-violet-100 dark:bg-[#31234B] dark:text-violet-100">Copy</button>
+              )}
+              {selectedMessage.isOwn && !selectedMessage.isDeleted && (
+                <button type="button" onClick={() => { const id = selectedMessage.id; setSelectedMessage(null); void remove(id); }} className="rounded-xl bg-rose-50 px-3 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-300">Delete</button>
+              )}
+            </div>
+            <button type="button" onClick={() => setSelectedMessage(null)} className="mt-2 w-full rounded-xl px-3 py-2 text-sm font-semibold text-[#64748B] hover:bg-[#F3F6FC] dark:text-[#CBD5E1] dark:hover:bg-[#26314A]">Close</button>
+          </div>
+        </div>
+      )}
+
+      {forwardDialogOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/45 p-3" onClick={() => { setForwardDialogOpen(false); setSelectedMessage(null); }}>
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl dark:bg-[#172033]" onClick={event => event.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-bold text-[#091F5B] dark:text-white">Forward message</h3>
+              <button type="button" onClick={() => { setForwardDialogOpen(false); setSelectedMessage(null); }} className="rounded-lg px-2 py-1 text-sm text-[#64748B] hover:bg-[#F3F6FC] dark:text-[#CBD5E1]">Close</button>
+            </div>
+            <input value={forwardSearch} onChange={event => setForwardSearch(event.target.value)} placeholder="Find a student or lecturer" className="mb-3 w-full rounded-xl border border-[#D7DEEA] bg-[#F8FAFD] px-3 py-2.5 text-sm text-[#091F5B] outline-none focus:border-violet-500 dark:border-[#475569] dark:bg-[#0B1120] dark:text-white" />
+            <div className="max-h-64 space-y-1 overflow-y-auto">
+              {contacts.filter(contact => !contact.isDeleted && contact.id !== user?.id && contact.academicHandle.toLowerCase().includes(forwardSearch.trim().replace(/^@+/, '').toLowerCase())).map(contact => (
+                <button key={contact.id} type="button" disabled={forwarding} onClick={async () => {
+                  if (!selectedMessage) return;
+                  setForwarding(true);
+                  try {
+                    await chatApi.forwardMessage(selectedMessage.id, contact.id);
+                    setForwardDialogOpen(false);
+                    setSelectedMessage(null);
+                    setForwardSearch('');
+                    setError('Message forwarded.');
+                    void loadInbox();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : 'Message could not be forwarded.');
+                  } finally {
+                    setForwarding(false);
+                  }
+                }} className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold text-[#1F2937] hover:bg-violet-50 disabled:opacity-50 dark:text-white dark:hover:bg-[#31234B]">
+                  <span>@{contact.academicHandle}</span><span className="text-xs font-medium text-[#64748B] dark:text-[#CBD5E1]">{contact.role}</span>
+                </button>
+              ))}
+              {!contacts.some(contact => !contact.isDeleted && contact.id !== user?.id && contact.academicHandle.toLowerCase().includes(forwardSearch.trim().replace(/^@+/, '').toLowerCase())) && <p className="py-5 text-center text-xs text-[#64748B] dark:text-[#CBD5E1]">No matching contacts.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       {(mode === 'group' || recipient) && (
-      <div className="border-t border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-t border-[#DCE4EF] bg-white p-3 dark:border-[#334155] dark:bg-[#0F172A]">
+        {replyTarget && (
+          <div className="mb-3 flex items-start gap-3 rounded-xl border border-violet-200 bg-violet-50 p-3 dark:border-violet-800 dark:bg-[#211A35]">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-violet-800 dark:text-violet-200">Replying to @{replyTarget.senderHandle}</p>
+              <p className="mt-1 truncate text-xs text-[#475569] dark:text-[#CBD5E1]">
+                {replyTarget.isDeleted ? 'This message was deleted' : replyTarget.contentType === 'voice' ? 'Voice message' : replyTarget.contentType === 'sticker' ? 'Sticker' : replyTarget.text}
+              </p>
+            </div>
+            <button type="button" onClick={() => setReplyTarget(null)} className="rounded-lg px-2 py-1 text-xs font-semibold text-[#475569] hover:bg-white dark:text-[#CBD5E1] dark:hover:bg-[#334155]">Cancel</button>
+          </div>
+        )}
         {(showEmoji || showStickers) && (
-          <div className="mb-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-            <div className="mb-2 flex gap-2 border-b border-slate-200 pb-2 dark:border-slate-700">
+          <div className="mb-3 rounded-2xl border border-[#DCE4EF] bg-white p-3 shadow-sm dark:border-[#334155] dark:bg-[#172033]">
+            <div className="mb-2 flex gap-2 border-b border-[#DCE4EF] pb-2 dark:border-[#334155]">
               <button
                 type="button"
                 onClick={() => {
@@ -1486,8 +1624,8 @@ export function ChatPage() {
                 }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
                   showEmoji
-                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                    ? 'bg-violet-100 text-violet-950 dark:bg-[#31234B] dark:text-[#D8CCFF]'
+                    : 'text-[#4B5563] hover:bg-[#F8FAFD] dark:text-[#CBD5E1] dark:hover:bg-[#26314A]'
                 }`}
               >
                 Emoji
@@ -1501,8 +1639,8 @@ export function ChatPage() {
                 }}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
                   showStickers
-                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                    ? 'bg-violet-100 text-violet-950 dark:bg-[#31234B] dark:text-[#D8CCFF]'
+                    : 'text-[#4B5563] hover:bg-[#F8FAFD] dark:text-[#CBD5E1] dark:hover:bg-[#26314A]'
                 }`}
               >
                 Stickers
@@ -1519,7 +1657,7 @@ export function ChatPage() {
                       setText(value => value + emoji);
                       messageInputRef.current?.focus();
                     }}
-                    className="rounded-lg p-2 text-xl hover:bg-slate-100 dark:hover:bg-slate-700"
+                    className="rounded-lg p-2 text-xl hover:bg-[#F8FAFD] dark:hover:bg-[#26314A]"
                     aria-label={`Add ${emoji}`}
                   >
                     {emoji}
@@ -1539,11 +1677,11 @@ export function ChatPage() {
                       sending ||
                       (mode === 'direct' && (!recipient || recipientDeleted))
                     }
-                    className="flex flex-col items-center rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 hover:border-violet-300 hover:bg-violet-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-700 dark:hover:border-violet-500 dark:hover:bg-slate-600"
+                    className="flex flex-col items-center rounded-xl border border-[#DCE4EF] bg-[#F3F6FC] px-2 py-3 hover:border-violet-300 hover:bg-[#F3F0FF] disabled:opacity-50 dark:border-[#475569] dark:bg-[#26314A] dark:hover:border-violet-500 dark:hover:bg-[#334155]"
                   >
                     <span className="text-3xl">{sticker.emoji}</span>
 
-                    <span className="mt-1 text-[10px] font-medium text-slate-700 dark:text-slate-100">
+                    <span className="mt-1 text-[10px] font-medium text-[#1F2937] dark:text-[#F1F5F9]">
                       {sticker.label}
                     </span>
                   </button>
@@ -1553,7 +1691,7 @@ export function ChatPage() {
           </div>
         )}
 
-        <div className="flex items-end gap-1.5 rounded-[28px] border border-slate-300 bg-slate-100 px-3 py-1.5 focus-within:border-emerald-500 dark:border-slate-600 dark:bg-slate-800 dark:focus-within:border-emerald-400">
+        <div className="flex items-end gap-1.5 rounded-[28px] border border-[#D7DEEA] bg-[#F8FAFD] px-3 py-1.5 focus-within:border-[#2C36D9] dark:border-[#475569] dark:bg-[#172033] dark:focus-within:border-[#8B7AE8]">
           {/* Text entry and voice recording/preview are mutually exclusive modes. */}
           {!recording && !previewBelongsToCurrentChat && (
             <>
@@ -1569,7 +1707,7 @@ export function ChatPage() {
                     setShowStickers(false);
                   }
                 }}
-                className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#4B5563] hover:bg-[#E8EDF5] dark:text-[#E2E8F0] dark:hover:bg-[#26314A]"
                 aria-label={
                   showEmoji || showStickers
                     ? 'Close emoji and sticker panel and open keyboard'
@@ -1609,7 +1747,7 @@ export function ChatPage() {
                 }
                 disabled={recipientDeleted}
                 rows={1}
-                className="max-h-28 min-h-10 min-w-0 flex-1 resize-y border-0 bg-transparent px-0.5 py-2.5 text-[15px] text-slate-900 caret-slate-900 outline-none placeholder:text-slate-500 focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white dark:caret-white dark:placeholder:text-slate-300"
+                className="chat-message-input max-h-28 min-h-10 min-w-0 flex-1 resize-y border-0 bg-transparent px-0.5 py-2.5 text-[15px] text-[#091F5B] caret-[#091F5B] outline-none placeholder:text-[#71809A] focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white dark:caret-white dark:placeholder:text-[#94A3B8]"
               />
 
               {/* Use text first: the microphone is only available for an empty draft. */}
@@ -1657,7 +1795,7 @@ export function ChatPage() {
           )}
 
           {recording && (
-            <div className="mb-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-2 py-1.5 dark:bg-slate-700">
+            <div className="mb-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-full bg-white px-2 py-1.5 dark:bg-[#26314A]">
               <span className="shrink-0 text-[11px] font-semibold text-rose-700 dark:text-rose-300">
                 Recording · release to preview
               </span>
@@ -1679,7 +1817,7 @@ export function ChatPage() {
           )}
 
           {voicePreview && previewBelongsToCurrentChat && (
-            <div className="mb-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-2xl bg-white px-2 py-1.5 dark:bg-slate-700">
+            <div className="mb-0.5 flex min-w-0 flex-1 items-center gap-2 rounded-2xl bg-white px-2 py-1.5 dark:bg-[#26314A]">
               <audio
                 ref={previewAudioRef}
                 preload="metadata"
@@ -1692,14 +1830,14 @@ export function ChatPage() {
               <button
                 type="button"
                 onClick={() => void toggleVoicePreview()}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-600 dark:text-white dark:hover:bg-slate-500"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F8FAFD] text-[#1F2937] hover:bg-[#E8EDF5] dark:bg-[#26314A] dark:text-white dark:hover:bg-[#334155]"
                 aria-label={previewPlaying ? 'Pause voice preview' : 'Play voice preview'}
                 title={previewPlaying ? 'Pause preview' : 'Play preview'}
               >
                 {previewPlaying ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}
               </button>
 
-              <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700 dark:text-slate-100">
+              <span className="min-w-0 flex-1 truncate text-xs font-medium text-[#1F2937] dark:text-[#F1F5F9]">
                 Voice recording ready to send
               </span>
 
@@ -1747,7 +1885,7 @@ export function ChatPage() {
           )}
         </div>
 
-        <p className="mt-2 text-[10px] text-slate-600 dark:text-slate-300">
+        <p className="mt-2 text-[10px] text-[#4B5563] dark:text-[#CBD5E1]">
           {recording
             ? 'Keep holding the microphone while recording; release it to preview.'
             : previewBelongsToCurrentChat
