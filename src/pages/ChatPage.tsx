@@ -185,6 +185,9 @@ export function ChatPage() {
   const recipientDeleted = Boolean(selectedContact?.isDeleted);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [hiddenDeletedMessageIds, setHiddenDeletedMessageIds] = useState<Set<string>>(() => new Set());
+  const [expandedDeletedMessageId, setExpandedDeletedMessageId] = useState<string | null>(null);
+  const visibleMessages = messages.filter(message => !hiddenDeletedMessageIds.has(message.id));
   const [hasMore, setHasMore] = useState(false);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -1087,13 +1090,13 @@ export function ChatPage() {
   return (
     <section className="chat-page mx-auto flex h-[calc(100vh-110px)] min-h-[640px] max-w-6xl flex-col overflow-hidden rounded-2xl border border-[#DCE4EF] bg-white text-[#091F5B] shadow-sm dark:border-[#334155] dark:bg-[#0F172A] dark:text-[#F1F5F9]">
       {/* Chat header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-[#334155] dark:bg-[#0F172A]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-[#334155] dark:bg-[#0F172A] lg:dark:border-violet-200 lg:dark:bg-violet-100">
         <div>
-          <h2 className="font-bold text-[#091F5B] dark:!text-white">
+          <h2 className="font-bold text-[#091F5B] dark:!text-white lg:dark:!text-violet-950">
             {mode === 'group' ? 'Group chat room' : 'Private DM'}
           </h2>
 
-          <p className="text-xs text-[#4B5563] dark:text-[#CBD5E1]">
+          <p className="text-xs text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900">
             {mode === 'group'
               ? 'Your institution, faculty and department community'
               : 'Private conversations with students and lecturers'}
@@ -1116,12 +1119,12 @@ export function ChatPage() {
       </div>
 
       {mode === 'direct' && !recipient && (
-        <div className="border-b border-[#DCE4EF] bg-[#F3F6FC] px-4 py-3 dark:border-[#334155] dark:bg-[#0B1120]">
+        <div className="border-b border-[#DCE4EF] bg-[#F3F6FC] px-4 py-3 dark:border-[#334155] dark:bg-[#0B1120] lg:dark:border-violet-200 lg:dark:bg-violet-100">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-[#1F2937] dark:text-[#E2E8F0]">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-[#1F2937] dark:text-[#E2E8F0] lg:dark:text-violet-950">
               Recent conversations
             </h3>
-            <span className="text-[10px] text-[#71809A] dark:text-[#94A3B8]">
+            <span className="text-[10px] text-[#71809A] dark:text-[#94A3B8] lg:dark:text-violet-800">
               {inbox.length} conversation{inbox.length === 1 ? '' : 's'}
             </span>
           </div>
@@ -1140,13 +1143,13 @@ export function ChatPage() {
                   }}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition-colors ${
                     recipient === item.contact.id
-                      ? 'bg-violet-100 dark:bg-[#31234B]'
-                      : 'bg-violet-50 hover:bg-[#F3F0FF] dark:bg-[#0F172A] dark:hover:bg-[#26314A]'
+                      ? 'bg-violet-100 dark:bg-[#31234B] lg:dark:bg-violet-200'
+                      : 'bg-violet-50 hover:bg-[#F3F0FF] dark:bg-[#0F172A] dark:hover:bg-[#26314A] lg:dark:bg-violet-50 lg:dark:hover:bg-violet-200'
                   }`}
                 >
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-xs font-semibold text-[#091F5B] dark:!text-white">
+                      <span className="truncate text-xs font-semibold text-[#091F5B] dark:!text-white lg:dark:!text-violet-950">
                         {item.contact.isDeleted ? 'Deleted user' : `@${item.contact.academicHandle}`}
                       </span>
                       {item.unreadCount > 0 && (
@@ -1155,11 +1158,11 @@ export function ChatPage() {
                         </span>
                       )}
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-[#4B5563] dark:text-[#CBD5E1]">
+                    <span className="mt-0.5 block truncate text-[11px] text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900">
                       {item.lastMessage.isOwn ? 'You: ' : ''}{item.lastMessage.preview}
                     </span>
                   </span>
-                  <time className="shrink-0 text-[10px] text-[#71809A] dark:text-[#94A3B8]">
+                  <time className="shrink-0 text-[10px] text-[#71809A] dark:text-[#94A3B8] lg:dark:text-violet-800">
                     {new Date(item.lastMessage.createdAt).toLocaleDateString()}
                   </time>
                 </button>
@@ -1364,12 +1367,12 @@ export function ChatPage() {
           <p className="py-10 text-center text-sm text-[#4B5563] dark:text-[#CBD5E1]">
             Choose a contact to start a conversation.
           </p>
-        ) : messages.length === 0 ? (
+        ) : visibleMessages.length === 0 ? (
           <p className="py-10 text-center text-sm text-[#4B5563] dark:text-[#CBD5E1]">
             No messages yet. Start the conversation.
           </p>
         ) : (
-          messages.map(message => (
+          visibleMessages.map(message => (
             <article
               key={message.id}
               onPointerDown={event => {
@@ -1407,22 +1410,22 @@ export function ChatPage() {
               }}
               className={`w-fit max-w-[85%] min-w-0 rounded-2xl border p-3 shadow-sm ${
                 message.isOwn
-                  ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-[#6D5AA8] dark:bg-[#31234B] dark:text-[#F3E8FF]'
-                  : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-[#334155] dark:bg-[#172033] dark:text-[#F1F5F9]'
+                  ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-[#6D5AA8] dark:bg-[#31234B] dark:text-[#F3E8FF] lg:dark:border-violet-300 lg:dark:bg-violet-100 lg:dark:text-violet-950'
+                  : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-[#334155] dark:bg-[#172033] dark:text-[#F1F5F9] lg:dark:border-blue-200 lg:dark:bg-blue-100 lg:dark:text-blue-950'
               }`}
             >
               <div
                 className={`mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] ${
                   message.isOwn
-                    ? 'text-violet-800 dark:text-[#D8CCFF]'
-                    : 'text-[#4B5563] dark:text-[#CBD5E1]'
+                    ? 'text-violet-800 dark:text-[#D8CCFF] lg:dark:text-violet-900'
+                    : 'text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900'
                 }`}
               >
                 <strong
                   className={`font-bold ${
                     message.isOwn
-                      ? 'text-violet-950 dark:text-[#F3E8FF]'
-                      : 'text-[#091F5B] dark:text-[#F1F5F9]'
+                      ? 'text-violet-950 dark:text-[#F3E8FF] lg:dark:text-violet-950'
+                      : 'text-[#091F5B] dark:text-[#F1F5F9] lg:dark:text-violet-950'
                   }`}
                 >
                   {message.senderId
@@ -1433,8 +1436,8 @@ export function ChatPage() {
                 <time
                   className={
                     message.isOwn
-                      ? 'text-violet-800 dark:text-[#D8CCFF]'
-                      : 'text-[#4B5563] dark:text-[#CBD5E1]'
+                      ? 'text-violet-800 dark:text-[#D8CCFF] lg:dark:text-violet-900'
+                      : 'text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900'
                   }
                 >
                   {new Date(message.createdAt).toLocaleString()}
@@ -1444,7 +1447,7 @@ export function ChatPage() {
                   <span
                     className={
                       message.isOwn
-                        ? 'text-violet-800 dark:text-[#D8CCFF]'
+                        ? 'text-violet-800 dark:text-[#D8CCFF] lg:dark:text-violet-900'
                         : 'text-[#4B5563] dark:text-[#CBD5E1]'
                     }
                   >
@@ -1464,9 +1467,29 @@ export function ChatPage() {
                 </div>
               )}
               {message.isDeleted ? (
-                <p className="text-sm italic text-[#4B5563] dark:text-[#CBD5E1]">
-                  This message was deleted.
-                </p>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedDeletedMessageId(current => current === message.id ? null : message.id)}
+                    className="block rounded-md px-1 py-0.5 text-left text-sm italic text-[#4B5563] transition hover:bg-[#E8EDF5] hover:text-[#091F5B] focus:outline-none focus:ring-2 focus:ring-[#2C36D9] dark:text-[#CBD5E1] dark:hover:bg-[#26314A] dark:hover:text-white"
+                    aria-expanded={expandedDeletedMessageId === message.id}
+                    aria-label="Show options for deleted message"
+                  >
+                    This message was deleted.
+                  </button>
+                  {expandedDeletedMessageId === message.id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHiddenDeletedMessageIds(current => new Set([...current, message.id]));
+                        setExpandedDeletedMessageId(null);
+                      }}
+                      className="rounded-lg border border-[#D7DEEA] bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-[#F3F0FF] dark:border-[#475569] dark:bg-[#172033] dark:text-[#D8CCFF] dark:hover:bg-[#26314A]"
+                    >
+                      Remove from my chat
+                    </button>
+                  )}
+                </div>
               ) : message.contentType === 'voice' && message.voiceUrl ? (
                 <VoiceMessagePlayer src={message.voiceUrl} />
               ) : message.contentType === 'sticker' ? (
