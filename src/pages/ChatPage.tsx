@@ -1376,11 +1376,15 @@ export function ChatPage() {
             <article
               key={message.id}
               onPointerDown={event => {
-                if (event.pointerType === 'mouse' || message.isDeleted || editing === message.id) return;
+                if (event.pointerType === 'mouse' || editing === message.id) return;
                 longPressStartRef.current = { x: event.clientX, y: event.clientY };
                 if (longPressTimerRef.current !== null) window.clearTimeout(longPressTimerRef.current);
                 longPressTimerRef.current = window.setTimeout(() => {
-                  setSelectedMessage(message);
+                  if (message.isDeleted) {
+                    setExpandedDeletedMessageId(message.id);
+                  } else {
+                    setSelectedMessage(message);
+                  }
                   longPressTimerRef.current = null;
                 }, 520);
               }}
@@ -1404,9 +1408,13 @@ export function ChatPage() {
                 longPressStartRef.current = null;
               }}
               onContextMenu={event => {
-                if (message.isDeleted || editing === message.id) return;
+                if (editing === message.id) return;
                 event.preventDefault();
-                setSelectedMessage(message);
+                if (message.isDeleted) {
+                  setExpandedDeletedMessageId(message.id);
+                } else {
+                  setSelectedMessage(message);
+                }
               }}
               className={`w-fit max-w-[85%] min-w-0 rounded-2xl border p-3 shadow-sm ${
                 message.isOwn
@@ -1486,7 +1494,7 @@ export function ChatPage() {
                       }}
                       className="rounded-lg border border-[#D7DEEA] bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-[#F3F0FF] dark:border-[#475569] dark:bg-[#172033] dark:text-[#D8CCFF] dark:hover:bg-[#26314A]"
                     >
-                      Remove from my chat
+                      Delete
                     </button>
                   )}
                 </div>
