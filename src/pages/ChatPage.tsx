@@ -403,6 +403,7 @@ export function ChatPage() {
               : { items: [], hasMore: false, nextBefore: null };
 
         if (requestSequence !== requestSequenceRef.current) return;
+        setHiddenDeletedMessageIds(new Set(result.hiddenMessageIds ?? []));
 
         if (quiet) {
           const container = listRef.current;
@@ -762,6 +763,18 @@ export function ChatPage() {
       await loadMessages(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Message could not be deleted.');
+    }
+  };
+
+  const hideDeletedMessage = async (id: string) => {
+    try {
+      await chatApi.hideDeletedMessage(id);
+      setHiddenDeletedMessageIds(current => new Set([...current, id]));
+      setMessages(current => current.filter(message => message.id !== id));
+      setExpandedDeletedMessageId(null);
+      await loadInbox();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Deleted message could not be removed from your chat.');
     }
   };
 
@@ -1507,10 +1520,7 @@ export function ChatPage() {
                   {expandedDeletedMessageId === message.id && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setHiddenDeletedMessageIds(current => new Set([...current, message.id]));
-                        setExpandedDeletedMessageId(null);
-                      }}
+                      onClick={() => void hideDeletedMessage(message.id)}
                       className="rounded-lg border border-[#D7DEEA] bg-white px-3 py-1.5 text-xs font-semibold text-violet-800 transition hover:bg-[#F3F0FF] dark:border-[#475569] dark:bg-[#172033] dark:text-[#D8CCFF] dark:hover:bg-[#26314A]"
                     >
                       Delete

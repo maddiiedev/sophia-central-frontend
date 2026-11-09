@@ -4,7 +4,7 @@ import { appConfig } from '../config/env';
 export type ChatContact = { id: string; academicHandle: string; role: 'student' | 'lecturer'; institution?: string; faculty?: string; department?: string; isDeleted?: boolean };
 export type ChatQuotedMessage = { id: string; senderHandle: string; contentType: 'text' | 'voice' | 'sticker'; text: string | null; stickerId?: string | null; isDeleted: boolean };
 export type ChatMessage = { id: string; kind: 'group' | 'direct'; senderId: string | null; senderHandle: string; contentType: 'text' | 'voice' | 'sticker'; text: string | null; voiceUrl: string | null; stickerId?: string | null; isDeleted: boolean; editedAt: string | null; createdAt: string; isOwn: boolean; replyToMessageId?: string | null; forwardedFromMessageId?: string | null; quotedMessage?: ChatQuotedMessage | null };
-export type ChatPage = { items: ChatMessage[]; hasMore: boolean; nextBefore: string | null };
+export type ChatPage = { items: ChatMessage[]; hasMore: boolean; nextBefore: string | null; hiddenMessageIds?: string[] };
 export type ChatInboxItem = {
   contact: ChatContact;
   lastMessage: {
@@ -41,6 +41,7 @@ export const chatApi = {
   forwardMessage: (messageId: string, recipientId: string) => apiRequest<ChatMessage>('/chat/messages', { method: 'POST', body: JSON.stringify({ kind: 'direct', recipientId, forwardMessageId: messageId }) }),
   edit: (id: string, text: string) => apiRequest<ChatMessage>(`/chat/messages/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ text }) }),
   remove: (id: string) => apiRequest<{ success: boolean }>(`/chat/messages/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  hideDeletedMessage: (id: string) => apiRequest<{ success: boolean }>(`/chat/messages/${encodeURIComponent(id)}/hide`, { method: 'DELETE' }),
   voiceUpload: (mimetype: string, size: number) => apiRequest<{ uploadUrl: string; key: string; contentType: string }>('/chat/voice-upload', { method: 'POST', body: JSON.stringify({ mimetype, size }) }),
   sendVoice: (kind: 'group' | 'direct', voiceKey: string, recipientId?: string, replyToMessageId?: string) => apiRequest<ChatMessage>('/chat/messages', { method: 'POST', body: JSON.stringify({ kind, voiceKey, ...(recipientId ? { recipientId } : {}), ...(replyToMessageId ? { replyToMessageId } : {}) }) }),
   sendSticker: (kind: 'group' | 'direct', stickerId: string, recipientId?: string, replyToMessageId?: string) => apiRequest<ChatMessage>('/chat/messages', { method: 'POST', body: JSON.stringify({ kind, stickerId, ...(recipientId ? { recipientId } : {}), ...(replyToMessageId ? { replyToMessageId } : {}) }) }),
