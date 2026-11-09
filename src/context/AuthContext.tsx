@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { authApi } from '../api/auth';
 import { academicApi } from '../api/academic';
 import { setCsrfToken } from '../lib/api/client';
-import { profileImageApi } from '../api/upload';
 import type { User, UserRole } from '../types';
 
 type RegisterPayload = {
@@ -31,18 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCsrfToken(response.csrfToken);
   }, []);
   const clearSession = useCallback(() => { setUser(null); setCsrfToken(null); }, []);
-  const hydrateUser = useCallback(async (nextUser: User): Promise<User> => {
-    if (!nextUser.profileImage) return nextUser;
-    try {
-      const image = await profileImageApi.getUrl();
-      return image.url ? { ...nextUser, profileImage: image.url } : nextUser;
-    } catch { return nextUser; }
-  }, []);
+  // /auth/me already returns the stable public R2 profile-image URL.
+  // Keep session restoration independent from any separate image-URL request.
   const refreshSession = useCallback(async () => {
     const response = await authApi.me();
-    setUser(await hydrateUser(response.user));
+    setUser(response.user);
     try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
-  }, [hydrateUser]);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -68,10 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (identifier: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
     const response = await authApi.login({ identifier, password });
-    setUser(await hydrateUser(response.user));
+    setUser(response.user);
     try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
-  }, [initializeCsrf, hydrateUser]);
+  }, [initializeCsrf]);
 
   const register = useCallback(async (payload: RegisterPayload) => {
     await initializeCsrf();
@@ -100,8 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeOnboarding = useCallback(async (payload: OnboardingPayload) => {
     const response = await academicApi.completeOnboarding(payload);
-    setUser(await hydrateUser(response.user));
-  }, [hydrateUser]);
+    setUser(response.user);
+  }, []);
   const logout = useCallback(async () => {
     try { await authApi.logout(); } finally { clearSession(); }
   }, [clearSession]);

@@ -11,11 +11,49 @@ function stageError(stage: string, error: unknown): Error {
   return new Error(`${stage} failed: ${detail}`);
 }
 
+async function prepareProfileImage(file: File): Promise<File> {
+  // Keep profile avatars small before they leave the device. The API still validates
+  // the final MIME type and size, so this is an optimization, not a security boundary.
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = objectUrl;
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error('The selected image could not be opened.'));
+    });
+
+    const maxDimension = 512;
+    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) return file;
+    context.drawImage(image, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/webp', 0.82);
+    });
+    if (!blob || blob.size >= file.size) return file;
+
+    const extension = blob.type === 'image/webp' ? 'webp' : blob.type === 'image/png' ? 'png' : 'jpg';
+    return new File([blob], `profile-image.${extension}`, {
+      type: blob.type || 'image/jpeg',
+      lastModified: Date.now(),
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export const profileImageApi = {
-  getUrl: () => apiRequest<{ url: string | null }>('/upload/profile-image/url', { method: 'GET' }),
   async upload(file: File) {
+    const optimizedFile = await prepareProfileImage(file);
     const body = new FormData();
-    body.append('file', file, file.name);
+    body.append('file', optimizedFile, optimizedFile.name);
     return apiRequest<{ success: boolean; profileImage: string; user: import('../types').User }>(
       '/upload/profile-image',
       { method: 'POST', body },
