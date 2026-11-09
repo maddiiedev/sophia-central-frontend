@@ -1,6 +1,6 @@
 import { apiRequest } from '../lib/api/client';
 
-export type InstitutionType = 'university' | 'polytechnic' | 'monotechnic' | 'college_of_education';
+export type InstitutionType = 'university' | 'polytechnic' | 'college_of_education';
 
 export interface DepartmentOption {
   id: string;
