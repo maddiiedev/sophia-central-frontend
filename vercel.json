@@ -32,7 +32,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(png|jpg|jpeg|webp|avif|svg|ico))",
+      "source": "/sophia-central-email-logo.png",
       "headers": [
         {
           "key": "Cache-Control",
