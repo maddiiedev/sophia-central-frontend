@@ -1130,7 +1130,7 @@ export function ChatPage() {
           <p data-chat-desktop-header-subtitle className="text-xs text-[#4B5563] dark:text-[#CBD5E1] lg:dark:text-violet-900">
             {mode === 'group'
               ? 'Your institution, faculty and department community'
-              : 'Private conversations with students and lecturers'}
+              : 'Institution-wide private conversations across all faculties and departments'}
           </p>
 
           <button
@@ -1214,7 +1214,7 @@ export function ChatPage() {
             className="mb-1 block text-xs font-semibold text-[#1F2937] dark:text-[#E2E8F0]"
             htmlFor="chat-contact-search"
           >
-            Find a student or lecturer
+            Find a student or lecturer at your institution
           </label>
 
           <input
@@ -1227,7 +1227,7 @@ export function ChatPage() {
               setContactSearch(value);
               setShowContactDropdown(Boolean(value.trim()));
             }}
-            placeholder="Search username (e.g. @username)"
+            placeholder="Search your institution by username (e.g. @username)"
             className="chat-search-input mb-2 w-full rounded-xl border border-[#D7DEEA] bg-[#F3F6FC] px-3 py-2.5 text-sm text-[#091F5B] outline-none placeholder:text-[#71809A] focus:border-[#2C36D9] focus:ring-2 focus:ring-[#2C36D9]/20 dark:border-[#475569] dark:bg-[#172033] dark:text-white dark:placeholder:text-[#94A3B8] dark:focus:border-[#8B7AE8]"
           />
 
@@ -1240,7 +1240,7 @@ export function ChatPage() {
               {contactSearchLoading ? (
                 <p className="px-3 py-4 text-center text-xs text-[#4B5563] dark:text-[#CBD5E1]">
                   {contactSearch.trim()
-                    ? 'Searching usernames…'
+                    ? 'Searching your institution…'
                     : 'Searching usernames…'}
                 </p>
               ) : contactSearchError ? (
@@ -1305,12 +1305,12 @@ export function ChatPage() {
               ) : (
                 <p className="px-3 py-4 text-center text-xs text-[#4B5563] dark:text-[#CBD5E1]">
                   {contactSearch.trim()
-                    ? `No student or lecturer account found for “${
+                    ? `No student or lecturer at your institution found for “${
                         contactSearch.trim().startsWith('@')
                           ? contactSearch.trim()
                           : `@${contactSearch.trim()}`
                       }”. Check the username and try again.`
-                    : 'Type a username to search for a student or lecturer.'}
+                    : 'Type a username to find a student or lecturer at your institution.'}
                 </p>
               )}
             </div>
@@ -1632,7 +1632,7 @@ export function ChatPage() {
               <h3 className="text-base font-bold text-[#091F5B] dark:text-white">Forward message</h3>
               <button type="button" onClick={() => { setForwardDialogOpen(false); setSelectedMessage(null); }} className="rounded-lg px-2 py-1 text-sm text-[#64748B] hover:bg-[#F3F6FC] dark:text-[#CBD5E1]">Close</button>
             </div>
-            <input value={forwardSearch} onChange={event => setForwardSearch(event.target.value)} placeholder="Find a student or lecturer" className="mb-3 w-full rounded-xl border border-[#D7DEEA] bg-[#F8FAFD] px-3 py-2.5 text-sm text-[#091F5B] outline-none focus:border-violet-500 dark:border-[#475569] dark:bg-[#0B1120] dark:text-white" />
+            <input value={forwardSearch} onChange={event => setForwardSearch(event.target.value)} placeholder="Find someone at your institution" className="mb-3 w-full rounded-xl border border-[#D7DEEA] bg-[#F8FAFD] px-3 py-2.5 text-sm text-[#091F5B] outline-none focus:border-violet-500 dark:border-[#475569] dark:bg-[#0B1120] dark:text-white" />
             <div className="max-h-64 space-y-1 overflow-y-auto">
               {contacts.filter(contact => !contact.isDeleted && contact.id !== user?.id && contact.academicHandle.toLowerCase().includes(forwardSearch.trim().replace(/^@+/, '').toLowerCase())).map(contact => (
                 <button key={contact.id} type="button" disabled={forwarding} onClick={async () => {
