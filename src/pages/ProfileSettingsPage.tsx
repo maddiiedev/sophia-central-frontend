@@ -23,7 +23,6 @@ export function ProfileSettingsPage() {
   const [form, setForm] = useState({ institution: '', faculty: '', department: '', programme: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
   const [academicInstitutions, setAcademicInstitutions] = useState<InstitutionOption[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
-  const [catalogueSubmitting, setCatalogueSubmitting] = useState(false);
   const [facultyFocused, setFacultyFocused] = useState(false);
   const [departmentFocused, setDepartmentFocused] = useState(false);
   const [teachingAssignments, setTeachingAssignments] = useState<TeachingAssignmentPayload[]>([]);
@@ -80,26 +79,9 @@ export function ProfileSettingsPage() {
     }
     const selectedDepartment = departmentOptions.find((item) => item.name.trim().toLocaleLowerCase() === departmentName.toLocaleLowerCase());
     setSavingField('faculty');
-    setCatalogueSubmitting(true);
     setMessage('');
     setError('');
     try {
-      let pendingFacultyId: string | undefined;
-      if (!selectedFaculty) {
-        const pendingFaculty = await academicApi.submitCatalogueEntry({
-          entryType: 'faculty', name: facultyName, parentInstitutionId: selectedInstitution.id,
-        }) as { id?: string };
-        pendingFacultyId = pendingFaculty?.id;
-        if (!pendingFacultyId) throw new Error('Faculty submission was not confirmed. Please try again.');
-      }
-      if (!selectedDepartment) {
-        await academicApi.submitCatalogueEntry({
-          entryType: 'department',
-          name: departmentName,
-          parentInstitutionId: selectedInstitution.id,
-          ...(selectedFaculty ? { parentFacultyId: selectedFaculty.id } : { parentFacultySubmissionId: pendingFacultyId }),
-        });
-      }
       await apiRequest(`/users/${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -111,15 +93,12 @@ export function ProfileSettingsPage() {
       });
       await refreshSession();
       setEditingInstitution(false);
-      const hasPending = !selectedFaculty || !selectedDepartment;
-      setMessage(hasPending
-        ? `Your institution and academic placement are saved and active now. Any missing faculty or department was sent to moderators/admins for catalogue review. ${user.role === 'student' ? 'Your Student Group Chat now uses the new institution, faculty and department; programme does not affect group membership.' : 'Your academic sections use the new placement.'} Review does not block access.`
-        : `Academic placement updated successfully. ${user.role === 'student' ? 'Your Student Group Chat now uses institution, faculty and department; programme remains a separate profile field.' : 'Your academic sections use the selected institution, faculty and department.'}`);
+      setMessage(`Academic placement updated successfully. ${user.role === 'student' ? 'Your Student Group Chat now uses institution, faculty and department; programme remains a separate profile field.' : 'Your academic sections use the selected institution, faculty and department.'} Missing catalogue entries are saved to your profile and are not sent for moderation review.`);
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update academic placement.');
       return false;
-    } finally { setSavingField(null); setCatalogueSubmitting(false); }
+    } finally { setSavingField(null); }
   };
   const uploadPhoto = async (file?: File) => {
     if (!file) return;
@@ -169,10 +148,7 @@ export function ProfileSettingsPage() {
         }),
       });
       await refreshSession();
-      const pendingPlacement = !selectedFaculty || !departmentOptions.some((item) => item.name.trim().toLocaleLowerCase() === form.department.trim().toLocaleLowerCase());
-      setMessage(pendingPlacement
-        ? 'Profile updated. Your new academic placement is active while the missing catalogue entries await moderator/admin review.'
-        : 'Profile updated successfully.');
+      setMessage('Profile updated successfully.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update profile.');
     } finally { setSaving(false); }
@@ -273,17 +249,17 @@ export function ProfileSettingsPage() {
               <label htmlFor="profile-faculty" className="mb-2 block text-sm font-semibold text-[#091F5B]">Faculty / School / College</label>
               <input id="profile-faculty" value={form.faculty} disabled={catalogueLoading || !selectedInstitution} onFocus={() => setFacultyFocused(true)} onBlur={() => window.setTimeout(() => setFacultyFocused(false), 140)} onChange={(event) => setForm((current) => ({ ...current, faculty: event.target.value, department: '' }))} placeholder="Type or choose faculty / school" className="brand-input" autoComplete="off" role="combobox" aria-expanded={facultyFocused && facultyOptions.length > 0} aria-controls="profile-faculty-suggestions" />
               {facultyFocused && form.faculty.trim() && facultyOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.faculty.trim().toLocaleLowerCase())).slice(0, 8).length > 0 && <div id="profile-faculty-suggestions" role="listbox" className="mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#DCE4EF] bg-white p-1 shadow-lg">{facultyOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.faculty.trim().toLocaleLowerCase())).slice(0, 8).map((item) => <button key={item.id} type="button" role="option" onMouseDown={(event) => event.preventDefault()} onClick={() => { setForm((current) => ({ ...current, faculty: item.name, department: '' })); setFacultyFocused(false); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#091F5B] hover:bg-[#F3F1FF]">{item.name}</button>)}</div>}
-              {!catalogueLoading && form.faculty.trim() && !selectedFaculty && <p className="mt-1 text-xs leading-5 text-amber-700">This faculty is not in the imported catalogue. Save academic placement to submit it for moderator/admin review. You can enter the department below now.</p>}
+              {!catalogueLoading && form.faculty.trim() && !selectedFaculty && <p className="mt-1 text-xs leading-5 text-amber-700">This faculty is not in the selected institution's catalogue yet. You can still save it directly to your profile.</p>}
             </div>
             <div>
               <label htmlFor="profile-department" className="mb-2 block text-sm font-semibold text-[#091F5B]">Department</label>
               <input id="profile-department" value={form.department} disabled={!form.faculty.trim() || catalogueLoading} onFocus={() => setDepartmentFocused(true)} onBlur={() => window.setTimeout(() => setDepartmentFocused(false), 140)} onChange={(event) => update('department', event.target.value)} placeholder={form.faculty.trim() ? 'Type or choose department' : 'Enter faculty first'} className="brand-input" autoComplete="off" role="combobox" aria-expanded={departmentFocused && departmentOptions.length > 0} aria-controls="profile-department-suggestions" />
               {departmentFocused && form.department.trim() && departmentOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.department.trim().toLocaleLowerCase())).slice(0, 8).length > 0 && <div id="profile-department-suggestions" role="listbox" className="mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#DCE4EF] bg-white p-1 shadow-lg">{departmentOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.department.trim().toLocaleLowerCase())).slice(0, 8).map((item) => <button key={item.id} type="button" role="option" onMouseDown={(event) => event.preventDefault()} onClick={() => { update('department', item.name); setDepartmentFocused(false); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#091F5B] hover:bg-[#F3F1FF]">{item.name}</button>)}</div>}
-              {form.department.trim() && !departmentOptions.some((item) => item.name.toLocaleLowerCase() === form.department.trim().toLocaleLowerCase()) && <p className="mt-1 text-xs leading-5 text-amber-700">This department is not in the selected faculty's imported catalogue. It will be submitted under the faculty for moderator/admin review when you save.</p>}
+              {form.department.trim() && !departmentOptions.some((item) => item.name.toLocaleLowerCase() === form.department.trim().toLocaleLowerCase()) && <p className="mt-1 text-xs leading-5 text-amber-700">This department is not in the selected faculty's catalogue yet. You can still save it directly to your profile.</p>}
             </div>
           </div>
-          <p className="text-xs leading-5 text-[#5C6982]">Choose a matching imported suggestion when available. New faculty and department entries are submitted together for moderator/admin review. Group Chat membership uses institution, faculty/school/college and department only; programme is stored separately.</p>
-          <div className="flex justify-end"><button type="button" onClick={() => void saveAcademicPlacement()} disabled={savingField !== null || catalogueSubmitting || !form.faculty.trim() || !form.department.trim() || !selectedInstitution} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{savingField === 'faculty' || catalogueSubmitting ? 'Saving…' : 'Save academic placement'}</button></div>
+          <p className="text-xs leading-5 text-[#5C6982]">Choose a matching suggestion when available, or type your exact faculty and department names. Missing entries are saved directly to your profile and are not sent for moderation review. Group Chat membership uses institution, faculty/school/college and department only; programme is stored separately.</p>
+          <div className="flex justify-end"><button type="button" onClick={() => void saveAcademicPlacement()} disabled={savingField !== null || !form.faculty.trim() || !form.department.trim() || !selectedInstitution} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{savingField === 'faculty' ? 'Saving…' : 'Save academic placement'}</button></div>
         </div>
         {user.role === 'student' && textField('programme', 'Programme / Course of Study', 'e.g. B.Sc. Computer Science')}
         {user.role === 'student' && textField('studyLevel', 'Study level', 'e.g. 300 level')}

@@ -10,6 +10,7 @@ export interface DepartmentOption {
 export interface FacultyOption {
   id: string;
   name: string;
+  unitType?: 'faculty' | 'school' | 'college';
   departments: DepartmentOption[];
 }
 
@@ -50,23 +51,8 @@ export interface CompleteOnboardingPayload {
 
 export interface AcademicCatalogueSubmission { id: string; entryType: 'institution' | 'faculty' | 'department'; name: string; parentInstitutionId?: string; parentFacultyId?: string; parentFacultySubmissionId?: string; parentInstitutionName?: string; parentFacultyName?: string; state?: string; city?: string; ownership?: string; institutionType?: InstitutionType; status: 'pending' | 'approved' | 'rejected'; submittedBy: string; createdAt: string; reviewNote?: string; sourceUrl?: string; verifiedAt?: string; }
 
-export interface AcademicCatalogueSubmissionPayload {
-  entryType: 'institution' | 'faculty' | 'department';
-  name: string;
-  parentInstitutionId?: string;
-  parentInstitutionSubmissionId?: string;
-  parentFacultyId?: string;
-  parentFacultySubmissionId?: string;
-  state?: string;
-  city?: string;
-  ownership?: 'Federal' | 'State' | 'Private';
-  institutionType?: InstitutionType;
-  sourceUrl?: string;
-}
-
 export const academicApi = {
   institutions: () => apiRequest<InstitutionOption[]>('/institutions'),
-  submitCatalogueEntry: (payload: AcademicCatalogueSubmissionPayload) => apiRequest('/institutions/submissions', { method: 'POST', body: JSON.stringify(payload) }),
   catalogueSubmissions: () => apiRequest<AcademicCatalogueSubmission[]>('/institutions/submissions'),
   reviewCatalogueSubmission: (id: string, status: 'approved' | 'rejected', reviewNote?: string, provenance?: { sourceUrl?: string; verifiedAt?: string }) => apiRequest<AcademicCatalogueSubmission>('/institutions/submissions/' + encodeURIComponent(id) + '/review', { method: 'PATCH', body: JSON.stringify({ status, reviewNote, ...provenance }) }),
   courses: (institutionId: string) =>
