@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Save, LogOut } from 'lucide-react';
+import { Camera, Save, LogOut, Pencil, Plus, X } from 'lucide-react';
 import { useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
@@ -20,13 +20,15 @@ const academicHandleError = (value: string) => {
 export function ProfileSettingsPage() {
   const { user, refreshSession, logout } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ institution: '', faculty: '', department: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
+  const [form, setForm] = useState({ institution: '', faculty: '', department: '', programme: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
   const [academicInstitutions, setAcademicInstitutions] = useState<InstitutionOption[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
   const [catalogueSubmitting, setCatalogueSubmitting] = useState(false);
   const [facultyFocused, setFacultyFocused] = useState(false);
   const [departmentFocused, setDepartmentFocused] = useState(false);
   const [teachingAssignments, setTeachingAssignments] = useState<TeachingAssignmentPayload[]>([]);
+  const [editingInstitution, setEditingInstitution] = useState(false);
+  const [editingCourses, setEditingCourses] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -53,6 +55,7 @@ export function ProfileSettingsPage() {
       institution: user.institution ?? '',
       faculty: user.faculty ?? '',
       department: user.department ?? '',
+      programme: user.programme ?? '',
       studyLevel: user.studyLevel ?? '',
       coursesTaught: (user.coursesTaught ?? []).join(', '),
       bio: user.bio ?? '',
@@ -64,7 +67,7 @@ export function ProfileSettingsPage() {
   if (!user) return null;
   if (user.role === 'moderator' || user.role === 'admin') return <AdminProfilePage />;
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const selectedInstitution = academicInstitutions.find((item) => item.name.trim().toLocaleLowerCase() === (user.institution ?? '').trim().toLocaleLowerCase());
+  const selectedInstitution = academicInstitutions.find((item) => item.name.trim().toLocaleLowerCase() === form.institution.trim().toLocaleLowerCase());
   const facultyOptions = selectedInstitution?.faculties ?? [];
   const selectedFaculty = facultyOptions.find((item) => item.name.trim().toLocaleLowerCase() === form.faculty.trim().toLocaleLowerCase());
   const departmentOptions = selectedFaculty?.departments ?? [];
@@ -72,7 +75,7 @@ export function ProfileSettingsPage() {
     const facultyName = form.faculty.trim();
     const departmentName = form.department.trim();
     if (!selectedInstitution || !facultyName || !departmentName) {
-      setError('Enter both your faculty and department. Your institution remains fixed.');
+      setError('Select an approved institution and enter both your faculty and department.');
       return false;
     }
     const selectedDepartment = departmentOptions.find((item) => item.name.trim().toLocaleLowerCase() === departmentName.toLocaleLowerCase());
@@ -100,15 +103,18 @@ export function ProfileSettingsPage() {
       await apiRequest(`/users/${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         body: JSON.stringify({
+          institution: selectedInstitution.name,
           faculty: selectedFaculty?.name ?? facultyName,
           department: selectedDepartment?.name ?? departmentName,
+          ...(user.role === 'student' ? { programme: form.programme.trim() } : {}),
         }),
       });
       await refreshSession();
+      setEditingInstitution(false);
       const hasPending = !selectedFaculty || !selectedDepartment;
       setMessage(hasPending
-        ? `Your academic placement is saved and active now. Any missing faculty or department was sent to moderators/admins for catalogue review. ${user.role === 'student' ? 'Your Group Chat and academic sections' : 'Your academic sections'} use the new placement immediately; review does not block access.`
-        : `Academic placement updated successfully. ${user.role === 'student' ? 'Your Group Chat and academic sections' : 'Your academic sections'} now use the selected institution, faculty and department.`);
+        ? `Your institution and academic placement are saved and active now. Any missing faculty or department was sent to moderators/admins for catalogue review. ${user.role === 'student' ? 'Your Student Group Chat now uses the new institution, faculty and department; programme does not affect group membership.' : 'Your academic sections use the new placement.'} Review does not block access.`
+        : `Academic placement updated successfully. ${user.role === 'student' ? 'Your Student Group Chat now uses institution, faculty and department; programme remains a separate profile field.' : 'Your academic sections use the selected institution, faculty and department.'}`);
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update academic placement.');
@@ -157,7 +163,7 @@ export function ProfileSettingsPage() {
       await apiRequest(`/users/${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          ...(user.role === 'student' ? { studyLevel: form.studyLevel.trim() } : { teachingAssignments, coursesTaught }),
+          ...(user.role === 'student' ? { programme: form.programme.trim(), studyLevel: form.studyLevel.trim() } : { teachingAssignments, coursesTaught }),
           bio: form.bio.trim(),
           academicHandle: normalizeAcademicHandle(form.handle),
         }),
@@ -247,9 +253,20 @@ export function ProfileSettingsPage() {
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-3 sm:col-span-2 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4">
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#091F5B]">Institution</label>
-            <input value={user.institution ?? 'Not set'} readOnly aria-readonly="true" className="brand-input cursor-not-allowed bg-[#EEF2F8]" />
-            <p className="mt-1 text-xs text-[#5C6982]">Your institution is fixed after onboarding to protect academic records and Group Chat structure. Contact support if it is incorrect.</p>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor="profile-institution" className="block text-sm font-semibold text-[#091F5B]">Institution</label>
+              <button type="button" onClick={() => { if (editingInstitution) { setForm((current) => ({ ...current, institution: user.institution ?? '', faculty: user.faculty ?? '', department: user.department ?? '' })); setEditingInstitution(false); } else { setForm((current) => ({ ...current, institution: user.institution ?? '', faculty: user.faculty ?? '', department: user.department ?? '' })); setEditingInstitution(true); } }} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#6121D0] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">
+                <Pencil size={14}/>{editingInstitution ? 'Close edit' : 'Edit institution'}
+              </button>
+            </div>
+            {editingInstitution ? <>
+              <select id="profile-institution" value={form.institution} disabled={catalogueLoading} onChange={(event) => setForm((current) => ({ ...current, institution: event.target.value, faculty: '', department: '' }))} className="brand-input" aria-label="Select institution">
+                <option value="">Select an approved institution</option>
+                {[...academicInstitutions].sort((a, b) => a.name.localeCompare(b.name)).map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
+              </select>
+              <p className="mt-1 text-xs leading-5 text-[#5C6982]">Choose an institution from the approved catalogue. You must also select a faculty/school/college and department belonging to it. Your Student Group Chat placement changes only after the academic placement is saved.</p>
+              <button type="button" onClick={() => { setForm((current) => ({ ...current, institution: user.institution ?? '', faculty: user.faculty ?? '', department: user.department ?? '' })); setEditingInstitution(false); }} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#5C6982] hover:text-[#091F5B]"><X size={13}/>Cancel institution change</button>
+            </> : <input id="profile-institution" value={user.institution ?? 'Not set'} readOnly aria-readonly="true" className="brand-input cursor-not-allowed bg-[#EEF2F8]" />}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -265,19 +282,35 @@ export function ProfileSettingsPage() {
               {form.department.trim() && !departmentOptions.some((item) => item.name.toLocaleLowerCase() === form.department.trim().toLocaleLowerCase()) && <p className="mt-1 text-xs leading-5 text-amber-700">This department is not in the selected faculty's imported catalogue. It will be submitted under the faculty for moderator/admin review when you save.</p>}
             </div>
           </div>
-          <p className="text-xs leading-5 text-[#5C6982]">Choose a matching imported suggestion when available. New faculty and department entries are submitted together for moderator/admin review, while your saved academic placement and Group Chat access update immediately.</p>
+          <p className="text-xs leading-5 text-[#5C6982]">Choose a matching imported suggestion when available. New faculty and department entries are submitted together for moderator/admin review. Group Chat membership uses institution, faculty/school/college and department only; programme is stored separately.</p>
           <div className="flex justify-end"><button type="button" onClick={() => void saveAcademicPlacement()} disabled={savingField !== null || catalogueSubmitting || !form.faculty.trim() || !form.department.trim() || !selectedInstitution} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{savingField === 'faculty' || catalogueSubmitting ? 'Saving…' : 'Save academic placement'}</button></div>
         </div>
+        {user.role === 'student' && textField('programme', 'Programme / Course of Study', 'e.g. B.Sc. Computer Science')}
         {user.role === 'student' && textField('studyLevel', 'Study level', 'e.g. 300 level')}
         {user.role === 'lecturer' && <div className="space-y-3 sm:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold text-[#091F5B]">Courses taught</h3><p className="mt-1 text-xs text-[#5C6982]">Edit each course title, code and level, or add another course.</p></div><button type="button" onClick={() => setTeachingAssignments((current) => [...current, { courseName: '', courseCode: '', levels: [] }])} className="rounded-lg border border-[#DCE4EF] px-3 py-2 text-sm font-semibold text-[#6121D0] hover:bg-[#F8F5FF]">+ Add course</button></div>
-          {teachingAssignments.map((course, index) => <div key={index} className="grid gap-3 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-3 sm:grid-cols-3">
-            <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course title<input value={course.courseName} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, courseName: event.target.value } : item))} placeholder="e.g. Data Structures" className="brand-input mt-1" /></label>
-            <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course code<input value={course.courseCode ?? ''} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, courseCode: event.target.value.toUpperCase() } : item))} placeholder="e.g. CSC 301" className="brand-input mt-1" /></label>
-            <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course level<select value={course.levels[0] ?? ''} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, levels: event.target.value ? [event.target.value] : [] } : item))} className="brand-input mt-1"><option value="">Select level</option>{['100','200','300','400','500','600','Postgraduate','ND I','ND II','HND I','HND II','NCE I','NCE II','NCE III','Degree 100','Degree 200','Degree 300','Degree 400','Degree 500','Degree 600'].map((level) => <option key={level} value={level}>{level}</option>)}</select></label>
-            <div className="flex justify-end sm:col-span-3"><button type="button" onClick={() => setTeachingAssignments((current) => current.filter((_, i) => i !== index))} className="text-xs font-semibold text-rose-600">Remove course</button></div>
-          </div>)}
-          <div className="flex justify-end"><button type="button" disabled={savingField !== null || teachingAssignments.some((item) => !item.courseName.trim() || !item.courseCode?.trim() || item.levels.length === 0)} onClick={async () => { setSavingField('coursesTaught'); setError(''); setMessage(''); try { const coursesTaught = teachingAssignments.map((item) => item.courseCode ? `${item.courseCode} — ${item.courseName}` : item.courseName); await apiRequest(`/users/${encodeURIComponent(user.id)}`, { method: 'PATCH', body: JSON.stringify({ teachingAssignments, coursesTaught }) }); await refreshSession(); setMessage('Teaching courses saved successfully.'); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save teaching courses.'); } finally { setSavingField(null); } }} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{savingField === 'coursesTaught' ? 'Saving…' : 'Save courses'}</button></div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><h3 className="text-sm font-semibold text-[#091F5B]">Courses taught</h3><p className="mt-1 text-xs text-[#5C6982]">Each course has its own title, course code and level.</p></div>
+            <button type="button" onClick={() => setEditingCourses((current) => !current)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE4EF] px-3 py-2 text-sm font-semibold text-[#6121D0] hover:bg-[#F8F5FF]"><Pencil size={14}/>{editingCourses ? 'Close edit' : 'Edit courses'}</button>
+          </div>
+          {!editingCourses ? <div className="space-y-3">
+            {teachingAssignments.length ? teachingAssignments.map((course, index) => <article key={`course-view-${index}`} className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#71809A]">Course {index + 1}</p>
+              <p className="mt-1 font-semibold text-[#091F5B]">{course.courseName || 'Untitled course'}</p>
+              <p className="mt-1 text-sm text-[#5C6982]">{course.courseCode || 'No course code'} · {(course.levels ?? []).join(', ') || 'No level selected'}</p>
+            </article>) : <p className="rounded-xl border border-dashed border-[#DCE4EF] p-4 text-sm text-[#5C6982]">No teaching courses have been added yet.</p>}
+          </div> : <>
+            <div className="flex justify-end"><button type="button" onClick={() => setTeachingAssignments((current) => [...current, { courseName: '', courseCode: '', levels: [] }])} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE4EF] px-3 py-2 text-sm font-semibold text-[#6121D0] hover:bg-[#F8F5FF]"><Plus size={15}/>Add another course</button></div>
+            {teachingAssignments.map((course, index) => <div key={`course-edit-${index}`} className="space-y-3 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4">
+              <div className="flex items-center justify-between gap-2"><h4 className="text-sm font-semibold text-[#091F5B]">Course {index + 1}</h4><button type="button" onClick={() => setTeachingAssignments((current) => current.filter((_, i) => i !== index))} className="text-xs font-semibold text-rose-600">Remove course</button></div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course title<input value={course.courseName} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, courseName: event.target.value } : item))} placeholder="e.g. Data Structures" className="brand-input mt-1" /></label>
+                <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course code<input value={course.courseCode ?? ''} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, courseCode: event.target.value.toUpperCase() } : item))} placeholder="e.g. CSC 301" className="brand-input mt-1" /></label>
+                <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course level<select value={course.levels[0] ?? ''} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, levels: event.target.value ? [event.target.value] : [] } : item))} className="brand-input mt-1"><option value="">Select level</option>{['100','200','300','400','500','600','Postgraduate','ND I','ND II','HND I','HND II','NCE I','NCE II','NCE III','Degree 100','Degree 200','Degree 300','Degree 400','Degree 500','Degree 600'].map((level) => <option key={level} value={level}>{level}</option>)}</select></label>
+              </div>
+            </div>)}
+            <div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => { setTeachingAssignments(user.teachingAssignments?.length ? user.teachingAssignments.map((item) => ({ courseName: item.courseName, courseCode: item.courseCode ?? '', levels: [...item.levels] })) : (user.coursesTaught ?? []).map((course) => { const separator = course.indexOf(' — '); return separator > 0 ? { courseName: course.slice(separator + 3).trim(), courseCode: course.slice(0, separator).trim(), levels: [] } : { courseName: course, courseCode: '', levels: [] }; })); setEditingCourses(false); }} className="rounded-lg border border-[#DCE4EF] px-4 py-2.5 text-sm font-semibold text-[#5C6982]">Cancel</button>
+              <button type="button" disabled={savingField !== null || teachingAssignments.some((item) => !item.courseName.trim() || !item.courseCode?.trim() || item.levels.length === 0)} onClick={async () => { setSavingField('coursesTaught'); setError(''); setMessage(''); try { const coursesTaught = teachingAssignments.map((item) => item.courseCode ? `${item.courseCode} — ${item.courseName}` : item.courseName); await apiRequest(`/users/${encodeURIComponent(user.id)}`, { method: 'PATCH', body: JSON.stringify({ teachingAssignments, coursesTaught }) }); await refreshSession(); setEditingCourses(false); setMessage('Teaching courses saved successfully.'); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save teaching courses.'); } finally { setSavingField(null); } }} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{savingField === 'coursesTaught' ? 'Saving…' : 'Save courses'}</button></div>
+          </>}
         </div>}
         {textField('handle', 'Academic handle', '@yourname')}
         <div className="flex items-end gap-2 sm:col-span-2"><label className="block min-w-0 flex-1"><span className="mb-2 block text-sm font-semibold text-[#091F5B]">Bio</span><textarea value={form.bio} onChange={(event) => update('bio', event.target.value)} rows={4} className="brand-input" placeholder="Tell your academic community about yourself" /></label>{fieldSaveButton('bio')}</div>
