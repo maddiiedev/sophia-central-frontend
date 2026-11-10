@@ -33,6 +33,8 @@ export interface CourseOption {
   institutionId?: string;
 }
 
+export interface TeachingAssignmentPayload { courseName: string; courseCode?: string; levels: string[]; }
+
 export interface CompleteOnboardingPayload {
   institution: string;
   faculty: string;
@@ -40,6 +42,7 @@ export interface CompleteOnboardingPayload {
   programme?: string;
   studyLevel?: string;
   coursesTaught?: string[];
+  teachingAssignments?: TeachingAssignmentPayload[];
   bio?: string;
   academicHandle?: string;
   socialHandle?: string;

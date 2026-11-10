@@ -10,6 +10,7 @@ export interface User {
   department?: string;
   programme?: string;
   coursesTaught?: string[];
+  teachingAssignments?: Array<{ courseName: string; courseCode?: string; levels: string[] }>;
   studyLevel?: string;
   bio?: string;
   isProfileComplete?: boolean;
