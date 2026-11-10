@@ -302,7 +302,6 @@ export function ProfileOnboardingPage() {
         institution: institutionName,
         faculty: facultyName,
         department: departmentName,
-        programme: isLecturer ? '' : departmentName,
         studyLevel: isLecturer ? undefined : studyLevel,
         coursesTaught: isLecturer ? teachingAssignments.map((item) => item.courseCode ? `${item.courseCode} — ${item.courseName}` : item.courseName) : undefined,
         teachingAssignments: isLecturer ? teachingAssignments : undefined,

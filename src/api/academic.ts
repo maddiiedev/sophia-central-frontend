@@ -48,7 +48,7 @@ export interface CompleteOnboardingPayload {
   socialHandle?: string;
 }
 
-export interface AcademicCatalogueSubmission { id: string; entryType: 'institution' | 'faculty' | 'department'; name: string; parentInstitutionId?: string; parentFacultyId?: string; state?: string; city?: string; ownership?: string; institutionType?: InstitutionType; status: 'pending' | 'approved' | 'rejected'; submittedBy: string; createdAt: string; reviewNote?: string; }
+export interface AcademicCatalogueSubmission { id: string; entryType: 'institution' | 'faculty' | 'department'; name: string; parentInstitutionId?: string; parentFacultyId?: string; parentFacultySubmissionId?: string; state?: string; city?: string; ownership?: string; institutionType?: InstitutionType; status: 'pending' | 'approved' | 'rejected'; submittedBy: string; createdAt: string; reviewNote?: string; }
 
 export interface AcademicCatalogueSubmissionPayload {
   entryType: 'institution' | 'faculty' | 'department';

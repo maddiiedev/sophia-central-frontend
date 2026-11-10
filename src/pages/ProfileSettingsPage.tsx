@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
 import { AdminProfilePage } from './AdminProfilePage';
 import { apiRequest } from '../lib/api/client';
-import { academicApi, type InstitutionOption } from '../api/academic';
+import { academicApi, type InstitutionOption, type TeachingAssignmentPayload } from '../api/academic';
 
 const normalizeAcademicHandle = (value: string) => value.trim().replace(/^@+/, '').toLowerCase();
 const academicHandleError = (value: string) => {
@@ -18,12 +18,15 @@ const academicHandleError = (value: string) => {
 };
 
 export function ProfileSettingsPage() {
-  const { user, completeOnboarding, refreshSession, logout } = useAuth();
+  const { user, refreshSession, logout } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ institution: '', faculty: '', department: '', programme: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
+  const [form, setForm] = useState({ institution: '', faculty: '', department: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
   const [academicInstitutions, setAcademicInstitutions] = useState<InstitutionOption[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
   const [catalogueSubmitting, setCatalogueSubmitting] = useState(false);
+  const [facultyFocused, setFacultyFocused] = useState(false);
+  const [departmentFocused, setDepartmentFocused] = useState(false);
+  const [teachingAssignments, setTeachingAssignments] = useState<TeachingAssignmentPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -50,12 +53,12 @@ export function ProfileSettingsPage() {
       institution: user.institution ?? '',
       faculty: user.faculty ?? '',
       department: user.department ?? '',
-      programme: user.programme ?? '',
       studyLevel: user.studyLevel ?? '',
       coursesTaught: (user.coursesTaught ?? []).join(', '),
       bio: user.bio ?? '',
       handle: user.academicHandle ?? '',
     });
+    setTeachingAssignments(user.teachingAssignments?.length ? user.teachingAssignments.map((item) => ({ courseName: item.courseName, courseCode: item.courseCode ?? '', levels: [...item.levels] })) : (user.coursesTaught ?? []).map((course) => { const separator = course.indexOf(' — '); return separator > 0 ? { courseName: course.slice(separator + 3).trim(), courseCode: course.slice(0, separator).trim(), levels: [] } : { courseName: course, courseCode: '', levels: [] }; }));
   }, [user]);
 
   if (!user) return null;
@@ -66,43 +69,51 @@ export function ProfileSettingsPage() {
   const selectedFaculty = facultyOptions.find((item) => item.name.trim().toLocaleLowerCase() === form.faculty.trim().toLocaleLowerCase());
   const departmentOptions = selectedFaculty?.departments ?? [];
   const saveAcademicPlacement = async () => {
-    if (!selectedFaculty || !departmentOptions.some((item) => item.name.trim().toLocaleLowerCase() === form.department.trim().toLocaleLowerCase())) {
-      setError('Choose an approved faculty and a department belonging to that faculty, or submit the missing entry for review.');
-      return;
+    const facultyName = form.faculty.trim();
+    const departmentName = form.department.trim();
+    if (!selectedInstitution || !facultyName || !departmentName) {
+      setError('Enter both your faculty and department. Your institution remains fixed.');
+      return false;
     }
+    const selectedDepartment = departmentOptions.find((item) => item.name.trim().toLocaleLowerCase() === departmentName.toLocaleLowerCase());
     setSavingField('faculty');
+    setCatalogueSubmitting(true);
     setMessage('');
     setError('');
     try {
-      await apiRequest(`/users/${encodeURIComponent(user.id)}`, { method: 'PATCH', body: JSON.stringify({ faculty: selectedFaculty.name, department: form.department.trim() }) });
+      let pendingFacultyId: string | undefined;
+      if (!selectedFaculty) {
+        const pendingFaculty = await academicApi.submitCatalogueEntry({
+          entryType: 'faculty', name: facultyName, parentInstitutionId: selectedInstitution.id,
+        }) as { id?: string };
+        pendingFacultyId = pendingFaculty?.id;
+        if (!pendingFacultyId) throw new Error('Faculty submission was not confirmed. Please try again.');
+      }
+      if (!selectedDepartment) {
+        await academicApi.submitCatalogueEntry({
+          entryType: 'department',
+          name: departmentName,
+          parentInstitutionId: selectedInstitution.id,
+          ...(selectedFaculty ? { parentFacultyId: selectedFaculty.id } : { parentFacultySubmissionId: pendingFacultyId }),
+        });
+      }
+      await apiRequest(`/users/${encodeURIComponent(user.id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          faculty: selectedFaculty?.name ?? facultyName,
+          department: selectedDepartment?.name ?? departmentName,
+        }),
+      });
       await refreshSession();
-      setMessage('Academic placement updated. Your Group Chat placement will follow the approved institution, faculty and department.');
+      const hasPending = !selectedFaculty || !selectedDepartment;
+      setMessage(hasPending
+        ? `Your academic placement is saved and active now. Any missing faculty or department was sent to moderators/admins for catalogue review. ${user.role === 'student' ? 'Your Group Chat and academic sections' : 'Your academic sections'} use the new placement immediately; review does not block access.`
+        : `Academic placement updated successfully. ${user.role === 'student' ? 'Your Group Chat and academic sections' : 'Your academic sections'} now use the selected institution, faculty and department.`);
+      return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update academic placement.');
-    } finally { setSavingField(null); }
-  };
-  const submitAcademicEntry = async (entryType: 'faculty' | 'department') => {
-    if (!selectedInstitution) {
-      setError('Your institution is not currently linked to the academic catalogue. Contact support for assistance.');
-      return;
-    }
-    const name = (entryType === 'faculty' ? form.faculty : form.department).trim();
-    if (!name) { setError(`Enter the ${entryType} name before submitting it for review.`); return; }
-    if (entryType === 'department' && !selectedFaculty) {
-      setError('Select an approved faculty before submitting a department.');
-      return;
-    }
-    setCatalogueSubmitting(true); setMessage(''); setError('');
-    try {
-      await academicApi.submitCatalogueEntry({
-        entryType,
-        name,
-        ...(entryType === 'faculty' ? { parentInstitutionId: selectedInstitution.id } : { parentInstitutionId: selectedInstitution.id, parentFacultyId: selectedFaculty!.id }),
-      });
-      setMessage(`${entryType === 'faculty' ? 'Faculty' : 'Department'} submitted for moderator/admin review. Your academic placement and Group Chat will not change until it is approved and selected.`);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : `Unable to submit ${entryType} for review.`);
-    } finally { setCatalogueSubmitting(false); }
+      return false;
+    } finally { setSavingField(null); setCatalogueSubmitting(false); }
   };
   const uploadPhoto = async (file?: File) => {
     if (!file) return;
@@ -136,17 +147,26 @@ export function ProfileSettingsPage() {
         setSaving(false);
         return;
       }
-      await completeOnboarding({
-        institution: form.institution.trim(),
-        faculty: form.faculty.trim(),
-        department: form.department.trim(),
-        programme: user.role === 'student' ? form.programme.trim() : undefined,
-        studyLevel: user.role === 'student' ? form.studyLevel.trim() : undefined,
-        coursesTaught: user.role === 'lecturer' ? form.coursesTaught.split(',').map((course) => course.trim()).filter(Boolean) : undefined,
-        bio: form.bio.trim(),
-        academicHandle: normalizeAcademicHandle(form.handle),
+      const academicSaved = await saveAcademicPlacement();
+      if (!academicSaved) return;
+      if (user.role === 'lecturer' && teachingAssignments.some((item) => !item.courseName.trim() || !item.courseCode?.trim() || item.levels.length === 0)) {
+        setError('Complete the course title, course code and level for every teaching assignment before saving all changes.');
+        return;
+      }
+      const coursesTaught = teachingAssignments.map((item) => item.courseCode ? `${item.courseCode} — ${item.courseName}` : item.courseName);
+      await apiRequest(`/users/${encodeURIComponent(user.id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          ...(user.role === 'student' ? { studyLevel: form.studyLevel.trim() } : { teachingAssignments, coursesTaught }),
+          bio: form.bio.trim(),
+          academicHandle: normalizeAcademicHandle(form.handle),
+        }),
       });
-      setMessage('Profile updated successfully.');
+      await refreshSession();
+      const pendingPlacement = !selectedFaculty || !departmentOptions.some((item) => item.name.trim().toLocaleLowerCase() === form.department.trim().toLocaleLowerCase());
+      setMessage(pendingPlacement
+        ? 'Profile updated. Your new academic placement is active while the missing catalogue entries await moderator/admin review.'
+        : 'Profile updated successfully.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update profile.');
     } finally { setSaving(false); }
@@ -234,22 +254,31 @@ export function ProfileSettingsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="profile-faculty" className="mb-2 block text-sm font-semibold text-[#091F5B]">Faculty / School / College</label>
-              <input id="profile-faculty" list="profile-faculty-options" value={form.faculty} disabled={catalogueLoading || !selectedInstitution} onChange={(event) => setForm((current) => ({ ...current, faculty: event.target.value, department: '' }))} placeholder="Select or enter faculty" className="brand-input" autoComplete="off" />
-              <datalist id="profile-faculty-options">{facultyOptions.map((item) => <option key={item.id} value={item.name} />)}</datalist>
-              {!catalogueLoading && !facultyOptions.some((item) => item.name.toLocaleLowerCase() === form.faculty.trim().toLocaleLowerCase()) && <button type="button" disabled={catalogueSubmitting || !form.faculty.trim()} onClick={() => void submitAcademicEntry('faculty')} className="mt-2 text-left text-xs font-semibold text-[#6121D0] disabled:opacity-50">{catalogueSubmitting ? 'Submitting…' : 'Submit current faculty for review'}</button>}
+              <input id="profile-faculty" value={form.faculty} disabled={catalogueLoading || !selectedInstitution} onFocus={() => setFacultyFocused(true)} onBlur={() => window.setTimeout(() => setFacultyFocused(false), 140)} onChange={(event) => setForm((current) => ({ ...current, faculty: event.target.value, department: '' }))} placeholder="Type or choose faculty / school" className="brand-input" autoComplete="off" role="combobox" aria-expanded={facultyFocused && facultyOptions.length > 0} aria-controls="profile-faculty-suggestions" />
+              {facultyFocused && form.faculty.trim() && facultyOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.faculty.trim().toLocaleLowerCase())).slice(0, 8).length > 0 && <div id="profile-faculty-suggestions" role="listbox" className="mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#DCE4EF] bg-white p-1 shadow-lg">{facultyOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.faculty.trim().toLocaleLowerCase())).slice(0, 8).map((item) => <button key={item.id} type="button" role="option" onMouseDown={(event) => event.preventDefault()} onClick={() => { setForm((current) => ({ ...current, faculty: item.name, department: '' })); setFacultyFocused(false); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#091F5B] hover:bg-[#F3F1FF]">{item.name}</button>)}</div>}
+              {!catalogueLoading && form.faculty.trim() && !selectedFaculty && <p className="mt-1 text-xs leading-5 text-amber-700">This faculty is not in the imported catalogue. Save academic placement to submit it for moderator/admin review. You can enter the department below now.</p>}
             </div>
             <div>
               <label htmlFor="profile-department" className="mb-2 block text-sm font-semibold text-[#091F5B]">Department</label>
-              <input id="profile-department" list="profile-department-options" value={form.department} disabled={!selectedFaculty} onChange={(event) => update('department', event.target.value)} placeholder={selectedFaculty ? 'Select or enter department' : 'Choose an approved faculty first'} className="brand-input" autoComplete="off" />
-              <datalist id="profile-department-options">{departmentOptions.map((item) => <option key={item.id} value={item.name} />)}</datalist>
-              {selectedFaculty && !departmentOptions.some((item) => item.name.toLocaleLowerCase() === form.department.trim().toLocaleLowerCase()) && <button type="button" disabled={catalogueSubmitting || !form.department.trim()} onClick={() => void submitAcademicEntry('department')} className="mt-2 text-left text-xs font-semibold text-[#6121D0] disabled:opacity-50">{catalogueSubmitting ? 'Submitting…' : 'Submit current department for review'}</button>}
+              <input id="profile-department" value={form.department} disabled={!form.faculty.trim() || catalogueLoading} onFocus={() => setDepartmentFocused(true)} onBlur={() => window.setTimeout(() => setDepartmentFocused(false), 140)} onChange={(event) => update('department', event.target.value)} placeholder={form.faculty.trim() ? 'Type or choose department' : 'Enter faculty first'} className="brand-input" autoComplete="off" role="combobox" aria-expanded={departmentFocused && departmentOptions.length > 0} aria-controls="profile-department-suggestions" />
+              {departmentFocused && form.department.trim() && departmentOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.department.trim().toLocaleLowerCase())).slice(0, 8).length > 0 && <div id="profile-department-suggestions" role="listbox" className="mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#DCE4EF] bg-white p-1 shadow-lg">{departmentOptions.filter((item) => item.name.toLocaleLowerCase().includes(form.department.trim().toLocaleLowerCase())).slice(0, 8).map((item) => <button key={item.id} type="button" role="option" onMouseDown={(event) => event.preventDefault()} onClick={() => { update('department', item.name); setDepartmentFocused(false); }} className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#091F5B] hover:bg-[#F3F1FF]">{item.name}</button>)}</div>}
+              {form.department.trim() && !departmentOptions.some((item) => item.name.toLocaleLowerCase() === form.department.trim().toLocaleLowerCase()) && <p className="mt-1 text-xs leading-5 text-amber-700">This department is not in the selected faculty's imported catalogue. It will be submitted under the faculty for moderator/admin review when you save.</p>}
             </div>
           </div>
-          <p className="text-xs leading-5 text-[#5C6982]">Only approved faculties and departments belonging to your institution are selectable. New entries go to moderator/admin review; pending entries never change your academic group.</p>
-          <div className="flex justify-end"><button type="button" onClick={() => void saveAcademicPlacement()} disabled={savingField !== null || !selectedFaculty || !departmentOptions.some((item) => item.name.trim().toLocaleLowerCase() === form.department.trim().toLocaleLowerCase())} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{savingField === 'faculty' ? 'Saving…' : 'Save academic placement'}</button></div>
+          <p className="text-xs leading-5 text-[#5C6982]">Choose a matching imported suggestion when available. New faculty and department entries are submitted together for moderator/admin review, while your saved academic placement and Group Chat access update immediately.</p>
+          <div className="flex justify-end"><button type="button" onClick={() => void saveAcademicPlacement()} disabled={savingField !== null || catalogueSubmitting || !form.faculty.trim() || !form.department.trim() || !selectedInstitution} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{savingField === 'faculty' || catalogueSubmitting ? 'Saving…' : 'Save academic placement'}</button></div>
         </div>
-        {user.role === 'student' && <>{textField('programme', 'Programme', 'Your programme')}{textField('studyLevel', 'Study level', 'e.g. 300 level')}</>}
-        {user.role === 'lecturer' && <div className="flex items-end gap-2 sm:col-span-2"><label className="block min-w-0 flex-1"><span className="mb-2 block text-sm font-semibold text-[#091F5B]">Courses taught</span><input value={form.coursesTaught} onChange={(event) => update('coursesTaught', event.target.value)} placeholder="Separate course names with commas" className="brand-input" /><span className="mt-1 block text-xs text-[#5C6982]">Use commas between courses, for example: CSC 101, MTH 102.</span></label>{fieldSaveButton('coursesTaught')}</div>}
+        {user.role === 'student' && textField('studyLevel', 'Study level', 'e.g. 300 level')}
+        {user.role === 'lecturer' && <div className="space-y-3 sm:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold text-[#091F5B]">Courses taught</h3><p className="mt-1 text-xs text-[#5C6982]">Edit each course title, code and level, or add another course.</p></div><button type="button" onClick={() => setTeachingAssignments((current) => [...current, { courseName: '', courseCode: '', levels: [] }])} className="rounded-lg border border-[#DCE4EF] px-3 py-2 text-sm font-semibold text-[#6121D0] hover:bg-[#F8F5FF]">+ Add course</button></div>
+          {teachingAssignments.map((course, index) => <div key={index} className="grid gap-3 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-3 sm:grid-cols-3">
+            <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course title<input value={course.courseName} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, courseName: event.target.value } : item))} placeholder="e.g. Data Structures" className="brand-input mt-1" /></label>
+            <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course code<input value={course.courseCode ?? ''} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, courseCode: event.target.value.toUpperCase() } : item))} placeholder="e.g. CSC 301" className="brand-input mt-1" /></label>
+            <label className="min-w-0 text-xs font-semibold text-[#5C6982]">Course level<select value={course.levels[0] ?? ''} onChange={(event) => setTeachingAssignments((current) => current.map((item, i) => i === index ? { ...item, levels: event.target.value ? [event.target.value] : [] } : item))} className="brand-input mt-1"><option value="">Select level</option>{['100','200','300','400','500','600','Postgraduate','ND I','ND II','HND I','HND II','NCE I','NCE II','NCE III','Degree 100','Degree 200','Degree 300','Degree 400','Degree 500','Degree 600'].map((level) => <option key={level} value={level}>{level}</option>)}</select></label>
+            <div className="flex justify-end sm:col-span-3"><button type="button" onClick={() => setTeachingAssignments((current) => current.filter((_, i) => i !== index))} className="text-xs font-semibold text-rose-600">Remove course</button></div>
+          </div>)}
+          <div className="flex justify-end"><button type="button" disabled={savingField !== null || teachingAssignments.some((item) => !item.courseName.trim() || !item.courseCode?.trim() || item.levels.length === 0)} onClick={async () => { setSavingField('coursesTaught'); setError(''); setMessage(''); try { const coursesTaught = teachingAssignments.map((item) => item.courseCode ? `${item.courseCode} — ${item.courseName}` : item.courseName); await apiRequest(`/users/${encodeURIComponent(user.id)}`, { method: 'PATCH', body: JSON.stringify({ teachingAssignments, coursesTaught }) }); await refreshSession(); setMessage('Teaching courses saved successfully.'); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save teaching courses.'); } finally { setSavingField(null); } }} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{savingField === 'coursesTaught' ? 'Saving…' : 'Save courses'}</button></div>
+        </div>}
         {textField('handle', 'Academic handle', '@yourname')}
         <div className="flex items-end gap-2 sm:col-span-2"><label className="block min-w-0 flex-1"><span className="mb-2 block text-sm font-semibold text-[#091F5B]">Bio</span><textarea value={form.bio} onChange={(event) => update('bio', event.target.value)} rows={4} className="brand-input" placeholder="Tell your academic community about yourself" /></label>{fieldSaveButton('bio')}</div>
       </div>
