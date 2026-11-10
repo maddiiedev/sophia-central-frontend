@@ -34,11 +34,12 @@ export default function HomePage() {
             <div className="relative mx-auto w-full max-w-xl md:ml-auto">
               <div aria-hidden="true" className="absolute -inset-3 rounded-[2rem] bg-white/10 blur-xl" />
               <img
-                src="/images/students-collaborating.png"
+                src="/images/students-collaborating.webp"
                 alt="Two university students collaborating on coursework at a laptop"
                 width="520"
                 height="453"
                 fetchPriority="high"
+                decoding="async"
                 className="relative aspect-[1.15/1] w-full rounded-3xl border border-white/25 object-cover shadow-2xl"
               />
               <div className="absolute -bottom-4 left-4 right-4 rounded-2xl border border-white/30 bg-white/95 p-4 text-[#091F5B] shadow-xl sm:left-8 sm:right-8">

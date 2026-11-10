@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 
 type BrandLogoProps = {
@@ -25,9 +24,10 @@ export function BrandLogo({
       alt="Sophis Central"
       className={
         variant === 'full'
-          ? 'block h-auto max-h-14 w-auto max-w-full object-contain'
-          : 'block h-10 w-10 shrink-0 object-contain'
+          ? 'block h-10 w-auto max-w-full object-contain sm:h-12 lg:h-14'
+          : 'block h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10'
       }
+      decoding="async"
     />
   );
 
