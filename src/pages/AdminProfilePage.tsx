@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, UserRound, Camera, LockKeyhole, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
+import { ProfileImage } from '../components/ProfileImage';
 
 export function AdminProfilePage() {
   const { user, refreshSession, logout } = useAuth();
@@ -35,7 +36,7 @@ export function AdminProfilePage() {
     <section className="glass-panel p-5 sm:p-7">
       <div className="flex flex-col gap-5 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-5 sm:flex-row sm:items-center">
         <div className="relative h-24 w-24 shrink-0">
-          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-3xl font-bold text-white shadow-sm">{user.profileImage ? <img src={user.profileImage} alt="Administrative profile" className="h-full w-full object-cover"/> : fullName.slice(0,1).toUpperCase()}</div>
+          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-3xl font-bold text-white shadow-sm">{user.profileImage ? <ProfileImage userId={user.id} reference={user.profileImage} alt="Administrative profile" className="h-full w-full object-cover"/> : fullName.slice(0,1).toUpperCase()}</div>
           <button type="button" aria-label="Change profile picture" title="Change profile picture" disabled={uploading} onClick={() => setPhotoMenuOpen(open => !open)} className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#6121D0] text-white shadow-md transition hover:bg-[#2C36D9] disabled:cursor-wait disabled:opacity-60">{uploading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"/> : <Camera size={15}/>}</button>
           {photoMenuOpen && !uploading && <div className="absolute left-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-xl border border-[#DCE4EF] bg-white py-1 shadow-xl">
             <button type="button" onClick={() => { setPhotoMenuOpen(false); cameraInputRef.current?.click(); }} className="block w-full px-3 py-2.5 text-left text-sm font-medium text-[#091F5B] hover:bg-[#F8F5FF]">Take photo</button>

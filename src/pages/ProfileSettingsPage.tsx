@@ -7,6 +7,7 @@ import { profileImageApi } from '../api/upload';
 import { AdminProfilePage } from './AdminProfilePage';
 import { apiRequest } from '../lib/api/client';
 import { academicApi, type InstitutionOption, type TeachingAssignmentPayload } from '../api/academic';
+import { ProfileImage } from '../components/ProfileImage';
 
 const normalizeAcademicHandle = (value: string) => value.trim().replace(/^@+/, '').toLowerCase();
 const academicHandleError = (value: string) => {
@@ -206,7 +207,7 @@ export function ProfileSettingsPage() {
       <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:flex-row sm:items-center">
         <div className="relative h-20 w-20 shrink-0">
           <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#2C36D9] text-2xl font-bold text-white shadow-sm">
-            {user.profileImage ? <img src={user.profileImage} alt="Profile picture" className="h-full w-full object-cover" /> : (user.firstName?.[0] || user.name?.[0] || 'U').toUpperCase()}
+            {user.profileImage ? <ProfileImage userId={user.id} reference={user.profileImage} alt="Profile picture" className="h-full w-full object-cover" /> : (user.firstName?.[0] || user.name?.[0] || 'U').toUpperCase()}
           </div>
           <button type="button" aria-label="Change profile picture" title="Change profile picture" disabled={uploadingPhoto} onClick={() => setPhotoMenuOpen((open) => !open)} className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#6121D0] text-white shadow-md transition hover:bg-[#2C36D9] disabled:cursor-wait disabled:opacity-60">
             {uploadingPhoto ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Camera size={15} />}
