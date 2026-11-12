@@ -37,6 +37,9 @@ export interface Resource {
   course?: string;
   topic?: string;
   institution?: string;
+  faculty?: string;
+  department?: string;
+  origin?: 'community_upload' | 'open_source';
   level?: string;
   author?: string;
   tags?: string[];

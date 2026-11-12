@@ -5,10 +5,13 @@ type ApiResource = Resource & {
   uploaderId?: string;
   license?: 'CC-BY-4.0' | 'CC-BY-SA-4.0' | 'CC0-1.0' | 'ALL-RIGHTS-RESERVED';
   attribution?: string;
+  faculty?: string;
+  department?: string;
+  origin?: 'community_upload' | 'open_source';
   hasFile?: boolean;
   uploader?: { id?: string; displayName?: string };
 };
-export type PublicResourceFilters = { q?: string; course?: string; topic?: string; institution?: string; level?: string; type?: string; license?: string; page?: number; limit?: number };
+export type PublicResourceFilters = { q?: string; course?: string; topic?: string; institution?: string; faculty?: string; department?: string; departmentOnly?: boolean; origin?: 'community_upload' | 'open_source'; level?: string; type?: string; license?: string; page?: number; limit?: number };
 export type PublicResourcePage = { items: ApiResource[]; page: number; limit: number; total: number; totalPages: number };
 
 function mapResource(resource: ApiResource): Resource {
