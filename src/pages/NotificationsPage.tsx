@@ -1,7 +1,28 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Bell, CheckCheck, RefreshCw, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { notificationsApi, type AppNotification } from '../api/notifications';
+
+type NotificationFilter = 'all' | 'unread' | 'moderation' | 'support' | 'resources' | 'accounts' | 'platform';
+
+const filters: { value: NotificationFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'unread', label: 'Unread' },
+  { value: 'moderation', label: 'Moderation' },
+  { value: 'support', label: 'Support' },
+  { value: 'resources', label: 'Resources' },
+  { value: 'accounts', label: 'Accounts' },
+  { value: 'platform', label: 'Platform' },
+];
+
+function categoryFor(type: string): Exclude<NotificationFilter, 'all' | 'unread'> {
+  const value = type.toLowerCase();
+  if (value.includes('support')) return 'support';
+  if (value.includes('resource') || value.includes('review')) return 'resources';
+  if (value.includes('report') || value.includes('moderation')) return 'moderation';
+  if (value.includes('account') || value.includes('security') || value.includes('suspend')) return 'accounts';
+  return 'platform';
+}
 
 export function NotificationsPage() {
   const navigate = useNavigate();
@@ -10,12 +31,14 @@ export function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<NotificationFilter>('all');
 
   const load = useCallback(async (quiet = false) => {
     try {
       if (!quiet) setLoading(true);
       setError('');
-      const result = await notificationsApi.list(50);
+      const result = await notificationsApi.list(100);
       setItems(result.notifications ?? []);
       setUnreadCount(result.unreadCount ?? 0);
     } catch (cause) {
@@ -28,6 +51,16 @@ export function NotificationsPage() {
     const interval = window.setInterval(() => { void load(true); }, 30000);
     return () => window.clearInterval(interval);
   }, [load]);
+
+  const visibleItems = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    return items.filter(item => {
+      if (filter === 'unread' && item.isRead) return false;
+      if (filter !== 'all' && filter !== 'unread' && categoryFor(item.type) !== filter) return false;
+      if (term && ![item.title, item.message, item.type].join(' ').toLowerCase().includes(term)) return false;
+      return true;
+    });
+  }, [items, filter, query]);
 
   const markRead = async (item: AppNotification) => {
     if (item.isRead) { if (item.link) navigate(item.link); return; }
@@ -54,11 +87,28 @@ export function NotificationsPage() {
   };
 
   return <section className="mx-auto max-w-4xl space-y-6">
-    <div className="rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-8">
-      <div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F0FF] text-[#6121D0]"><Bell size={22} aria-hidden="true" /></div><h2 className="mt-5 text-2xl font-semibold text-[#091F5B]">Your notifications</h2><p className="mt-2 text-sm leading-6 text-[#4B5563]">{unreadCount} unread notification{unreadCount === 1 ? '' : 's'}. Updates refresh automatically.</p></div><div className="flex gap-2"><button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><RefreshCw size={15} className={loading ? 'animate-spin' : ''}/> Refresh</button><button type="button" onClick={() => void markAllRead()} disabled={busy || unreadCount === 0} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-50"><CheckCheck size={15}/> Mark all read</button></div></div>
+    <div className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm sm:p-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F0FF] text-[#6121D0]"><Bell size={22} aria-hidden="true" /></div>
+          <h2 className="mt-5 text-2xl font-semibold text-[#091F5B]">Notifications</h2>
+          <p className="mt-2 text-sm leading-6 text-[#4B5563]">{unreadCount} unread notification{unreadCount === 1 ? '' : 's'}. New updates refresh automatically.</p>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><RefreshCw size={15} className={loading ? 'animate-spin' : ''}/> Refresh</button>
+          <button type="button" onClick={() => void markAllRead()} disabled={busy || unreadCount === 0} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-50"><CheckCheck size={15}/> Mark all read</button>
+        </div>
+      </div>
       {error && <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
-      <div className="mt-6 space-y-3">
-        {loading ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#4B5563]">Loading your notifications…</p> : items.length === 0 ? <div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-8 text-center"><Bell size={24} className="mx-auto text-[#6121D0]"/><p className="mt-3 font-semibold text-[#091F5B]">You’re all caught up</p><p className="mt-1 text-sm text-[#4B5563]">New messages, account updates, and resource activity will appear here.</p></div> : items.map(item => <button key={item.id} type="button" onClick={() => void markRead(item)} disabled={busy} className={`block w-full rounded-xl border p-4 text-left transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60 ${item.isRead ? 'border-[#DCE4EF] bg-white' : 'border-[#C4B5FD] bg-[#F8F5FF]'}`}><div className="flex items-start gap-3"><span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.isRead ? 'bg-[#CBD5E1]' : 'bg-[#6121D0]'}`} aria-label={item.isRead ? 'Read' : 'Unread'}/><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-[#091F5B]">{item.title}</span><span className="text-xs text-[#5C6982]">{new Date(item.createdAt).toLocaleString()}</span></span><span className="mt-1 block whitespace-pre-wrap text-sm leading-6 text-[#4B5563]">{item.message}</span>{item.link && <span className="mt-2 block text-xs font-semibold text-[#6121D0]">Open related page →</span>}</span></div></button>)}
+      <label className="mt-6 flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5">
+        <Search size={17} className="shrink-0 text-[#71809A]"/>
+        <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search notifications…" aria-label="Search notifications" className="w-full bg-transparent text-sm text-[#091F5B] outline-none"/>
+      </label>
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Notification filters">
+        {filters.map(item => <button key={item.value} type="button" role="tab" aria-selected={filter === item.value} onClick={() => setFilter(item.value)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${filter === item.value ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#4B5563] hover:border-[#6121D0] hover:text-[#6121D0]'}`}>{item.label}{item.value === 'unread' ? ` (${unreadCount})` : ''}</button>)}
+      </div>
+      <div className="mt-5 space-y-3">
+        {loading ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#4B5563]">Loading notifications…</p> : visibleItems.length === 0 ? <div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-8 text-center"><Bell size={24} className="mx-auto text-[#6121D0]"/><p className="mt-3 font-semibold text-[#091F5B]">{items.length === 0 ? 'You’re all caught up' : 'No matching notifications'}</p><p className="mt-1 text-sm text-[#4B5563]">{items.length === 0 ? 'New support, moderation and account updates will appear here.' : 'Try another filter or search term.'}</p></div> : visibleItems.map(item => <button key={item.id} type="button" onClick={() => void markRead(item)} disabled={busy} className={`block w-full rounded-xl border p-4 text-left transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60 ${item.isRead ? 'border-[#DCE4EF] bg-white' : 'border-[#C4B5FD] bg-[#F8F5FF]'}`}><div className="flex items-start gap-3"><span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.isRead ? 'bg-[#CBD5E1]' : 'bg-[#6121D0]'}`} aria-label={item.isRead ? 'Read' : 'Unread'}/><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-[#091F5B]">{item.title}</span><span className="text-xs text-[#5C6982]">{new Date(item.createdAt).toLocaleString()}</span></span><span className="mt-1 block whitespace-pre-wrap text-sm leading-6 text-[#4B5563]">{item.message}</span><span className="mt-2 block text-[11px] font-semibold uppercase tracking-wide text-[#71809A]">{categoryFor(item.type)}</span>{item.link && <span className="mt-2 block text-xs font-semibold text-[#6121D0]">Open related page →</span>}</span></div></button>)}
       </div>
       <Link to="/dashboard" className="mt-6 inline-flex rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">Back to dashboard</Link>
     </div>

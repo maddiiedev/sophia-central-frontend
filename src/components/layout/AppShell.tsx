@@ -50,6 +50,7 @@ const moderatorNav = [
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
+  { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Analytics', href: '/moderation/analytics', icon: ChartNoAxesCombined },
   { label: 'Management', href: '/moderation/management', icon: BriefcaseBusiness },
 ];
@@ -59,6 +60,7 @@ const reviewerNav = [
   { label: 'Assigned review queue', href: '/moderation', icon: ShieldCheck },
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'My saved resources', href: '/my-resources', icon: Bookmark },
+  { label: 'Notifications', href: '/notifications', icon: Bell },
 ];
 
 const adminNav = [
@@ -69,6 +71,7 @@ const adminNav = [
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Analytics', href: '/analytics', icon: LayoutGrid },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
+  { label: 'Notifications', href: '/notifications', icon: Bell },
 ];
 
 export function AppShell({ children, title }: { children: React.ReactNode; title: string }) {
@@ -120,7 +123,8 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
       {navItems.map(({ href, label, icon: Icon }) => (
         <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />
-          {label}
+          <span className="min-w-0 flex-1">{label}</span>
+          {href === '/notifications' && unreadCount > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}
         </NavLink>
       ))}
       {[

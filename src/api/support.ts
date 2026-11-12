@@ -1,6 +1,7 @@
 import { apiRequest } from '../lib/api/client';
 
 export type SupportRequestStatus = 'pending' | 'concluded';
+export type SupportEmailStatus = { configured: boolean; provider: 'resend'; inboundReplySync: boolean };
 export type SupportRequest = {
   id: string;
   userId: string;
@@ -20,6 +21,7 @@ export type SupportRequest = {
 };
 
 export const supportApi = {
+  emailStatus: () => apiRequest<SupportEmailStatus>('/moderation/support-email-status'),
   create: (payload: { subject: string; category: string; description: string; links: string[]; attachments: string[] }) =>
     apiRequest<SupportRequest>('/support-requests', { method: 'POST', body: JSON.stringify(payload) }),
   mine: () => apiRequest<SupportRequest[]>('/support-requests/mine'),
