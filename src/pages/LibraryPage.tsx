@@ -29,7 +29,7 @@ export function LibraryPage() {
       <p className="text-xs font-semibold uppercase tracking-[.2em] text-white/80">Sophis Central · Open academic community</p>
       <h2 className="mt-3 text-3xl font-bold !text-white sm:text-4xl">{departmentOnly ? "Your department library" : "Learn openly. Share knowledge."}</h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-white/90">{departmentOnly ? "Approved uploads and open-source research materials classified for your institution, faculty and department appear here." : "Explore approved academic notes, past questions, research, projects and learning materials shared by students and lecturers. Browse freely without creating an account."}</p>
-      <div className="mt-5 flex flex-wrap gap-3"><Link to="/onboarding" className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#2C36D9]">Join the community</Link><Link to="/login" className="rounded-xl border border-white/50 px-4 py-3 text-sm font-semibold text-white">Sign in to contribute</Link></div>
+      <div className="mt-5 flex flex-wrap gap-3"><Link to="/onboarding" className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#2C36D9]">Join the community</Link></div>
     </section>
     <section className="grid gap-3 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Search and filter public resources">
       <label className="relative sm:col-span-2"><span className="sr-only">Search resources</span><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6121D0]"/><input className={input+' pl-10'} value={q} onChange={e=>{setQ(e.target.value);setPage(1)}} placeholder="Search titles, topics, courses…"/></label>
