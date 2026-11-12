@@ -598,3 +598,12 @@ html[data-theme='dark'] .app-shell .chat-page textarea.chat-edit-input {
   -webkit-user-select: none !important;
   -webkit-tap-highlight-color: transparent !important;
 }
+
+
+/* Keep the emoji/keyboard toggle clearly visible inside the shared chat composer
+   for every account, in both light and dark themes. */
+.app-shell .chat-page button:has(+ textarea.chat-message-input),
+.app-shell .chat-page button:has(+ textarea.chat-message-input):hover,
+.app-shell .chat-page button:has(+ textarea.chat-message-input):focus-visible {
+  color: #B8860B !important;
+}
