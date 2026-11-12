@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, Gift, History, Share2, Star } from 'lucide-react';
+import { Check, Coins, Copy, History, Share2, Star } from 'lucide-react';
 import { OverviewCard, SectionTitle } from '../components/layout/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api/client';
@@ -16,7 +16,7 @@ export function WalletPage() {
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [transactions, setTransactions] = useState<PointTransaction[]>([]);
   const [showActivity, setShowActivity] = useState(false);
-  const [showRedeemInfo, setShowRedeemInfo] = useState(false);
+  const [showBuyPointsInfo, setShowBuyPointsInfo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [message, setMessage] = useState('');
@@ -88,7 +88,7 @@ export function WalletPage() {
           <div className="text-5xl font-semibold text-[#091F5B]">{loading ? '…' : balance === null ? '—' : balance.toLocaleString()}</div>
           <p className="text-sm leading-6 text-[#4B5563]">Your balance is loaded from your account wallet, not a sample figure.</p>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => setShowRedeemInfo(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#2C36D9] focus:ring-offset-2"><Gift size={16}/> Redeem points</button>
+            <button type="button" onClick={() => setShowBuyPointsInfo(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 font-semibold text-white transition hover:bg-[#2C36D9] focus:outline-none focus:ring-2 focus:ring-[#2C36D9] focus:ring-offset-2"><Coins size={16}/> Buy points</button>
             <button type="button" onClick={() => setShowActivity(v => !v)} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><History size={16}/>{showActivity ? 'Hide activity' : 'View activity'}</button>
           </div>
           {showActivity && <div className="space-y-2 border-t border-[#DCE4EF] pt-4"><h3 className="font-semibold text-[#091F5B]">Recent wallet activity</h3>{transactions.length === 0 ? <p className="text-sm text-[#5C6982]">No wallet transactions were returned.</p> : transactions.map(tx => <div key={tx.id} className="flex items-start justify-between gap-3 rounded-xl bg-[#F8FAFD] p-3"><div><p className="text-sm font-semibold text-[#091F5B]">{tx.reason}</p><p className="mt-1 text-xs text-[#5C6982]">{new Date(tx.createdAt).toLocaleDateString()} · {tx.type}</p></div><span className={`shrink-0 font-bold ${tx.amount < 0 ? 'text-rose-700' : 'text-emerald-800'}`}>{tx.amount > 0 ? '+' : ''}{tx.amount}</span></div>)}</div>}
@@ -127,6 +127,6 @@ export function WalletPage() {
       </div> : null}
     </OverviewCard>}
 
-    {showRedeemInfo && <div role="dialog" aria-modal="true" aria-labelledby="redeem-title" className="fixed inset-0 z-50 flex items-center justify-center bg-[#091F5B]/50 p-4"><div className="w-full max-w-md rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-xl"><div className="flex items-center gap-3"><span className="rounded-xl bg-[#F3F0FF] p-3 text-[#6121D0]"><Gift size={20}/></span><div><h2 id="redeem-title" className="text-xl font-bold text-[#091F5B]">Redeem Wisdom Points</h2><p className="text-sm text-[#5C6982]">Available balance: {balance ?? '—'}</p></div></div><p className="mt-4 text-sm leading-6 text-[#374151]">The points balance and activity are connected, but the reward catalogue and redemption endpoint are not yet enabled. No points have been deducted. This button will become a complete redemption flow when reward options are configured.</p><button type="button" onClick={() => setShowRedeemInfo(false)} className="mt-5 w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white transition hover:bg-[#2C36D9]">Close</button></div></div>}
+    {showBuyPointsInfo && <div role="dialog" aria-modal="true" aria-labelledby="buy-points-title" className="fixed inset-0 z-50 flex items-center justify-center bg-[#091F5B]/50 p-4"><div className="w-full max-w-md rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-xl"><div className="flex items-center gap-3"><span className="rounded-xl bg-[#F3F0FF] p-3 text-[#6121D0]"><Coins size={20}/></span><div><h2 id="buy-points-title" className="text-xl font-bold text-[#091F5B]">Buy Wisdom Points</h2><p className="text-sm text-[#5C6982]">Available balance: {balance ?? '—'}</p></div></div><p className="mt-4 text-sm leading-6 text-[#374151]">Purchasing Wisdom Points is coming soon. Your current balance, referral rewards and wallet activity remain available. No payment will be taken and no points will be added until secure purchasing is introduced.</p><button type="button" onClick={() => setShowBuyPointsInfo(false)} className="mt-5 w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white transition hover:bg-[#2C36D9]">Close</button></div></div>}
   </div>;
 }
