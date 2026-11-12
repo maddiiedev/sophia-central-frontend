@@ -17,6 +17,7 @@ import {
   ChartNoAxesCombined,
   BriefcaseBusiness,
   MessageCircle,
+  Flag,
 } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -35,6 +36,7 @@ const studentNav = [
   { label: 'Wallet', href: '/wallet', icon: WalletCards },
   { label: 'Group Chat', href: '/chat/group', icon: MessageCircle },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
+  { label: 'My reports', href: '/reports', icon: Flag },
 ];
 
 const lecturerNav = [
@@ -43,6 +45,7 @@ const lecturerNav = [
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Submit resource', href: '/upload', icon: Upload },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
+  { label: 'My reports', href: '/reports', icon: Flag },
 ];
 
 const moderatorNav = [

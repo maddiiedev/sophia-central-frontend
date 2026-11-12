@@ -8,8 +8,9 @@ import { apiRequest } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
 import type { ModerationItem } from '../types';
 import { AcademicCatalogueReviewPanel } from '../components/AcademicCatalogueReviewPanel';
+import { ContentReportsPanel } from '../components/moderation/ContentReportsPanel';
 
-type ModerationTab = 'queue' | 'history' | 'catalogue';
+type ModerationTab = 'queue' | 'history' | 'catalogue' | 'reports';
 type ReviewerOption = { id: string; firstName?: string; lastName?: string; email: string; role: string; reviewerExpertise?: string[]; isSuspended?: boolean };
 
 export function ModerationPage() {
@@ -20,7 +21,7 @@ export function ModerationPage() {
   const [reviewers, setReviewers] = useState<ReviewerOption[]>([]);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [tab, setTab] = useState<ModerationTab>('queue');
+  const [tab, setTab] = useState<ModerationTab>(() => new URLSearchParams(window.location.search).get('tab') === 'reports' ? 'reports' : 'queue');
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -108,10 +109,11 @@ export function ModerationPage() {
     <div className="flex flex-wrap gap-2" role="tablist" aria-label="Moderation sections">
       <button type="button" role="tab" aria-selected={tab === 'queue'} onClick={() => setTab('queue')} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${tab === 'queue' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9]'}`}>Assigned review queue ({pending.length})</button>
       <button type="button" role="tab" aria-selected={tab === 'history'} onClick={() => setTab('history')} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${tab === 'history' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9]'}`}>Decision history</button>
+      {isPlatformModerator && <button type="button" role="tab" aria-selected={tab === 'reports'} onClick={() => setTab('reports')} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${tab === 'reports' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9]'}`}>User & content reports</button>}
       {isPlatformModerator && <button type="button" role="tab" aria-selected={tab === 'catalogue'} onClick={() => setTab('catalogue')} className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${tab === 'catalogue' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B] hover:border-[#2C36D9]'}`}>Academic catalogue</button>}
     </div>
 
-    {tab === 'catalogue' && isPlatformModerator ? <AcademicCatalogueReviewPanel /> : tab === 'queue' ? <OverviewCard title={`${pending.length} pending academic materials`} action="Review queue">
+    {tab === 'reports' && isPlatformModerator ? <ContentReportsPanel /> : tab === 'catalogue' && isPlatformModerator ? <AcademicCatalogueReviewPanel /> : tab === 'queue' ? <OverviewCard title={`${pending.length} pending academic materials`} action="Review queue">
       <div className="space-y-3">
         <div className="flex justify-end"><button type="button" onClick={() => void loadQueue()} disabled={loading || Boolean(processingId)} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-medium text-[#091F5B] hover:border-[#6121D0] disabled:opacity-50"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh queue</button></div>
         {loading ? <div className="p-6 text-sm text-[#5C6982]">Loading assigned academic materials…</div> : pending.length === 0 ? <div className="p-8 text-center text-sm text-[#5C6982]"><ShieldCheck size={24} className="mx-auto mb-2 text-[#6121D0]" />No pending materials assigned to this review workspace.</div> : pending.map((item) => {

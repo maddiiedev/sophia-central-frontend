@@ -4,6 +4,7 @@ import { Keyboard, Mic, Pause, Play, Send, Smile, Trash2 } from 'lucide-react';
 import { chatApi, type ChatContact, type ChatInboxItem, type ChatMessage } from '../api/chat';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ReportContentButton } from '../components/ReportContentButton';
 
 type Mode = 'group' | 'direct';
 
@@ -1355,6 +1356,7 @@ export function ChatPage() {
               Private conversation
             </p>
           </div>
+          {!recipientDeleted && selectedContact && <ReportContentButton targetType="user" targetId={selectedContact.id} label="Report account" compact />}
         </div>
       )}
 
@@ -1482,6 +1484,7 @@ export function ChatPage() {
                 >
                   {new Date(message.createdAt).toLocaleString()}
                 </time>
+                {!message.isOwn && message.senderId && <ReportContentButton targetType="user" targetId={message.senderId} label="Report account" compact />}
 
                 {message.editedAt && (
                   <span
@@ -1574,6 +1577,8 @@ export function ChatPage() {
                   {message.text}
                 </p>
               )}
+
+              {!message.isOwn && !message.isDeleted && message.senderId && <div className="mt-2"><ReportContentButton targetType="chat_message" targetId={message.id} label="Report message" compact /></div>}
 
               {message.isOwn && !message.isDeleted && (
                 <div className="mt-2 flex gap-3 text-xs">
