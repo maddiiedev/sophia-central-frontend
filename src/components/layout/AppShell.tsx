@@ -58,6 +58,7 @@ const moderatorNav = [
 const reviewerNav = [
   { label: 'Assigned review queue', href: '/moderation', icon: ShieldCheck },
   { label: 'Resource library', href: '/library', icon: BookOpen },
+  { label: 'My saved resources', href: '/my-resources', icon: Bookmark },
 ];
 
 const adminNav = [

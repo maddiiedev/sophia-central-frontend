@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowUpRight, CheckCircle2, Clock3, FileText, RefreshCw, ShieldCheck, XCircle, UserCheck } from 'lucide-react';
 import { OverviewCard, SectionTitle } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
@@ -126,7 +127,7 @@ export function ModerationPage() {
                   <div><dt className="inline font-medium text-[#091F5B]">Course: </dt><dd className="inline">{item.course || 'Not specified'}</dd></div>
                   <div><dt className="inline font-medium text-[#091F5B]">Submitted: </dt><dd className="inline">{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Date unavailable'}</dd></div>
                 </dl>
-                {item.fileUrl && <a href={item.fileUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0] underline underline-offset-4 hover:text-[#2C36D9]"><FileText size={15} /> Open attached upload <ArrowUpRight size={14} /></a>}
+                {item.fileUrl && <Link to={`/resource/${encodeURIComponent(item.id)}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0] underline underline-offset-4 hover:text-[#2C36D9]"><FileText size={15} /> Open attached upload in reader <ArrowUpRight size={14} /></Link>}
                 {isPlatformModerator && <div className="mt-4 flex flex-col gap-2 rounded-xl bg-[#F8FAFD] p-3 sm:flex-row sm:items-center">
                   <label className="min-w-0 flex-1 text-xs font-semibold text-[#091F5B]">Assign subject-matter reviewer
                     <select value={assignments[item.id] ?? item.assignedReviewerId ?? ''} onChange={(event) => setAssignments((current) => ({ ...current, [item.id]: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-normal">
