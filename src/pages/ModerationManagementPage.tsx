@@ -23,9 +23,9 @@ export function ModerationManagementPage() {
   const [notice, setNotice] = useState('');
   const [expertiseByUser, setExpertiseByUser] = useState<Record<string, string>>({});
 
-  const loadUsers = async () => { setLoading(true); setError(''); try { const data = await apiRequest<ManagedUser[]>('/users/management'); setUsers(Array.isArray(data) ? data : []); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load accounts.'); } finally { setLoading(false); } };
+  const loadUsers = async () => { setLoading(true); setError(''); try { const data = await apiRequest<ManagedUser[]>('/users/management'); setUsers(Array.isArray(data) ? data.filter((account) => account.role !== 'moderator') : []); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load accounts.'); } finally { setLoading(false); } };
   useEffect(() => { void loadUsers(); }, []);
-  const filtered = useMemo(() => users.filter((item) => [item.firstName, item.lastName, item.name, item.email, item.role, item.institution].filter(Boolean).join(' ').toLowerCase().includes(query.toLowerCase())), [users, query]);
+  const filtered = useMemo(() => users.filter((item) => item.role !== 'moderator' && [item.firstName, item.lastName, item.name, item.email, item.role, item.institution].filter(Boolean).join(' ').toLowerCase().includes(query.toLowerCase())), [users, query]);
 
   const openPoints = async (account: ManagedUser) => {
     if (account.role !== 'student') {
@@ -37,6 +37,7 @@ export function ModerationManagementPage() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load wallet activity.'); }
   };
   const setSuspended = async (account: ManagedUser, suspended: boolean) => {
+    if (account.role === 'moderator') return;
     setBusy(true); setError(''); setNotice('');
     try { await apiRequest(`/users/${encodeURIComponent(account.id)}/status`, { method: 'PATCH', body: JSON.stringify({ isSuspended: suspended, reason: suspended ? 'Suspended from moderation management' : 'Restored from moderation management' }) }); setUsers((current) => current.map((item) => item.id === account.id ? { ...item, isSuspended: suspended } : item)); setNotice(`${account.email} was ${suspended ? 'suspended' : 'restored'}.`); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to update account status.'); }
