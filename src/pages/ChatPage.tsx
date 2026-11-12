@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Mic, Pause, Play, Send, Smile, Trash2 } from 'lucide-react';
-import { chatApi, type ChatContact, type ChatInboxItem, type ChatMessage } from '../api/chat';
+import { chatApi, type ChatContact, type ChatInboxItem, type ChatMessage, type ChatRetentionPeriod } from '../api/chat';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ReportContentButton } from '../components/ReportContentButton';
@@ -186,6 +186,8 @@ export function ChatPage() {
   const recipientDeleted = Boolean(selectedContact?.isDeleted);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [retentionPeriod, setRetentionPeriod] = useState<ChatRetentionPeriod>('90_days');
+  const [savingRetention, setSavingRetention] = useState(false);
   const [hiddenDeletedMessageIds, setHiddenDeletedMessageIds] = useState<Set<string>>(() => new Set());
   const [expandedDeletedMessageId, setExpandedDeletedMessageId] = useState<string | null>(null);
   const visibleMessages = messages.filter(message => !hiddenDeletedMessageIds.has(message.id));
@@ -401,9 +403,10 @@ export function ChatPage() {
             ? await chatApi.groupHistory()
             : recipient
               ? await chatApi.directHistory(recipient)
-              : { items: [], hasMore: false, nextBefore: null };
+              : { items: [], hasMore: false, nextBefore: null, retentionPeriod: '90_days' as const };
 
         if (requestSequence !== requestSequenceRef.current) return;
+        if (mode === 'direct') setRetentionPeriod(result.retentionPeriod ?? '90_days');
         setHiddenDeletedMessageIds(new Set(result.hiddenMessageIds ?? []));
 
         if (quiet) {
@@ -480,6 +483,20 @@ export function ChatPage() {
     },
     [mode, recipient, mutedGroup, mutedDirect, loadInbox],
   );
+
+  const changeRetention = async (period: ChatRetentionPeriod) => {
+    if (!recipient || savingRetention || recipientDeleted) return;
+    setSavingRetention(true);
+    setError('');
+    try {
+      const updated = await chatApi.updateDirectRetention(recipient, period);
+      setRetentionPeriod(updated.retentionPeriod);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update disappearing messages.');
+    } finally {
+      setSavingRetention(false);
+    }
+  };
 
   const loadOlder = async () => {
     if (!hasMore || !nextBefore || loadingOlder || !listRef.current) return;
@@ -1356,7 +1373,35 @@ export function ChatPage() {
               Private conversation
             </p>
           </div>
+          {!recipientDeleted && recipient && (
+            <label className="ml-auto flex shrink-0 items-center gap-2 text-[11px] font-semibold text-violet-900 dark:text-[#E2E8F0]">
+              <span className="hidden sm:inline">Disappearing messages</span>
+              <select
+                aria-label="Disappearing messages duration"
+                value={retentionPeriod}
+                disabled={savingRetention}
+                onChange={event => void changeRetention(event.target.value as ChatRetentionPeriod)}
+                className="max-w-[128px] rounded-lg border border-violet-300 bg-white px-2 py-2 text-xs font-semibold text-violet-900 outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60 dark:border-[#475569] dark:bg-[#1E293B] dark:text-white"
+              >
+                <option value="90_days">90 days</option>
+                <option value="7_days">7 days</option>
+                <option value="24_hours">24 hours</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+          )}
           {!recipientDeleted && selectedContact && <ReportContentButton targetType="user" targetId={selectedContact.id} label="Report account" compact />}
+        </div>
+      )}
+
+      {mode === 'direct' && recipient && !recipientDeleted && (
+        <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-xs text-violet-950 dark:border-[#4C3A70] dark:bg-[#211A32] dark:text-[#E9DFFF]">
+          <span aria-hidden="true">⏳</span>
+          <p>
+            {retentionPeriod === 'off'
+              ? 'Automatic clearing is off for new messages. Messages sent under an earlier timer keep their original expiration. Changes apply to future messages only.'
+              : `New messages in this private conversation automatically disappear after ${retentionPeriod === '90_days' ? '90 days' : retentionPeriod === '7_days' ? '7 days' : '24 hours'}. Either participant can change this setting. The timer applies to messages sent after the setting is selected.`}
+          </p>
         </div>
       )}
 
