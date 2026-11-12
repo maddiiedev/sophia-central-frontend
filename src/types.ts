@@ -1,7 +1,8 @@
-export type UserRole = 'student' | 'lecturer' | 'moderator' | 'admin';
+export type UserRole = 'student' | 'lecturer' | 'reviewer' | 'moderator' | 'admin';
 
 export interface User {
   id: string;
+  uniqueId?: string;
   name: string;
   email: string;
   role: UserRole;
@@ -63,5 +64,6 @@ export interface ModerationItem {
   tags?: string[];
   createdAt?: string;
   isVerified?: boolean;
+  assignedReviewerId?: string | null;
   [key: string]: unknown;
 }

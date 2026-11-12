@@ -12,16 +12,18 @@ type ApiModerationResource = {
   topic?: string | null;
   fileUrl?: string | null;
   tags?: string[];
-  moderationStatus?: 'pending' | 'approved' | 'rejected' | 'flagged' | 'draft';
+  moderationStatus?: 'pending' | 'revision_requested' | 'approved' | 'rejected' | 'flagged' | 'draft';
   isVerified?: boolean;
   uploaderId?: string;
+  assignedReviewerId?: string | null;
+  assignedReviewer?: { id?: string; firstName?: string; lastName?: string; email?: string; reviewerExpertise?: string[] };
   uploader?: { id?: string; name?: string; firstName?: string; lastName?: string; email?: string; faculty?: string; department?: string };
   createdAt?: string;
 };
 
 export type ModerationHistoryItem = {
   id: string;
-  status: 'approved' | 'rejected' | string;
+  status: 'approved' | 'rejected' | 'revision_requested' | string;
   note?: string | null;
   createdAt?: string;
   resource?: ApiModerationResource;
@@ -33,7 +35,7 @@ function mapModerationResource(resource: ApiModerationResource): ModerationItem 
     [resource.uploader?.firstName, resource.uploader?.lastName].filter(Boolean).join(' ') ||
     resource.uploader?.email ||
     resource.uploaderId ||
-    'Unknown lecturer';
+    'Unknown contributor';
   return {
     ...resource,
     id: resource.id,
@@ -61,18 +63,25 @@ export const moderationApi = {
 
   review: async (
     resourceId: string,
-    status: 'approved' | 'rejected',
+    status: 'approved' | 'rejected' | 'revision_requested',
     token?: string | null,
     note?: string,
   ) => {
     return apiRequest<{
       id: string;
-      status: 'approved' | 'rejected';
-      resource?: { id: string; moderationStatus: 'approved' | 'rejected'; isVerified: boolean };
+      status: 'approved' | 'rejected' | 'revision_requested';
+      resource?: { id: string; moderationStatus: 'approved' | 'rejected' | 'revision_requested'; isVerified: boolean };
     }>(
       `/moderation/resources/${encodeURIComponent(resourceId)}/review`,
       { method: 'PATCH', body: JSON.stringify({ status, ...(note ? { note } : {}) }) },
       token ?? null,
+    );
+  },
+
+  assignReviewer: async (resourceId: string, reviewerId: string) => {
+    return apiRequest<{ id: string; assignedReviewerId: string }>(
+      `/moderation/resources/${encodeURIComponent(resourceId)}/assign-reviewer`,
+      { method: 'PATCH', body: JSON.stringify({ reviewerId }) },
     );
   },
 };

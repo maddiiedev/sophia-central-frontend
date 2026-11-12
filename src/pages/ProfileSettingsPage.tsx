@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Save, LogOut, Pencil, Plus, X } from 'lucide-react';
+import { Camera, Save, LogOut, Pencil, Plus, X, Copy, Check } from 'lucide-react';
 import { useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { profileImageApi } from '../api/upload';
@@ -37,6 +37,7 @@ export function ProfileSettingsPage() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [savingField, setSavingField] = useState<keyof typeof form | null>(null);
+  const [uniqueIdCopied, setUniqueIdCopied] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -67,6 +68,16 @@ export function ProfileSettingsPage() {
   if (!user) return null;
   if (user.role === 'moderator' || user.role === 'admin') return <AdminProfilePage />;
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const copyUniqueId = async () => {
+    if (!user.uniqueId) return;
+    try {
+      await navigator.clipboard.writeText(user.uniqueId);
+      setUniqueIdCopied(true);
+      window.setTimeout(() => setUniqueIdCopied(false), 1800);
+    } catch {
+      setError('Clipboard access is unavailable. Select your Sophis Central ID and copy it manually.');
+    }
+  };
   const selectedInstitution = academicInstitutions.find((item) => item.name.trim().toLocaleLowerCase() === form.institution.trim().toLocaleLowerCase());
   const facultyOptions = selectedInstitution?.faculties ?? [];
   const selectedFaculty = facultyOptions.find((item) => item.name.trim().toLocaleLowerCase() === form.faculty.trim().toLocaleLowerCase());
@@ -224,6 +235,19 @@ export function ProfileSettingsPage() {
           <p className="mt-1 font-semibold text-[#091F5B]">{user.name}</p>
           <p className="mt-1 text-sm text-[#4B5563]">{user.email}</p>
           <p className="mt-1 text-xs font-semibold capitalize text-[#6121D0]">{user.role} account</p>
+          {user.uniqueId && <div className="mt-3 rounded-xl border border-[#DCE4EF] bg-white p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#5C6982]">Sophis Central ID</p>
+                <p className="mt-1 font-mono text-lg font-bold tracking-wide text-[#091F5B]">{user.uniqueId}</p>
+              </div>
+              <button type="button" onClick={() => void copyUniqueId()} className="inline-flex items-center gap-2 rounded-lg border border-[#DCE4EF] px-3 py-2 text-sm font-semibold text-[#6121D0] hover:border-[#6121D0]">
+                {uniqueIdCopied ? <Check size={15} /> : <Copy size={15} />}
+                {uniqueIdCopied ? "Copied" : "Copy ID"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[#5C6982]">This ID is permanently linked to your account. It supplements your sign-in; it is not a password or a substitute for account security. Avoid posting it publicly.</p>
+          </div>}
           {uploadingPhoto && <p className="mt-2 text-xs text-[#6121D0]" role="status">Uploading profile picture…</p>}
         </div>
       </div>

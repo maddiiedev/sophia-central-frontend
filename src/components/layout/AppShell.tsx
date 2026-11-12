@@ -54,6 +54,12 @@ const moderatorNav = [
   { label: 'Management', href: '/moderation/management', icon: BriefcaseBusiness },
 ];
 
+
+const reviewerNav = [
+  { label: 'Assigned review queue', href: '/moderation', icon: ShieldCheck },
+  { label: 'Resource library', href: '/library', icon: BookOpen },
+];
+
 const adminNav = [
   { label: 'Dashboard', href: '/analytics', icon: LayoutGrid },
   { label: 'Users', href: '/admin/users', icon: Users },
@@ -101,11 +107,11 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
     return () => { active = false; window.clearInterval(interval); };
   }, [user?.id]);
 
-  const navItems = user?.role === 'lecturer' ? lecturerNav : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : studentNav;
+  const navItems = user?.role === 'lecturer' ? lecturerNav : user?.role === 'reviewer' ? reviewerNav : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : studentNav;
   const goBack = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (historyIndex > 0) navigate(-1);
-    else navigate(user?.role === 'lecturer' ? '/lecturer' : user?.role === 'moderator' || user?.role === 'admin' ? '/moderation' : '/dashboard');
+    else navigate(user?.role === 'lecturer' ? '/lecturer' : user?.role === 'reviewer' || user?.role === 'moderator' || user?.role === 'admin' ? '/moderation' : '/dashboard');
   };
 
   const nav = (
