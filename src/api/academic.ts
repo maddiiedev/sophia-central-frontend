@@ -1,6 +1,6 @@
 import { apiRequest } from '../lib/api/client';
 
-export type InstitutionType = 'university' | 'polytechnic' | 'college_of_education';
+export type InstitutionType = 'university' | 'polytechnic' | 'monotechnic' | 'college_of_education' | 'college_of_health_technology' | 'college_of_agriculture' | 'other_college';
 
 export interface DepartmentOption {
   id: string;
@@ -17,6 +17,7 @@ export interface FacultyOption {
 export interface InstitutionOption {
   id: string;
   name: string;
+  institutionCode?: string;
   country?: string;
   city?: string;
   state?: string;
@@ -37,6 +38,7 @@ export interface CourseOption {
 export interface TeachingAssignmentPayload { courseName: string; courseCode?: string; levels: string[]; }
 
 export interface CompleteOnboardingPayload {
+  institutionId: string;
   institution: string;
   faculty: string;
   department: string;

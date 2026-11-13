@@ -130,7 +130,7 @@ export function ModerationPage() {
                 <div className="flex items-center gap-2"><ShieldCheck size={16} className="shrink-0 text-[#6121D0]" /><h3 className="break-words font-semibold text-[#091F5B]">{item.title}</h3></div>
                 <p className="mt-2 text-sm text-[#4B5563]">{item.summary || `${item.type ?? 'Resource'} • ${item.course ?? 'Course not specified'}`}</p>
                 <dl className="mt-3 grid gap-2 text-xs text-[#4B5563] sm:grid-cols-2">
-                  <div><dt className="inline font-medium text-[#091F5B]">Contributor: </dt><dd className="inline">{item.uploadedBy || 'Unknown contributor'}</dd></div>
+                  <div><dt className="inline font-medium text-[#091F5B]">Contributor: </dt><dd className="inline">{item.uploadedBy || (item.uploaderId === null ? 'Former contributor' : item.origin === 'open_source' ? 'Anonymous contributor' : 'Contributor not listed')}</dd></div>
                   <div><dt className="inline font-medium text-[#091F5B]">Institution: </dt><dd className="inline">{item.institution || 'Not specified'}</dd></div>
                   <div><dt className="inline font-medium text-[#091F5B]">Course: </dt><dd className="inline">{item.course || 'Not specified'}</dd></div>
                   <div><dt className="inline font-medium text-[#091F5B]">Submitted: </dt><dd className="inline">{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Date unavailable'}</dd></div>

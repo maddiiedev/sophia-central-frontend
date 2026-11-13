@@ -78,7 +78,7 @@ export function ProfileSettingsPage() {
       setError('Clipboard access is unavailable. Select your Sophis Central ID and copy it manually.');
     }
   };
-  const selectedInstitution = academicInstitutions.find((item) => item.name.trim().toLocaleLowerCase() === form.institution.trim().toLocaleLowerCase());
+  const selectedInstitution = academicInstitutions.find((item) => item.id === user.institutionId) ?? academicInstitutions.find((item) => item.name.trim().toLocaleLowerCase() === form.institution.trim().toLocaleLowerCase());
   const facultyOptions = selectedInstitution?.faculties ?? [];
   const selectedFaculty = facultyOptions.find((item) => item.name.trim().toLocaleLowerCase() === form.faculty.trim().toLocaleLowerCase());
   const departmentOptions = selectedFaculty?.departments ?? [];
@@ -97,6 +97,7 @@ export function ProfileSettingsPage() {
       await apiRequest(`/users/${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         body: JSON.stringify({
+          institutionId: selectedInstitution.id,
           institution: selectedInstitution.name,
           faculty: selectedFaculty?.name ?? facultyName,
           department: selectedDepartment?.name ?? departmentName,
@@ -256,11 +257,9 @@ export function ProfileSettingsPage() {
           <div>
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <label htmlFor="profile-institution" className="block text-sm font-semibold text-[#091F5B]">Institution</label>
-              <button type="button" onClick={() => { if (editingInstitution) { setForm((current) => ({ ...current, institution: user.institution ?? '', faculty: user.faculty ?? '', department: user.department ?? '' })); setEditingInstitution(false); } else { setForm((current) => ({ ...current, institution: user.institution ?? '', faculty: user.faculty ?? '', department: user.department ?? '' })); setEditingInstitution(true); } }} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#6121D0] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">
-                <Pencil size={14}/>{editingInstitution ? 'Close edit' : 'Edit institution'}
-              </button>
+              {!user.institutionId && <button type="button" onClick={() => { if (editingInstitution) { setForm((current) => ({ ...current, institution: user.institution ?? '', faculty: user.faculty ?? '', department: user.department ?? '' })); setEditingInstitution(false); } else { setForm((current) => ({ ...current, institution: user.institution ?? '', faculty: user.faculty ?? '', department: user.department ?? '' })); setEditingInstitution(true); } }} className="inline-flex items-center gap-1.5 rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#6121D0] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><Pencil size={14}/>{editingInstitution ? 'Close edit' : 'Set catalogue institution'}</button>}
             </div>
-            {editingInstitution ? <>
+            {editingInstitution && !user.institutionId ? <>
               <select id="profile-institution" value={form.institution} disabled={catalogueLoading} onChange={(event) => setForm((current) => ({ ...current, institution: event.target.value, faculty: '', department: '' }))} className="brand-input" aria-label="Select institution">
                 <option value="">Select an approved institution</option>
                 {[...academicInstitutions].sort((a, b) => a.name.localeCompare(b.name)).map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}

@@ -2,7 +2,7 @@ import { apiRequest } from './client';
 import type { Resource } from '../types';
 
 type ApiResource = Resource & {
-  uploaderId?: string;
+  uploaderId?: string | null;
   license?: 'CC-BY-4.0' | 'CC-BY-SA-4.0' | 'CC0-1.0' | 'ALL-RIGHTS-RESERVED';
   attribution?: string;
   faculty?: string;
@@ -15,7 +15,7 @@ export type PublicResourceFilters = { q?: string; course?: string; topic?: strin
 export type PublicResourcePage = { items: ApiResource[]; page: number; limit: number; total: number; totalPages: number };
 
 function mapResource(resource: ApiResource): Resource {
-  return { ...resource, uploadedBy: resource.uploadedBy ?? resource.uploaderId, moderationStatus: resource.moderationStatus ?? (resource.isVerified ? 'approved' : 'pending') };
+  return { ...resource, uploadedBy: resource.uploadedBy ?? resource.uploaderId ?? undefined, moderationStatus: resource.moderationStatus ?? (resource.isVerified ? 'approved' : 'pending') };
 }
 function queryString(filters: PublicResourceFilters = {}) {
   const params = new URLSearchParams();

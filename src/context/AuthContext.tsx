@@ -77,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastName: payload.lastName,
       role: payload.role,
       referralCode: payload.role === 'student' && typeof payload.referralCode === 'string' ? payload.referralCode : undefined,
+      institutionId: typeof payload.institutionId === 'string' ? payload.institutionId : '',
       institution: typeof payload.institution === 'string' ? payload.institution.trim() || undefined : undefined,
       faculty: typeof payload.faculty === 'string' ? payload.faculty.trim() || undefined : undefined,
       department: typeof payload.department === 'string' ? payload.department.trim() || undefined : undefined,

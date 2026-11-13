@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, Eye, EyeOff, BrainCircuit, Flame } from 'lucide-react';
+import { UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, Eye, EyeOff, BrainCircuit, Flame, Copy } from 'lucide-react';
 import { OverviewCard, UserBadge } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
 import { useAuth } from '../context/AuthContext';
@@ -110,7 +110,7 @@ export function DashboardPage() {
   return <div className="space-y-6">
     <section className="rounded-3xl bg-[#2C36D9] p-5 text-white shadow-sm sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">Study dashboard</p><h2 data-hero-middle-heading className="mt-2 text-3xl font-bold !text-white">Your academic momentum is building.</h2><p className="mt-2 text-sm text-white/90">Welcome back, {firstName}.</p></div>
+        <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">Study dashboard</p><h2 data-hero-middle-heading className="mt-2 text-3xl font-bold !text-white">Your academic momentum is building.</h2><p className="mt-2 text-sm text-white/90">Welcome back, {firstName}.</p>{user?.uniqueId && <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/90"><span>Institution ID:</span><span className="font-semibold tracking-wide">{user.uniqueId}</span><button type="button" onClick={() => { if (user.uniqueId) void navigator.clipboard?.writeText(user.uniqueId); }} className="inline-flex items-center gap-1 rounded-lg border border-white/30 px-2 py-1 font-semibold text-white hover:bg-white/10" aria-label="Copy Institution ID"><Copy size={12}/> Copy</button></div>}{!user?.uniqueId && <p className="mt-2 text-xs text-white/80">Institution ID pending catalogue verification</p>}</div>
         <UserBadge />
       </div>
     </section>

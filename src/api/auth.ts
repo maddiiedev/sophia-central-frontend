@@ -8,6 +8,7 @@ type RegisterPayload = {
   firstName: string;
   lastName: string;
   role?: Extract<UserRole, 'student' | 'lecturer'>;
+  institutionId: string;
   institution?: string;
   faculty?: string;
   department?: string;

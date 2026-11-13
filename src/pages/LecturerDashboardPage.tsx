@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, UploadCloud } from 'lucide-react';
+import { ChevronRight, UploadCloud, Copy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { OverviewCard, SectionTitle, UserBadge } from '../components/layout/AppShell';
 import { resourcesApi } from '../api/resources';
@@ -43,7 +43,7 @@ export function LecturerDashboardPage() {
   ];
 
   return <div className="space-y-6">
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><SectionTitle eyebrow="Lecturer workspace" title={`Welcome back, ${firstName}`} /><div className="flex items-center gap-3"><Link to="/upload" className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2C36D9]"><UploadCloud size={16} /> Upload resource</Link><UserBadge /></div></div>
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div className="min-w-0"><SectionTitle eyebrow="Lecturer workspace" title={`Welcome back, ${firstName}`} />{user?.uniqueId ? <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#5C6982]"><span>Institution ID:</span><span className="font-semibold tracking-wide text-[#091F5B]">{user.uniqueId}</span><button type="button" onClick={() => { if (user.uniqueId) void navigator.clipboard?.writeText(user.uniqueId); }} className="inline-flex items-center gap-1 rounded-lg border border-[#DCE4EF] px-2 py-1 font-semibold text-[#6121D0] hover:bg-[#F3F0FF]" aria-label="Copy Institution ID"><Copy size={12}/> Copy</button></div> : <p className="mt-1 text-xs text-[#71809A]">Institution ID pending catalogue verification</p>}</div><div className="flex items-center gap-3"><Link to="/upload" className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#2C36D9]"><UploadCloud size={16} /> Upload resource</Link><UserBadge /></div></div>
     {showOnboarding && <div className="rounded-3xl border border-[#6121D0]/25 bg-[#6121D0]/10 p-5"><div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><div className="text-[10px] uppercase tracking-[0.22em] text-[#6121D0]">Lecturer workflow</div><h3 className="mt-2 text-2xl font-semibold text-[#091F5B]">Upload → submit → moderation</h3><p className="mt-2 text-sm text-[#4B5563]">Your submissions and review decisions are shown here. Only approved resources appear in the shared library.</p></div><button type="button" onClick={() => setShowOnboarding(false)} className="rounded-xl border border-[#6121D0]/30 bg-white px-4 py-2 text-sm font-semibold text-[#6121D0] hover:bg-[#F3F0FF]">Dismiss</button></div></div>}
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => <div key={stat.label} className="glass-panel p-4"><div className="text-[10px] uppercase tracking-[0.2em] text-[#5C6982]">{stat.label}</div><div className="mt-4 text-3xl font-semibold text-[#091F5B]">{stat.value}</div><div className="mt-1 text-sm text-[#5C6982]">{stat.helper}</div></div>)}</div>
     <OverviewCard title="My resource review history" action={String(resources.length) + ' total'}>

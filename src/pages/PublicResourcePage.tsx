@@ -4,9 +4,11 @@ import { ArrowLeft, BookOpen, ExternalLink } from 'lucide-react';
 import { resourcesApi } from '../api/resources';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
+import { useAuth } from '../context/AuthContext';
 
 export function PublicResourcePage() {
   const { id = '' } = useParams();
+  const { user } = useAuth();
   const resource = useQuery({
     queryKey: ['public-resource', id],
     queryFn: () => resourcesApi.publicById(id),
@@ -15,7 +17,7 @@ export function PublicResourcePage() {
   const file = useQuery({
     queryKey: ['public-resource-file', id],
     queryFn: () => resourcesApi.publicFileUrl(id),
-    enabled: Boolean(id) && Boolean(resource.data?.hasFile),
+    enabled: Boolean(id) && Boolean(resource.data?.hasFile) && Boolean(user && (!['student', 'lecturer', 'reviewer'].includes(user.role) || user.institutionId)),
     retry: false,
   });
 
@@ -75,7 +77,7 @@ export function PublicResourcePage() {
           {Boolean(item.hasFile) && (
             <section>
               <h2 className="font-semibold text-[#091F5B]">Attached material</h2>
-              {file.isLoading ? (
+              {!user ? <p className="mt-2 text-sm text-[#5C6982]">Sign in to your Sophis Central account. File downloads require a permanent Institution ID on student and lecturer accounts. <Link to="/login" className="font-semibold text-[#6121D0] underline">Sign in</Link>. Public resource details remain available without signing in.</p> : ['student', 'lecturer', 'reviewer'].includes(user.role) && !user.institutionId ? <p className="mt-2 text-sm text-[#5C6982]">Select your institution from the approved catalogue in Profile settings to receive your permanent Institution ID before downloading materials.</p> : file.isLoading ? (
                 <p className="mt-2 text-sm text-[#5C6982]">Preparing secure file access…</p>
               ) : file.isError ? (
                 <p className="mt-2 text-sm text-rose-700">

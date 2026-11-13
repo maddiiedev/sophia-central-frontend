@@ -3,6 +3,7 @@ export type UserRole = 'student' | 'lecturer' | 'reviewer' | 'moderator' | 'admi
 export interface User {
   id: string;
   uniqueId?: string;
+  institutionId?: string | null;
   name: string;
   email: string;
   role: UserRole;
@@ -48,6 +49,7 @@ export interface Resource {
   moderationStatus?: 'pending' | 'approved' | 'rejected' | 'flagged' | string;
   isVerified?: boolean;
   uploadedBy?: string;
+  uploaderId?: string | null;
   createdAt?: string;
   [key: string]: unknown;
 }

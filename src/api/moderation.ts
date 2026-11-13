@@ -14,7 +14,8 @@ type ApiModerationResource = {
   tags?: string[];
   moderationStatus?: 'pending' | 'revision_requested' | 'approved' | 'rejected' | 'flagged' | 'draft';
   isVerified?: boolean;
-  uploaderId?: string;
+  uploaderId?: string | null;
+  origin?: 'community_upload' | 'open_source';
   assignedReviewerId?: string | null;
   assignedReviewer?: { id?: string; firstName?: string; lastName?: string; email?: string; reviewerExpertise?: string[] };
   uploader?: { id?: string; name?: string; firstName?: string; lastName?: string; email?: string; faculty?: string; department?: string };
@@ -34,8 +35,7 @@ function mapModerationResource(resource: ApiModerationResource): ModerationItem 
   const uploaderName = resource.uploader?.name ||
     [resource.uploader?.firstName, resource.uploader?.lastName].filter(Boolean).join(' ') ||
     resource.uploader?.email ||
-    resource.uploaderId ||
-    'Unknown contributor';
+    (resource.uploaderId === null ? 'Former contributor' : resource.origin === 'open_source' ? 'Anonymous contributor' : 'Contributor not listed');
   return {
     ...resource,
     id: resource.id,
