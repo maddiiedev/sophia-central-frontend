@@ -28,7 +28,7 @@ export default function HomePage() {
               <h1 className="max-w-4xl text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">Your academic resources. One central destination.</h1>
               <p className="mt-5 max-w-3xl text-base leading-7 text-blue-50 sm:text-lg">Find course materials, research papers, past questions, and final-year projects in one organized academic platform.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link to="/onboarding" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-[#2C36D9]">Create an account <ArrowRight size={18} /></Link>
+                <Link to="/onboarding" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-[#2C36D9]">Get started <ArrowRight size={18} /></Link>
                 <Link to="/login" className="inline-flex items-center justify-center rounded-xl border border-white/70 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10">Already a member? Sign in</Link>
               </div>
             </div>
@@ -84,8 +84,8 @@ export default function HomePage() {
         <section id="community" className="mx-auto max-w-7xl bg-white px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:pb-28">
           <div className="brand-gradient rounded-[28px] p-8 text-center shadow-lg sm:p-12">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">Academic community</p>
-            <h2 className="mt-3 text-3xl font-bold text-white">Build a better academic resource experience together.</h2>
-            <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row"><Link to="/onboarding" className="rounded-xl bg-[#6121D0] px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-[#2C36D9]">Create a student account</Link><Link to="/onboarding?role=lecturer" className="rounded-xl border border-white/70 px-6 py-3.5 font-semibold text-white">Join as a lecturer</Link></div>
+            <h2 className="mt-3 text-3xl font-bold text-white">A shared space for learning, research, and knowledge-sharing.</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-blue-50 sm:text-base">Sophis Central brings students, lecturers, and academic resources together in one organized learning environment.</p>
           </div>
         </section>
       </main>
