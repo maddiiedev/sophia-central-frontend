@@ -157,8 +157,8 @@ export function UploadPage() {
 
   const field = 'brand-input';
   return <div className="mx-auto max-w-4xl rounded-2xl border border-[#DCE4EF] bg-white p-6">
-    <h2 className="text-2xl font-bold text-[#091F5B]">Contribute academic material</h2>
-    <p className="mt-2 text-sm text-[#5C6982]">Students and lecturers can submit notes, past questions, research and study resources. All submissions are reviewed before publication.</p>
+    <h2 className="text-2xl font-bold text-[#091F5B]">Upload a student resource</h2>
+    <p className="mt-2 text-sm text-[#5C6982]">Submit your notes, past questions, research and study resources for review. Approved materials become available in the academic library.</p>
     {pendingUpload && <div role="status" className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
       <p className="font-semibold">Attachment upload needs to be completed</p>
       <p className="mt-1">Contribution record: {pendingUpload.resourceId}</p>

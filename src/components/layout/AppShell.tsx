@@ -43,7 +43,7 @@ const lecturerNav = [
   { label: 'Dashboard', href: '/lecturer', icon: LayoutGrid },
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
-  { label: 'Submit resource', href: '/upload', icon: Upload },
+  { label: 'Upload Resource', href: '/lecturer/upload', icon: Upload },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
   { label: 'My reports', href: '/reports', icon: Flag },
 ];
