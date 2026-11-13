@@ -56,6 +56,7 @@ const moderatorNav = [
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Analytics', href: '/moderation/analytics', icon: ChartNoAxesCombined },
   { label: 'Accounts & Wisdom Points', href: '/moderation/management', icon: BriefcaseBusiness },
+  { label: 'Wisdom Points Oversight', href: '/moderation/management/wisdom-points', icon: WalletCards },
 ];
 
 
