@@ -24,7 +24,7 @@ export function ProtectedRoute({
     return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to={user.role === 'reviewer' || user.role === 'moderator' || user.role === 'admin' ? '/moderation' : '/dashboard'} replace />;
+    return <Navigate to={user.role === 'moderator' ? '/moderator/dashboard' : user.role === 'reviewer' || user.role === 'admin' ? '/moderation' : user.role === 'lecturer' ? '/lecturer/dashboard' : '/student/dashboard'} replace />;
   }
 
   if (

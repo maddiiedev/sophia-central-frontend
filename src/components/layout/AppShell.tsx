@@ -28,7 +28,7 @@ import { notificationsApi } from '../../api/notifications';
 import { ProfileImage } from '../ProfileImage';
 
 const studentNav = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+  { label: 'Dashboard', href: '/student/dashboard', icon: LayoutGrid },
   { label: 'Academic & research materials', href: '/library', icon: BookOpen },
   { label: 'Contribute resource', href: '/upload', icon: Upload },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
@@ -40,7 +40,7 @@ const studentNav = [
 ];
 
 const lecturerNav = [
-  { label: 'Dashboard', href: '/lecturer', icon: LayoutGrid },
+  { label: 'Dashboard', href: '/lecturer/dashboard', icon: LayoutGrid },
   { label: 'Resource library', href: '/library', icon: BookOpen },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Upload Resource', href: '/lecturer/upload', icon: Upload },
@@ -49,6 +49,7 @@ const lecturerNav = [
 ];
 
 const moderatorNav = [
+  { label: 'Dashboard', href: '/moderator/dashboard', icon: LayoutGrid },
   { label: 'Reports & moderation', href: '/moderation', icon: ShieldCheck },
   { label: 'Platform resource library', href: '/library', icon: BookOpen },
   { label: 'Saved resources', href: '/my-resources', icon: Bookmark },
@@ -119,7 +120,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const goBack = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (historyIndex > 0) navigate(-1);
-    else navigate(user?.role === 'lecturer' ? '/lecturer' : user?.role === 'reviewer' || user?.role === 'moderator' || user?.role === 'admin' ? '/moderation' : '/dashboard');
+    else navigate(user?.role === 'moderator' ? '/moderator/dashboard' : user?.role === 'lecturer' ? '/lecturer/dashboard' : user?.role === 'reviewer' || user?.role === 'admin' ? '/moderation' : '/student/dashboard');
   };
 
   const nav = (
