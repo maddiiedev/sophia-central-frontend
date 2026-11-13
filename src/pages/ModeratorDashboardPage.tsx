@@ -78,7 +78,7 @@ export function ModeratorDashboardPage() {
 
   return <div className="space-y-6">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div><SectionTitle eyebrow="Moderator workspace" title={`Welcome back, ${user?.firstName?.trim() || user?.name?.trim().split(/\s+/)[0] || 'Moderator'}`} /><p className="-mt-3 text-sm text-[#5C6982]">Your overview of moderation operations, platform resources and account activity.</p></div>
+      <div><SectionTitle eyebrow="Moderator workspace" title="Welcome back Sophis" /><p className="-mt-3 text-sm text-[#5C6982]">Your overview of moderation operations, platform resources and account activity.</p></div>
       <button type="button" onClick={() => void loadOverview(true)} disabled={loading || refreshing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 text-sm font-semibold text-[#091F5B] hover:border-[#6121D0] disabled:opacity-50"><RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} /> Refresh overview</button>
     </div>
     {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}<button type="button" onClick={() => void loadOverview()} className="ml-2 font-semibold underline">Try again</button></div>}
