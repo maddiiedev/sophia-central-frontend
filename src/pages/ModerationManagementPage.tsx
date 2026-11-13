@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, ShieldCheck, RefreshCw } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, RefreshCw } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/api/client';
 import { SectionTitle } from '../components/layout/AppShell';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +22,7 @@ export function ModerationManagementPage() {
     setLoading(true); setError('');
     try {
       const data = await apiRequest<ManagedUser[]>('/users/management');
-      setUsers(Array.isArray(data) ? data.filter((account) => account.role !== 'moderator') : []);
+      setUsers(Array.isArray(data) ? data.filter((account) => user?.role === 'admin' ? ['student', 'lecturer', 'reviewer'].includes(account.role) : ['student', 'lecturer'].includes(account.role)) : []);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load accounts.');
     } finally { setLoading(false); }
@@ -31,7 +31,8 @@ export function ModerationManagementPage() {
   const filtered = useMemo(() => users.filter((item) => item.role !== 'moderator' && [item.firstName, item.lastName, item.name, item.email, item.academicHandle, item.role, item.institution].filter(Boolean).join(' ').toLowerCase().includes(query.trim().toLowerCase())), [users, query]);
 
   const setSuspended = async (account: ManagedUser, suspended: boolean) => {
-    if (account.role === 'moderator') return;
+    if (!['student', 'lecturer', 'reviewer'].includes(account.role)) return;
+    if (user?.role === 'moderator' && !['student', 'lecturer'].includes(account.role)) return;
     setBusy(true); setError(''); setNotice('');
     try {
       await apiRequest(`/users/${encodeURIComponent(account.id)}/status`, { method: 'PATCH', body: JSON.stringify({ isSuspended: suspended, reason: suspended ? 'Suspended from moderation management' : 'Restored from moderation management' }) });
@@ -42,6 +43,7 @@ export function ModerationManagementPage() {
   };
 
   const setReviewerAccess = async (account: ManagedUser, enabled: boolean) => {
+    if (user?.role !== 'admin') return;
     const expertiseAreas = (expertiseByUser[account.id] ?? '').split(',').map((value) => value.trim()).filter(Boolean);
     if (enabled && expertiseAreas.length === 0) { setError('Enter at least one subject expertise area before granting reviewer access.'); return; }
     setBusy(true); setError(''); setNotice('');
@@ -54,11 +56,8 @@ export function ModerationManagementPage() {
   };
 
   return <div className="space-y-6">
-    <SectionTitle eyebrow="Moderator tools" title="Management" />
-    <div className="flex flex-wrap gap-2">
-      <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-[#6121D0] bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white"><ShieldCheck size={16}/> Manage users</button>
-      <button type="button" onClick={() => navigate('/moderation/management/wisdom-points')} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 text-sm font-semibold text-[#091F5B]">Manage Wisdom Points</button>
-    </div>
+    <SectionTitle eyebrow="Moderator tools" title="User & points management" />
+    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-[#5C6982]">{user?.role === 'moderator' ? 'Manage student and lecturer accounts. Reviewer access and platform permissions remain an Admin responsibility.' : 'Manage eligible accounts and administer reviewer access.'}</p><Link to="/moderation/management/wisdom-points" className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 text-sm font-semibold text-[#091F5B]">Wisdom Points oversight</Link></div>
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</p>}
     <section className="space-y-4 rounded-2xl border border-[#DCE4EF] bg-white p-4 sm:p-5">

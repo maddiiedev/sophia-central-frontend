@@ -49,10 +49,10 @@ export function SavedResourcesPage() {
 
   return <div className="space-y-6">
     <section className="rounded-3xl border border-[#DCE4EF] bg-[#F3F0FF] p-6 sm:p-7">
-      <div className="flex items-center gap-3"><span className="rounded-xl bg-white p-3 text-[#6121D0]"><Bookmark aria-hidden="true" /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6121D0]">Personal library</p><h2 className="mt-1 text-2xl font-semibold text-[#091F5B]">My resources</h2></div></div>
+      <div className="flex items-center gap-3"><span className="rounded-xl bg-white p-3 text-[#6121D0]"><Bookmark aria-hidden="true" /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6121D0]">Personal library</p><h2 className="mt-1 text-2xl font-semibold text-[#091F5B]">{isModerationRole ? 'Saved resources' : 'My resources'}</h2></div></div>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-[#374151]">Keep resources you have saved for later separate from resources downloaded in-app to this account.</p>
     </section>
-    {isModerationRole && <p className="text-sm text-[#5C6982]">Your saved materials are available here for full preview. Downloading and contributing are disabled for moderation accounts.</p>}
+    {isModerationRole && <p className="text-sm text-[#5C6982]">Your saved materials are available here for quick access. Use the Resource library for platform-wide browsing; reviewer accounts can only assess submissions assigned to them.</p>}
     {!isModerationRole && <div className="flex flex-wrap gap-2" role="tablist" aria-label="My resources sections">
       <button type="button" role="tab" aria-selected={section === 'downloaded'} onClick={() => setSection('downloaded')} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${section === 'downloaded' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}><Download size={16}/> Downloaded resources ({downloadedQuery.data?.length ?? 0})</button>
       <button type="button" role="tab" aria-selected={section === 'saved'} onClick={() => setSection('saved')} className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold ${section === 'saved' ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#091F5B]'}`}><Bookmark size={16}/> Saved resources ({savedQuery.data?.length ?? 0})</button>

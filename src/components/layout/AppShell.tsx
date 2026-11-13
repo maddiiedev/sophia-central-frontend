@@ -49,13 +49,13 @@ const lecturerNav = [
 ];
 
 const moderatorNav = [
-  { label: 'Review queue', href: '/moderation', icon: ShieldCheck },
-  { label: 'Resource library', href: '/library', icon: BookOpen },
-  { label: 'My resources', href: '/my-resources', icon: Bookmark },
+  { label: 'Reports & moderation', href: '/moderation', icon: ShieldCheck },
+  { label: 'Platform resource library', href: '/library', icon: BookOpen },
+  { label: 'Saved resources', href: '/my-resources', icon: Bookmark },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Analytics', href: '/moderation/analytics', icon: ChartNoAxesCombined },
-  { label: 'Management', href: '/moderation/management', icon: BriefcaseBusiness },
+  { label: 'Accounts & Wisdom Points', href: '/moderation/management', icon: BriefcaseBusiness },
 ];
 
 
