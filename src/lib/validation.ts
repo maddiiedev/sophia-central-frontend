@@ -13,7 +13,7 @@ export const registerSchema = z.object({
   email: z.string().email('Enter a valid email address'),
   referralCode: z.string().trim().max(32, 'Referral code is too long').optional(),
   handle: z.string().trim().transform((value) => value.replace(/^@/, '').toLowerCase()).pipe(z.string().min(3, 'Academic handle must be at least 3 characters').max(30, 'Academic handle must be 30 characters or fewer').regex(/^[a-z0-9](?:[a-z0-9._]*[a-z0-9])$/, 'Start and end with a letter or number; use only letters, numbers, periods, and underscores')),
-
+  termsAccepted: z.boolean().refine((accepted) => accepted, 'You must agree to the Terms of Use and Privacy Policy to create an account'),
 });
 
 export type RegisterValues = z.infer<typeof registerSchema>;

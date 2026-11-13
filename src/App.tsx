@@ -8,6 +8,7 @@ import { useAuth } from './context/AuthContext';
 import { apiRequest } from './lib/api/client';
 import { ThemeProvider } from './context/ThemeContext';
 import { AppShell } from './components/layout/AppShell';
+import { BrandLogo } from './components/brand/BrandLogo';
 import HomePage from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ModeratorDashboardPage } from './pages/ModeratorDashboardPage';
@@ -87,7 +88,76 @@ function LoginPage() {
     } finally { setCancellingDeletion(false); }
   };
   if (isAuthenticated && user) return <Navigate to={destinationForUser(user)} replace />;
-  return <main className="min-h-screen bg-white px-4 py-8 sm:px-6 lg:py-12"><div className="mx-auto grid min-h-[650px] w-full max-w-6xl overflow-hidden rounded-[28px] border border-[#DCE4EF] bg-white shadow-[0_24px_70px_rgba(7,30,84,0.12)] lg:grid-cols-2"><section className="relative flex flex-col justify-between overflow-hidden bg-[#2C36D9] p-7 text-white sm:p-10 lg:justify-center lg:gap-16 lg:p-12"><div className="relative"><p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/85">Study · Research · Grow</p><h1 className="mt-4 max-w-lg text-4xl font-bold leading-tight text-white sm:text-5xl">Your academic journey starts here.</h1><p className="mt-5 max-w-md text-base leading-7 text-white/90">Discover academic resources, organise your studies, and get AI-guided support throughout your learning journey.</p></div><div className="relative mt-12 space-y-3">{['Find relevant notes and past questions', 'Discover and share academic resources', 'Learn with AI-guided study support'].map((item) => <div key={item} className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 p-4 text-sm text-white"><span aria-hidden="true">✓</span><span>{item}</span></div>)}</div></section><section className="flex items-center justify-center p-6 sm:p-10 lg:p-12"><div className="w-full max-w-md"><div className="mb-8"><div className="mb-4 flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2C36D9]">Welcome back</p><h2 className="mt-3 text-3xl font-bold text-[#091F5B] sm:text-4xl">Sign in</h2></div></div><p className="text-sm leading-6 text-[#5C6982]">Continue your learning journey from where you left off.</p></div>{accountNotice === 'deletion-scheduled' && <div role="status" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Your deletion request has been scheduled. Your account is inaccessible now, and permanent cleanup is due after 30 days. You can cancel during the grace period using your registered email, password and security answer.</div>}{accountNotice === 'deactivated' && <div role="status" className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">Your account has been deactivated. Sign in again with your password when you are ready to reactivate it.</div>}<form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-5" noValidate>{submitError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{submitError}</div>}{submitError.toLowerCase().includes('pending deletion') && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-sm leading-6 text-amber-950">You can cancel the request during the 30-day grace period by verifying your account details.</p><button type="button" onClick={() => { setShowDeletionCancellation((value) => !value); setCancelEmail(getValues('identifier').includes('@') ? getValues('identifier') : ''); setCancelPassword(getValues('password')); setCancelError(''); }} className="mt-2 text-sm font-semibold text-[#6121D0]">{showDeletionCancellation ? 'Hide cancellation form' : 'Cancel deletion request'}</button>{showDeletionCancellation && <div className="mt-3 space-y-3"><input value={cancelEmail} onChange={(event) => setCancelEmail(event.target.value)} type="email" autoComplete="email" placeholder="Registered email address" className="brand-input"/><input value={cancelPassword} onChange={(event) => setCancelPassword(event.target.value)} type="password" autoComplete="current-password" placeholder="Current password" className="brand-input"/><input value={cancelAnswer} onChange={(event) => setCancelAnswer(event.target.value)} type="text" autoComplete="off" placeholder="Security answer" className="brand-input"/>{cancelError && <p role="alert" className="text-sm text-rose-700">{cancelError}</p>}{cancelMessage && <p role="status" className="text-sm text-emerald-800">{cancelMessage}</p>}<button type="button" onClick={() => void cancelDeletion()} disabled={cancellingDeletion || !cancelEmail.trim() || !cancelPassword || !cancelAnswer.trim()} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white disabled:opacity-60">{cancellingDeletion ? 'Restoring account…' : 'Cancel deletion and sign in'}</button></div>}</div>}{submitError.toLowerCase().includes('verify') && <p className="text-center text-sm"><Link to="/verify-email" className="font-semibold text-[#2C36D9]">Resend activation email</Link></p>}<div><label htmlFor="login-identifier" className="mb-2 block text-sm font-medium text-[#091F5B]">Email, username or Institution ID</label><input id="login-identifier" {...register('identifier')} type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="Email, @username or SC-… Institution ID" aria-invalid={Boolean(errors.identifier)} className="brand-input" />{errors.identifier && <p className="mt-1 text-sm text-rose-600">{errors.identifier.message}</p>}</div><div><div className="mb-2 flex items-center justify-between"><label htmlFor="login-password" className="block text-sm font-medium text-[#091F5B]">Password</label><Link to="/forgot-password" className="text-xs font-semibold text-[#2C36D9]">Forgot password?</Link></div><div className="relative"><input id="login-password" {...register('password')} type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" aria-invalid={Boolean(errors.password)} className="brand-input pr-11" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#5C6982]" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>{errors.password && <p className="mt-1 text-sm text-rose-600">{errors.password.message}</p>}</div><button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white shadow-lg transition hover:bg-[#2C36D9] disabled:opacity-60">{isSubmitting ? 'Signing in...' : 'Sign in'}</button><p className="text-center text-sm text-[#5C6982]">New to Sophis Central? <Link to="/onboarding" className="font-semibold text-[#2C36D9]">Create an account</Link></p></form><div className="mt-8 border-t border-[#DCE4EF] pt-5 text-center"><p className="text-xs text-[#71809A]">Sophis Central · Your academic journey, organised.</p></div></div></section></div></main>;
+  return (
+    <main className="min-h-screen bg-[#F3F6FC] px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto grid min-h-[680px] w-full max-w-6xl overflow-hidden rounded-[28px] border border-[#DCE4EF] bg-white shadow-[0_24px_70px_rgba(7,30,84,0.10)] lg:grid-cols-[0.92fr_1.08fr]">
+        <aside className="relative isolate flex min-h-[300px] flex-col justify-between overflow-hidden bg-[#091F5B] p-7 text-white sm:p-10 lg:min-h-full lg:p-12">
+          <div className="absolute inset-0 -z-20 bg-cover bg-center opacity-35" style={{ backgroundImage: "url('/images/students-collaborating.webp')" }} />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#091F5B]/95 via-[#1736A2]/90 to-[#6121D0]/85" />
+          <BrandLogo variant="full" tone="dark" className="rounded-lg bg-white/95 px-3 py-2" />
+          <div className="relative mt-12 max-w-lg lg:mt-20">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">Welcome back</p>
+            <h1 className="mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl">Good to have you back.</h1>
+            <p className="mt-5 max-w-md text-sm leading-7 text-blue-50/95 sm:text-base">Sign in to pick up where you left off, find your learning resources, and stay connected with your academic community.</p>
+          </div>
+          <div className="relative mt-10 grid gap-3 sm:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 p-3.5 text-sm text-white backdrop-blur-sm"><span aria-hidden="true" className="text-[#D9C6FF]">✓</span><span>Keep your studies organised</span></div>
+            <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 p-3.5 text-sm text-white backdrop-blur-sm"><span aria-hidden="true" className="text-[#D9C6FF]">✓</span><span>Stay close to your community</span></div>
+          </div>
+        </aside>
+
+        <section className="flex items-center justify-center px-5 py-9 sm:px-10 sm:py-12 lg:px-14">
+          <div className="w-full max-w-md">
+            <div className="mb-8">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#6121D0]">Your account</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#091F5B] sm:text-4xl">Sign in</h2>
+              <p className="mt-3 text-sm leading-6 text-[#64748B]">Enter your account details to continue.</p>
+            </div>
+
+            {accountNotice === 'deletion-scheduled' && <div role="status" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Your deletion request has been scheduled. Your account is inaccessible now, and permanent cleanup is due after 30 days. You can cancel during the grace period using your registered email, password and security answer.</div>}
+            {accountNotice === 'deactivated' && <div role="status" className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">Your account has been deactivated. Sign in again with your password when you are ready to reactivate it.</div>}
+
+            <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-5" noValidate>
+              {submitError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{submitError}</div>}
+              {submitError.toLowerCase().includes('pending deletion') && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm leading-6 text-amber-950">You can cancel the request during the 30-day grace period by verifying your account details.</p>
+                  <button type="button" onClick={() => { setShowDeletionCancellation((value) => !value); setCancelEmail(getValues('identifier').includes('@') ? getValues('identifier') : ''); setCancelPassword(getValues('password')); setCancelError(''); }} className="mt-2 text-sm font-semibold text-[#6121D0]">{showDeletionCancellation ? 'Hide cancellation form' : 'Cancel deletion request'}</button>
+                  {showDeletionCancellation && <div className="mt-3 space-y-3"><input value={cancelEmail} onChange={(event) => setCancelEmail(event.target.value)} type="email" autoComplete="email" placeholder="Registered email address" className="brand-input" /><input value={cancelPassword} onChange={(event) => setCancelPassword(event.target.value)} type="password" autoComplete="current-password" placeholder="Current password" className="brand-input" /><input value={cancelAnswer} onChange={(event) => setCancelAnswer(event.target.value)} type="text" autoComplete="off" placeholder="Security answer" className="brand-input" />{cancelError && <p role="alert" className="text-sm text-rose-700">{cancelError}</p>}{cancelMessage && <p role="status" className="text-sm text-emerald-800">{cancelMessage}</p>}<button type="button" onClick={() => void cancelDeletion()} disabled={cancellingDeletion || !cancelEmail.trim() || !cancelPassword || !cancelAnswer.trim()} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white disabled:opacity-60">{cancellingDeletion ? 'Restoring account…' : 'Cancel deletion and sign in'}</button></div>}
+                </div>
+              )}
+              {submitError.toLowerCase().includes('verify') && <p className="text-center text-sm"><Link to="/verify-email" className="font-semibold text-[#004BEC]">Resend activation email</Link></p>}
+
+              <div>
+                <label htmlFor="login-identifier" className="mb-2 block text-sm font-medium text-[#091F5B]">Email, username or Institution ID</label>
+                <input id="login-identifier" {...register('identifier')} type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="Email, @username or SC-… Institution ID" aria-invalid={Boolean(errors.identifier)} className="brand-input" />
+                {errors.identifier && <p className="mt-1 text-sm text-rose-600">{errors.identifier.message}</p>}
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label htmlFor="login-password" className="block text-sm font-medium text-[#091F5B]">Password</label>
+                  <Link to="/forgot-password" className="text-xs font-semibold text-[#004BEC] hover:text-[#6121D0]">Forgot password?</Link>
+                </div>
+                <div className="relative">
+                  <input id="login-password" {...register('password')} type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" aria-invalid={Boolean(errors.password)} className="brand-input pr-11" />
+                  <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#5C6982] transition hover:bg-[#F3F6FC] hover:text-[#004BEC]" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+                </div>
+                {errors.password && <p className="mt-1 text-sm text-rose-600">{errors.password.message}</p>}
+              </div>
+
+              <button type="submit" disabled={isSubmitting} className="brand-button flex w-full items-center justify-center px-4 py-3 font-semibold disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Signing in...' : 'Sign in'}</button>
+              <p className="text-center text-sm text-[#5C6982]">New to Sophis Central? <Link to="/onboarding" className="font-semibold text-[#004BEC] hover:text-[#6121D0]">Create an account</Link></p>
+            </form>
+
+            <div className="mt-8 border-t border-[#E4EAF5] pt-5 text-center">
+              <p className="text-xs text-[#71809A]">Sophis Central · Your academic journey, organised.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
 }
 
 export default function App() {
