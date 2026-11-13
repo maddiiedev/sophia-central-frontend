@@ -55,6 +55,8 @@ export function NotificationsPage() {
   const visibleItems = useMemo(() => {
     const term = query.trim().toLowerCase();
     return items.filter(item => {
+      // Defensive UI guard for legacy caches: private message contents belong only in Messages.
+      if (item.type === 'chat_message') return false;
       if (filter === 'unread' && item.isRead) return false;
       if (filter !== 'all' && filter !== 'unread' && categoryFor(item.type) !== filter) return false;
       if (term && ![item.title, item.message, item.type].join(' ').toLowerCase().includes(term)) return false;
