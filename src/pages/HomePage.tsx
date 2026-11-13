@@ -77,33 +77,7 @@ export default function HomePage() {
               </section>
             </div>
 
-            <section className="mt-10">
-              <h3 className="text-2xl font-bold text-[#091F5B]">What We Offer</h3>
-              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[
-                  ['Centralized academic resources', 'an organized destination for discovering relevant academic materials.'],
-                  ['Course materials and study notes', 'resources that support coursework, revision, and independent learning.'],
-                  ['Past questions and academic projects', 'materials that help students prepare for examinations and understand research expectations, subject to authorization and availability.'],
-                  ['Research resources', 'access to selected research publications and scholarly materials that support academic exploration.'],
-                  ['Knowledge-sharing opportunities', 'opportunities for eligible users, including lecturers, to contribute useful academic materials responsibly.'],
-                  ['Institution-based organization', 'resource discovery designed to reflect users’ institutions, faculties, departments, courses, and academic needs.'],
-                  ['AI Chat Assistance', 'where available, AI-powered assistance to support learning, understanding, and academic exploration.'],
-                ].map(([heading, description]) => (
-                  <div key={heading} className="rounded-2xl border border-[#DCE4EF] bg-white p-5">
-                    <h4 className="font-bold text-[#091F5B]">{heading}</h4>
-                    <p className="mt-2 text-sm leading-6 text-[#4B5563]">{description}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
 
-            <section className="mt-10 rounded-2xl border border-[#DCE4EF] bg-white p-6 sm:p-8">
-              <h3 className="text-2xl font-bold text-[#091F5B]">Our Commitment</h3>
-              <p className="mt-3 text-sm leading-7 text-[#374151]">We believe knowledge should be organized, learning should be encouraged, and academic resources should be handled responsibly. We are committed to promoting academic integrity, respecting intellectual property, protecting user information, and improving the academic experience through technology.</p>
-              <p className="mt-3 text-sm leading-7 text-[#374151]">Sophis Central supports learning and research; it does not guarantee academic outcomes or replace formal teaching. Users remain responsible for verifying information, citing sources appropriately, and following their institutions’ academic rules.</p>
-              <p className="mt-5 font-semibold text-[#091F5B]">Sophis Central — Learn. Research. Grow.</p>
-            </section>
-            <Link to="/onboarding" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9]">Create your account <ArrowRight size={17}/></Link>
           </div>
         </section>
 
