@@ -2,6 +2,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { featureHighlights } from '../lib/mock-data';
+import { publicContactEmails } from '../config/publicContact';
 
 export default function HomePage() {
   return (
@@ -11,7 +12,7 @@ export default function HomePage() {
         <nav aria-label="Primary navigation" className="hidden items-center gap-7 text-sm font-medium text-[#091F5B] md:flex">
           <a href="#features" className="transition hover:text-[#2C36D9]">Features</a>
           <a href="#community" className="transition hover:text-[#2C36D9]">Community</a>
-          <a href="#about" className="transition hover:text-[#2C36D9]">About</a>
+          <a href="#about" className="transition hover:text-[#2C36D9]">About Us</a>
         </nav>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link to="/login" className="rounded-xl border-2 border-[#004BEC] bg-white px-3 py-2 text-sm font-semibold text-[#004BEC] transition hover:bg-[#F3F6FC] sm:px-4">Sign in</Link>
@@ -33,15 +34,7 @@ export default function HomePage() {
             </div>
             <div className="relative mx-auto w-full max-w-xl md:ml-auto">
               <div aria-hidden="true" className="absolute -inset-3 rounded-[2rem] bg-white/10 blur-xl" />
-              <img
-                src="/images/students-collaborating.webp"
-                alt="Two university students collaborating on coursework at a laptop"
-                width="520"
-                height="453"
-                fetchPriority="high"
-                decoding="async"
-                className="relative aspect-[1.15/1] w-full rounded-3xl border border-white/25 object-cover shadow-2xl"
-              />
+              <img src="/images/students-collaborating.webp" alt="Two university students collaborating on coursework at a laptop" width="520" height="453" fetchPriority="high" decoding="async" className="relative aspect-[1.15/1] w-full rounded-3xl border border-white/25 object-cover shadow-2xl" />
               <div className="absolute -bottom-4 left-4 right-4 rounded-2xl border border-white/30 bg-white/95 p-4 text-[#091F5B] shadow-xl sm:left-8 sm:right-8">
                 <p className="text-sm font-bold">Learn together. Achieve more.</p>
                 <p className="mt-1 text-xs leading-5 text-[#4B5563]">A shared home for students, lecturers, and academic resources.</p>
@@ -63,10 +56,54 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="about" className="mx-auto max-w-7xl bg-[#F8FAFD] px-4 py-14 sm:px-6 lg:px-8 lg:py-16">
-          <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr]">
-            <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">About Sophis Central</p><h2 className="mt-3 text-3xl font-bold leading-tight text-[#091F5B]">A more organized home for academic knowledge.</h2></div>
-            <div><p className="text-base leading-7 text-[#374151]">Sophis Central brings verified academic resources, research materials, lecturer contributions, and study support into one structured space. Resources are reviewed before they enter the shared library, helping students discover materials relevant to their school, faculty, and department.</p><Link to="/onboarding" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9]">Create your account <ArrowRight size={17}/></Link></div>
+        <section id="about" className="scroll-mt-24 bg-[#F8FAFD] px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">About Us</p>
+              <h2 className="mt-3 text-3xl font-bold leading-tight text-[#091F5B] sm:text-4xl">Your Academic Resources. One Central Destination.</h2>
+              <p className="mt-5 text-base leading-7 text-[#374151]">Sophis Central is an academic resource and learning platform designed to make learning, research, and academic collaboration easier for students, researchers, lecturers, and educational institutions.</p>
+              <p className="mt-4 text-base leading-7 text-[#374151]">We understand that finding relevant and reliable academic materials can be difficult when resources are scattered across websites, messaging platforms, personal files, institutional repositories, and online libraries. Sophis Central brings academic resources into a more organized, searchable, and accessible environment.</p>
+              <p className="mt-4 text-base leading-7 text-[#374151]">The platform is being developed to serve users across universities, polytechnics, and colleges of education, beginning in Nigeria, with an ambition to support wider academic communities across Africa.</p>
+            </div>
+
+            <div className="mt-10 grid gap-6 md:grid-cols-2">
+              <section className="rounded-2xl border border-[#DCE4EF] bg-white p-6">
+                <h3 className="text-xl font-bold text-[#091F5B]">Our Mission</h3>
+                <p className="mt-3 text-sm leading-7 text-[#374151]">Our mission is to simplify access to academic resources, encourage responsible knowledge-sharing, and support better learning and research experiences for students and academic communities.</p>
+              </section>
+              <section className="rounded-2xl border border-[#DCE4EF] bg-white p-6">
+                <h3 className="text-xl font-bold text-[#091F5B]">Our Vision</h3>
+                <p className="mt-3 text-sm leading-7 text-[#374151]">We envision a future where students and researchers can spend less time searching for learning materials and more time learning, creating, researching, and making meaningful contributions to society.</p>
+              </section>
+            </div>
+
+            <section className="mt-10">
+              <h3 className="text-2xl font-bold text-[#091F5B]">What We Offer</h3>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  ['Centralized academic resources', 'an organized destination for discovering relevant academic materials.'],
+                  ['Course materials and study notes', 'resources that support coursework, revision, and independent learning.'],
+                  ['Past questions and academic projects', 'materials that help students prepare for examinations and understand research expectations, subject to authorization and availability.'],
+                  ['Research resources', 'access to selected research publications and scholarly materials that support academic exploration.'],
+                  ['Knowledge-sharing opportunities', 'opportunities for eligible users, including lecturers, to contribute useful academic materials responsibly.'],
+                  ['Institution-based organization', 'resource discovery designed to reflect users’ institutions, faculties, departments, courses, and academic needs.'],
+                  ['AI Chat Assistance', 'where available, AI-powered assistance to support learning, understanding, and academic exploration.'],
+                ].map(([heading, description]) => (
+                  <div key={heading} className="rounded-2xl border border-[#DCE4EF] bg-white p-5">
+                    <h4 className="font-bold text-[#091F5B]">{heading}</h4>
+                    <p className="mt-2 text-sm leading-6 text-[#4B5563]">{description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="mt-10 rounded-2xl border border-[#DCE4EF] bg-white p-6 sm:p-8">
+              <h3 className="text-2xl font-bold text-[#091F5B]">Our Commitment</h3>
+              <p className="mt-3 text-sm leading-7 text-[#374151]">We believe knowledge should be organized, learning should be encouraged, and academic resources should be handled responsibly. We are committed to promoting academic integrity, respecting intellectual property, protecting user information, and improving the academic experience through technology.</p>
+              <p className="mt-3 text-sm leading-7 text-[#374151]">Sophis Central supports learning and research; it does not guarantee academic outcomes or replace formal teaching. Users remain responsible for verifying information, citing sources appropriately, and following their institutions’ academic rules.</p>
+              <p className="mt-5 font-semibold text-[#091F5B]">Sophis Central — Learn. Research. Grow.</p>
+            </section>
+            <Link to="/onboarding" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9]">Create your account <ArrowRight size={17}/></Link>
           </div>
         </section>
 
@@ -80,13 +117,46 @@ export default function HomePage() {
       </main>
 
       <footer className="bg-[#091F5B] text-white">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr] lg:px-8">
-          <div>
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-9 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:gap-7 lg:px-8 xl:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))]">
+          <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1">
             <BrandLogo variant="full" tone="light" linked={false} className="brightness-0 invert" />
             <p className="mt-5 max-w-xl text-sm leading-7 text-blue-100">Sophis Central is an academic learning and knowledge-sharing platform that connects students and lecturers with educational resources, supports academic discovery, and helps learners study more effectively with intelligent AI assistance.</p>
           </div>
-          <div><h3 className="font-semibold text-white">Explore</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#features" className="block hover:text-white">Features</a><a href="#community" className="block hover:text-white">Academic community</a><Link to="/library" className="block hover:text-white">Academic library</Link><Link to="/library" className="block hover:text-white">Research materials</Link></div></div>
-          <div><h3 className="font-semibold text-white">Information</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#about" className="block hover:text-white">About Us</a><Link to="/terms" className="block hover:text-white">Terms</Link><Link to="/privacy" className="block hover:text-white">Privacy Policy</Link></div></div>
+
+          <div className="min-w-0">
+            <h3 className="font-semibold text-white">Company</h3>
+            <div className="mt-4 space-y-3 break-words text-sm text-blue-100">
+              <a href="#about" className="block hover:text-white">About Us</a>
+              <Link to="/careers" className="block hover:text-white">Careers</Link>
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="font-semibold text-white">Support</h3>
+            <div className="mt-4 space-y-3 text-sm text-blue-100">
+              <Link to="/contact" className="block hover:text-white">Contact Us</Link>
+              <a href={`mailto:${publicContactEmails.support}?subject=${encodeURIComponent('Sophis Central Support Enquiry')}`} className="block hover:text-white">Email Support</a>
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="font-semibold text-white">Policies</h3>
+            <div className="mt-4 space-y-3 text-sm text-blue-100">
+              <Link to="/terms" className="block hover:text-white">Terms of Use</Link>
+              <Link to="/privacy" className="block hover:text-white">Privacy Policy</Link>
+              <Link to="/financial-policy" className="block hover:text-white">Financial Policy</Link>
+            </div>
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="font-semibold text-white">Explore</h3>
+            <div className="mt-4 space-y-3 text-sm text-blue-100">
+              <a href="#features" className="block hover:text-white">Features</a>
+              <a href="#community" className="block hover:text-white">Academic community</a>
+              <Link to="/library" className="block hover:text-white">Academic library</Link>
+              <Link to="/library" className="block hover:text-white">Research materials</Link>
+            </div>
+          </div>
         </div>
         <div className="border-t border-white/15"><div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-blue-100 sm:px-6 lg:px-8">© {new Date().getFullYear()} Sophis Central. All rights reserved.</div></div>
       </footer>
