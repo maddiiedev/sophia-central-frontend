@@ -6,7 +6,6 @@ import type { User, UserRole } from '../types';
 
 type RegisterPayload = {
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
   role?: Extract<UserRole, 'student' | 'lecturer'>;
@@ -72,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const socialLinks = payload.socialLinks as { linkedin?: string; instagram?: string; twitter?: string } | undefined;
     const response = await authApi.register({
       email: payload.email,
-      password: payload.password,
       firstName: payload.firstName,
       lastName: payload.lastName,
       role: payload.role,
@@ -89,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } : undefined,
     });
     // Registration does not create a session. The user must verify their email first.
-    if (!response.user || response.emailSent === undefined) throw new Error('Account creation did not complete. Please try again.');
+    if (response.emailSent === undefined) throw new Error('Registration request did not complete. Please try again.');
     return { emailSent: response.emailSent, message: response.message };
   }, [initializeCsrf]);
 
