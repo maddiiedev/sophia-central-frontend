@@ -607,3 +607,12 @@ html[data-theme='dark'] .app-shell .chat-page textarea.chat-edit-input {
 .app-shell .chat-page button:has(+ textarea.chat-message-input):focus-visible {
   color: #B8860B !important;
 }
+
+
+/* Apply the white correction only to explicitly marked middle hero headings.
+   Supporting text, other headings, controls, and hero backgrounds are untouched. */
+.app-shell [data-hero-middle-heading] {
+  color: #FFFFFF !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}

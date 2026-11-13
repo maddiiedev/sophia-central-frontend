@@ -110,7 +110,7 @@ export function DashboardPage() {
   return <div className="space-y-6">
     <section className="rounded-3xl bg-[#2C36D9] p-5 text-white shadow-sm sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">Study dashboard</p><h2 className="mt-2 text-3xl font-bold !text-white">Your academic momentum is building.</h2><p className="mt-2 text-sm text-white/90">Welcome back, {firstName}.</p></div>
+        <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">Study dashboard</p><h2 data-hero-middle-heading className="mt-2 text-3xl font-bold !text-white">Your academic momentum is building.</h2><p className="mt-2 text-sm text-white/90">Welcome back, {firstName}.</p></div>
         <UserBadge />
       </div>
     </section>
