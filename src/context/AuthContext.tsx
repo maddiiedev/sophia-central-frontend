@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { authApi } from '../api/auth';
 import { academicApi } from '../api/academic';
 import { setCsrfToken } from '../lib/api/client';
+import { clearPreAccountSession } from '../lib/registration-session';
 import type { User, UserRole } from '../types';
 
 type RegisterPayload = {
@@ -12,14 +13,8 @@ type RegisterPayload = {
   [key: string]: unknown;
 };
 type OnboardingPayload = Parameters<typeof academicApi.completeOnboarding>[0];
-type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<void>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
+type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<void>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-function optionalUrl(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -68,23 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (payload: RegisterPayload) => {
     await initializeCsrf();
-    const socialLinks = payload.socialLinks as { linkedin?: string; instagram?: string; twitter?: string } | undefined;
     const response = await authApi.register({
       email: payload.email,
       firstName: payload.firstName,
       lastName: payload.lastName,
       role: payload.role,
       referralCode: payload.role === 'student' && typeof payload.referralCode === 'string' ? payload.referralCode : undefined,
-      institutionId: typeof payload.institutionId === 'string' ? payload.institutionId : '',
-      institution: typeof payload.institution === 'string' ? payload.institution.trim() || undefined : undefined,
-      faculty: typeof payload.faculty === 'string' ? payload.faculty.trim() || undefined : undefined,
-      department: typeof payload.department === 'string' ? payload.department.trim() || undefined : undefined,
       academicHandle: typeof payload.handle === 'string' ? payload.handle.trim().replace(/^@/, '').toLowerCase() : '',
-      socialLinks: socialLinks ? {
-        linkedin: optionalUrl(socialLinks.linkedin),
-        instagram: optionalUrl(socialLinks.instagram),
-        twitter: optionalUrl(socialLinks.twitter),
-      } : undefined,
     });
     // Registration does not create a session. The user must verify their email first.
     if (response.emailSent === undefined) throw new Error('Registration request did not complete. Please try again.');
@@ -95,10 +80,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await academicApi.completeOnboarding(payload);
     setUser(response.user);
   }, []);
+  const completePreAccountOnboarding = useCallback(async (token: string, payload: OnboardingPayload) => {
+    await initializeCsrf();
+    const response = await authApi.completePreAccountOnboarding(token, payload);
+    setUser(response.user);
+    clearPreAccountSession();
+    try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
+    void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
+  }, [initializeCsrf]);
   const logout = useCallback(async () => {
     try { await authApi.logout(); } finally { clearSession(); }
   }, [clearSession]);
-  const value = useMemo<AuthContextValue>(() => ({ user, isAuthenticated: Boolean(user), isLoading, login, register, completeOnboarding, logout, refreshSession }), [user, isLoading, login, register, completeOnboarding, logout, refreshSession]);
+  const value = useMemo<AuthContextValue>(() => ({ user, isAuthenticated: Boolean(user), isLoading, login, register, completeOnboarding, completePreAccountOnboarding, logout, refreshSession }), [user, isLoading, login, register, completeOnboarding, completePreAccountOnboarding, logout, refreshSession]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function useAuth() { const context = useContext(AuthContext); if (!context) throw new Error('useAuth must be used inside AuthProvider'); return context; }

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/auth';
+import { clearRegistrationDraft, readRegistrationDraft, savePreAccountSession } from '../lib/registration-session';
 
 export function VerifyEmailPage() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const registrationNotice = location.state as { emailSent?: boolean; message?: string } | null;
   const token = params.get('token') || '';
@@ -13,7 +15,7 @@ export function VerifyEmailPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [verificationState, setVerificationState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [verificationMessage, setVerificationMessage] = useState(
-    token ? 'Your email link is ready. Set your password below to complete registration.' : registrationNotice?.message || 'Check your inbox and spam folder for your activation link.',
+    token ? 'Your email link is ready. Set your password below to verify your email.' : registrationNotice?.message || 'Check your inbox and spam folder for your activation link.',
   );
   const [resendMessage, setResendMessage] = useState('');
   const [resendError, setResendError] = useState('');
@@ -32,9 +34,18 @@ export function VerifyEmailPage() {
       return;
     }
     setVerificationState('loading');
-    setVerificationMessage('Verifying your email and completing your account…');
+    setVerificationMessage('Verifying your email and preparing your onboarding session…');
     try {
       const response = await authApi.confirmEmailVerification(token, password);
+      if (response.onboardingToken && response.preAccount) {
+        savePreAccountSession({ ...response.preAccount, onboardingToken: response.onboardingToken });
+        clearRegistrationDraft();
+        setVerificationState('success');
+        setVerificationMessage(response.message);
+        navigate('/onboarding/profile', { replace: true });
+        return;
+      }
+      clearRegistrationDraft();
       setVerificationState('success');
       setVerificationMessage(response.message);
     } catch (error) {
@@ -53,7 +64,11 @@ export function VerifyEmailPage() {
     }
     setIsResending(true);
     try {
-      const response = await authApi.resendEmailVerification(email.trim());
+      const draft = readRegistrationDraft();
+      if (!draft || draft.email.toLowerCase() !== email.trim().toLowerCase()) {
+        throw new Error('For security, this registration can only be resent from the browser where it was started. Return to account creation and enter your details again if you no longer have that session.');
+      }
+      const response = await authApi.resendEmailVerification(draft);
       setResendMessage(response.message);
     } catch (error) {
       setResendError(error instanceof Error ? error.message : 'Unable to request a new verification email. Please try again.');
@@ -70,19 +85,19 @@ export function VerifyEmailPage() {
         <div role={verificationState === 'error' || registrationNotice?.emailSent === false ? 'alert' : 'status'} className="mt-5 rounded-xl border border-[#DCE4EF] bg-[#F7F8FC] px-4 py-3 text-sm text-[#40516E]">{verificationMessage}</div>
         {token && verificationState !== 'success' && (
           <>
-            <p className="mt-5 text-sm leading-6 text-[#5C6982]">For security, Sophis Central does not create an account or store a password until you prove control of this email address. Choose your account password now. The verification link expires after 24 hours.</p>
+            <p className="mt-5 text-sm leading-6 text-[#5C6982]">For security, Sophis Central does not create an account or store your password in the database at this stage. Choose your password now. After email verification, you will complete your academic profile before your account and permanent ID are created. The verification link expires after 24 hours.</p>
             <form onSubmit={confirm} className="mt-6 space-y-3">
               <label htmlFor="verified-password" className="block text-sm font-medium text-[#091F5B]">Create password</label>
               <input id="verified-password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} className="brand-input" />
               <label htmlFor="verified-password-confirm" className="block text-sm font-medium text-[#091F5B]">Confirm password</label>
               <input id="verified-password-confirm" type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="brand-input" />
-              <button type="submit" disabled={verificationState === 'loading'} className="brand-button w-full px-4 py-3 font-semibold disabled:opacity-60">{verificationState === 'loading' ? 'Completing registration…' : 'Verify email and create account'}</button>
+              <button type="submit" disabled={verificationState === 'loading'} className="brand-button w-full px-4 py-3 font-semibold disabled:opacity-60">{verificationState === 'loading' ? 'Verifying email…' : 'Verify email and continue'}</button>
             </form>
           </>
         )}
-        {!token && (
+        {(!token || verificationState === 'error') && (
           <>
-            <p className="mt-5 text-sm leading-6 text-[#5C6982]">Before you can sign in, confirm that you own the email address used to register. The activation link expires after 24 hours.</p>
+            <p className="mt-5 text-sm leading-6 text-[#5C6982]">Confirm that you own the email address used to register. After verification, you will complete your academic profile before your account is created. The verification link expires after 24 hours.</p>
             <form onSubmit={resend} className="mt-6 space-y-3">
               <label htmlFor="verification-email" className="block text-sm font-medium text-[#091F5B]">Account email</label>
               <input id="verification-email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="brand-input" />
