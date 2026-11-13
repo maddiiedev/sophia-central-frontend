@@ -94,7 +94,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-9 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:gap-7 lg:px-8 xl:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))]">
           <div className="min-w-0 sm:col-span-2 lg:col-span-3 xl:col-span-1">
             <BrandLogo variant="full" tone="light" linked={false} className="brightness-0 invert" />
-            <p className="mt-5 max-w-xl text-sm leading-7 text-blue-100">Sophis Central is an academic learning and knowledge-sharing platform that connects students and lecturers with educational resources, supports academic discovery, and helps learners study more effectively with intelligent AI assistance.</p>
+            <p className="mt-5 max-w-sm text-sm leading-6 text-blue-100">Sophis Central is an academic platform connecting students and lecturers with learning resources, research materials, and tools for knowledge-sharing.</p>
           </div>
 
           <div className="min-w-0">
