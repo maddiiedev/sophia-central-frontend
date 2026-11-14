@@ -149,3 +149,16 @@ When the new domain is assigned in Vercel:
 Do not change `VITE_API_BASE_URL` as part of this frontend-domain migration: the API remains `https://sophia-central-backend.onrender.com`. Preview deployments and local development continue to use their own URLs and local API configuration.
 
 The old production hostname should only be removed after the redirect, login/session flow, password-reset links, and API CORS have been verified on the new hostname.
+
+
+## Progressive Web App (PWA)
+
+Sophis Central is installable as a Progressive Web App on supported browsers.
+
+- The web app manifest defines the application name, launch route, display mode, theme, and existing brand icons.
+- A production-only service worker provides an offline app-shell fallback and caches same-origin static assets.
+- Authenticated API requests and cross-origin requests are deliberately excluded from service-worker caching. Offline mode does not imply that sign-in, uploads, messaging, or other server-backed actions work without a connection.
+- On supported browsers, an install prompt is shown when the browser exposes the install event. On iOS, use Share → Add to Home Screen.
+- Responsive layout safeguards cover narrow viewports, safe-area insets, touch interaction, and horizontally scrollable data tables.
+
+Validate the production build and test installation on Android Chrome and iOS Safari. Confirm the deployed site is served over HTTPS; service workers and installability require a secure context.

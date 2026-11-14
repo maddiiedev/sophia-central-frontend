@@ -719,3 +719,78 @@ html[data-theme='dark'] .app-shell .page-shell {
 .app-shell .route-content h3 {
   line-height: 1.25;
 }
+
+
+/* Responsive application baseline and mobile safe-area support. */
+html, body {
+  width: 100%;
+  min-width: 320px;
+  overflow-x: clip;
+}
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+  -webkit-text-size-adjust: 100%;
+}
+img, video, canvas, svg {
+  max-width: 100%;
+}
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+input, select, textarea {
+  font-size: max(16px, 1rem);
+}
+:focus-visible {
+  outline: 3px solid rgba(44, 54, 217, 0.55);
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .app-shell main {
+    min-width: 0;
+    width: 100%;
+  }
+  .app-shell .page-shell {
+    padding-left: max(0.875rem, env(safe-area-inset-left));
+    padding-right: max(0.875rem, env(safe-area-inset-right));
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+  .app-shell .route-content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .app-shell .route-content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app-shell header {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  .homepage main,
+  .homepage section,
+  .homepage footer {
+    min-width: 0;
+  }
+  .homepage h1 {
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 380px) {
+  .app-shell .page-shell {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .app-shell header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

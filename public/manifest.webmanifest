@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Sophis Central",
+  "short_name": "Sophis Central",
+  "description": "Academic resources, learning support, and collaboration in one place.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F3F6FC",
+  "theme_color": "#091F5B",
+  "icons": [
+    {
+      "src": "/sophis-central-favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/sophia-central-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
