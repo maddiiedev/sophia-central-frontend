@@ -49,17 +49,85 @@ async function prepareProfileImage(file: File): Promise<File> {
   }
 }
 
+const PROFILE_IMAGE_URL_CACHE_TTL_MS = 10 * 60 * 1000;
+const profileImageUrlCache = new Map<string, { url: string; expiresAt: number }>();
+const profileImageUrlRequests = new Map<string, Promise<{ url: string | null }>>();
+
+function profileImageCacheStorageKey(userId: string) {
+  return `sophis-central:profile-image-url:${userId}`;
+}
+
+function readCachedProfileImageUrl(userId: string): string | null {
+  const cached = profileImageUrlCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) return cached.url;
+  profileImageUrlCache.delete(userId);
+
+  try {
+    const raw = window.sessionStorage.getItem(profileImageCacheStorageKey(userId));
+    if (!raw) return null;
+    const stored = JSON.parse(raw) as { url?: unknown; expiresAt?: unknown };
+    if (typeof stored.url === 'string' && typeof stored.expiresAt === 'number' && stored.expiresAt > Date.now()) {
+      profileImageUrlCache.set(userId, { url: stored.url, expiresAt: stored.expiresAt });
+      return stored.url;
+    }
+    window.sessionStorage.removeItem(profileImageCacheStorageKey(userId));
+  } catch {
+    // Browser storage is optional; the in-memory cache remains available.
+  }
+  return null;
+}
+
+function cacheProfileImageUrl(userId: string, url: string) {
+  const expiresAt = Date.now() + PROFILE_IMAGE_URL_CACHE_TTL_MS;
+  profileImageUrlCache.set(userId, { url, expiresAt });
+  try {
+    // Session-scoped only: signed image URLs are short-lived and never persist across browser sessions.
+    window.sessionStorage.setItem(profileImageCacheStorageKey(userId), JSON.stringify({ url, expiresAt }));
+  } catch {
+    // Private browsing or storage limits must not prevent the image from loading.
+  }
+}
+
+function invalidateProfileImageUrl(userId: string) {
+  profileImageUrlCache.delete(userId);
+  profileImageUrlRequests.delete(userId);
+  try {
+    window.sessionStorage.removeItem(profileImageCacheStorageKey(userId));
+  } catch {
+    // Browser storage is optional.
+  }
+}
+
 export const profileImageApi = {
-  getUrl: (userId: string) =>
-    apiRequest<{ url: string | null }>(`/upload/profile-image/${encodeURIComponent(userId)}/url`),
+  getCachedUrl: (userId: string) => readCachedProfileImageUrl(userId),
+  invalidate: (userId: string) => invalidateProfileImageUrl(userId),
+  async getUrl(userId: string, options: { forceRefresh?: boolean } = {}) {
+    if (options.forceRefresh) invalidateProfileImageUrl(userId);
+    const cachedUrl = readCachedProfileImageUrl(userId);
+    if (cachedUrl) return { url: cachedUrl };
+
+    const pending = profileImageUrlRequests.get(userId);
+    if (pending) return pending;
+
+    const request = apiRequest<{ url: string | null }>(`/upload/profile-image/${encodeURIComponent(userId)}/url`)
+      .then((result) => {
+        if (result.url) cacheProfileImageUrl(userId, result.url);
+        return result;
+      })
+      .finally(() => profileImageUrlRequests.delete(userId));
+    profileImageUrlRequests.set(userId, request);
+    return request;
+  },
   async upload(file: File) {
     const optimizedFile = await prepareProfileImage(file);
     const body = new FormData();
     body.append('file', optimizedFile, optimizedFile.name);
-    return apiRequest<{ success: boolean; profileImage: string; user: import('../types').User }>(
+    const result = await apiRequest<{ success: boolean; profileImage: string; user: import('../types').User }>(
       '/upload/profile-image',
       { method: 'POST', body },
     );
+    if (result.user?.id) invalidateProfileImageUrl(result.user.id);
+    return result;
   },
 };
 
