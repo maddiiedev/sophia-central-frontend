@@ -9,6 +9,7 @@ export type RegistrationDraft = {
 
 export type PreAccountSession = RegistrationDraft & {
   onboardingToken: string;
+  progress?: Record<string, unknown>;
 };
 
 const REGISTRATION_DRAFT_KEY = 'sophis-central-registration-draft';

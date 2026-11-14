@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { academicApi, type CourseOption, type InstitutionOption, type InstitutionType } from '../api/academic';
+import { authApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { clearPreAccountSession, readPreAccountSession, type PreAccountSession } from '../lib/registration-session';
 
@@ -19,33 +20,65 @@ export function ProfileOnboardingPage() {
   const navigate = useNavigate();
   const { user, completeOnboarding, completePreAccountOnboarding, logout } = useAuth();
   const [preAccount] = useState<PreAccountSession | null>(() => readPreAccountSession());
-  const leaveSetup = async () => {
-    try { if (user) await logout(); else clearPreAccountSession(); } finally { navigate('/', { replace: true }); }
-  };
+  const savedProgress = preAccount?.progress ?? {};
+  const savedString = (key: string) => typeof savedProgress[key] === 'string' ? savedProgress[key] as string : '';
+  const savedStep = Number(savedProgress.step);
   const [institutions, setInstitutions] = useState<InstitutionOption[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
-  const [step, setStep] = useState<Step>(1);
-  const [institutionId, setInstitutionId] = useState(user?.institutionId ?? '');
-  const [institutionType, setInstitutionType] = useState<InstitutionType>('university');
-  const [institutionManual, setInstitutionManual] = useState('');
+  const [step, setStep] = useState<Step>([1, 2, 3, 4].includes(savedStep) ? savedStep as Step : 1);
+  const [institutionId, setInstitutionId] = useState(user?.institutionId ?? savedString('institutionId'));
+  const [institutionType, setInstitutionType] = useState<InstitutionType>((savedString('institutionType') as InstitutionType) || 'university');
+  const [institutionManual, setInstitutionManual] = useState(savedString('institutionManual'));
   const [institutionDropdownOpen, setInstitutionDropdownOpen] = useState(false);
-  const [institutionSearch, setInstitutionSearch] = useState('');
+  const [institutionSearch, setInstitutionSearch] = useState(savedString('institutionSearch'));
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [facultyId, setFacultyId] = useState('');
-  const [facultySearch, setFacultySearch] = useState('');
-  const [facultyManual, setFacultyManual] = useState('');
-  const [department, setDepartment] = useState('');
-  const [departmentSearch, setDepartmentSearch] = useState('');
-  const [departmentManual, setDepartmentManual] = useState('');
-  const [programme, setProgramme] = useState('');
-  const [studyLevel, setStudyLevel] = useState('');
-  const [teachingAssignments, setTeachingAssignments] = useState<TeachingAssignment[]>([]);
-  const [courseTitleInput, setCourseTitleInput] = useState('');
-  const [courseCodeInput, setCourseCodeInput] = useState('');
-  const [courseLevelInput, setCourseLevelInput] = useState('');
+  const [facultyId, setFacultyId] = useState(savedString('facultyId'));
+  const [facultySearch, setFacultySearch] = useState(savedString('facultySearch'));
+  const [facultyManual, setFacultyManual] = useState(savedString('facultyManual'));
+  const [department, setDepartment] = useState(savedString('department'));
+  const [departmentSearch, setDepartmentSearch] = useState(savedString('departmentSearch'));
+  const [departmentManual, setDepartmentManual] = useState(savedString('departmentManual'));
+  const [programme, setProgramme] = useState(savedString('programme'));
+  const [studyLevel, setStudyLevel] = useState(savedString('studyLevel'));
+  const [teachingAssignments, setTeachingAssignments] = useState<TeachingAssignment[]>(Array.isArray(savedProgress.teachingAssignments) ? savedProgress.teachingAssignments as TeachingAssignment[] : []);
+  const [courseTitleInput, setCourseTitleInput] = useState(savedString('courseTitleInput'));
+  const [courseCodeInput, setCourseCodeInput] = useState(savedString('courseCodeInput'));
+  const [courseLevelInput, setCourseLevelInput] = useState(savedString('courseLevelInput'));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const onboardingProgress = {
+    step, institutionId, institutionType, institutionManual, institutionSearch,
+    facultyId, facultySearch, facultyManual, department, departmentSearch,
+    departmentManual, programme, studyLevel, teachingAssignments,
+    courseTitleInput, courseCodeInput, courseLevelInput,
+  };
+  const leaveSetup = async () => {
+    try {
+      if (preAccount?.onboardingToken) await authApi.savePreAccountProgress(preAccount.onboardingToken, onboardingProgress).catch(() => undefined);
+      if (user) await logout();
+      else clearPreAccountSession();
+    } finally { navigate('/', { replace: true }); }
+  };
+  useEffect(() => {
+    if (!preAccount?.onboardingToken || onboardingCompleted) return;
+    const timeout = window.setTimeout(() => {
+      const progress = {
+        step, institutionId, institutionType, institutionManual, institutionSearch,
+        facultyId, facultySearch, facultyManual, department, departmentSearch,
+        departmentManual, programme, studyLevel, teachingAssignments,
+        courseTitleInput, courseCodeInput, courseLevelInput,
+      };
+      void authApi.savePreAccountProgress(preAccount.onboardingToken, progress).catch(() => undefined);
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [
+    preAccount?.onboardingToken, onboardingCompleted, step, institutionId, institutionType,
+    institutionManual, institutionSearch, facultyId, facultySearch, facultyManual,
+    department, departmentSearch, departmentManual, programme, studyLevel,
+    teachingAssignments, courseTitleInput, courseCodeInput, courseLevelInput,
+  ]);
 
   const isLecturer = (user?.role ?? preAccount?.role) === 'lecturer';
   const totalSteps = isLecturer ? 4 : 3;

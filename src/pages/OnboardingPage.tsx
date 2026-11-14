@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight, BookOpen, Users } from 'lucide-react';
 import { BrandLogo } from '../components/brand/BrandLogo';
+import { authApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { registerSchema, type RegisterValues } from '../lib/validation';
 import { saveRegistrationDraft } from '../lib/registration-session';
@@ -14,7 +15,8 @@ export function OnboardingPage() {
   const { register: registerUser } = useAuth();
   const role: 'student' | 'lecturer' = params.get('role') === 'lecturer' ? 'lecturer' : 'student';
   const [submitError, setSubmitError] = useState('');
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterValues>({
+  const [handleAvailability, setHandleAvailability] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       firstName: '',
@@ -26,8 +28,28 @@ export function OnboardingPage() {
     },
   });
 
+  const watchedHandle = watch('handle');
+  useEffect(() => {
+    const handle = String(watchedHandle ?? '').trim().replace(/^@+/, '').toLowerCase();
+    if (handle.length < 3 || !/^[a-z0-9._]{3,30}$/.test(handle)) {
+      setHandleAvailability('idle');
+      return;
+    }
+    setHandleAvailability('checking');
+    const timeout = window.setTimeout(() => {
+      void authApi.checkAcademicHandleAvailability(handle)
+        .then((result) => setHandleAvailability(result.available ? 'available' : 'taken'))
+        .catch(() => setHandleAvailability('error'));
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [watchedHandle]);
+
   const onSubmit = async (values: RegisterValues) => {
     setSubmitError('');
+    if (handleAvailability === 'taken') {
+      setSubmitError('Academic handle taken. Please choose another handle.');
+      return;
+    }
     try {
       const draft = {
         email: values.email.trim().toLowerCase(),
@@ -117,6 +139,10 @@ export function OnboardingPage() {
                 <label htmlFor="handle" className="mb-2 block text-sm font-medium text-[#091F5B]">Academic handle</label>
                 <input id="handle" {...register('handle', { onChange: (event) => { event.target.value = event.target.value.replace(/^@+/, '').toLowerCase(); } })} required autoCapitalize="none" autoComplete="username" spellCheck={false} minLength={3} maxLength={30} placeholder="username" className="brand-input" />
                 {errors.handle && <p className="mt-1 text-sm text-rose-600">{errors.handle.message}</p>}
+                {handleAvailability === 'checking' && <p role="status" className="mt-1 text-xs text-[#71809A]">Checking academic handle availability…</p>}
+                {handleAvailability === 'available' && <p role="status" className="mt-1 text-xs font-medium text-emerald-700">Academic handle available</p>}
+                {handleAvailability === 'taken' && <p role="alert" className="mt-1 text-xs font-medium text-rose-700">Academic handle taken. Choose another handle.</p>}
+                {handleAvailability === 'error' && <p role="status" className="mt-1 text-xs text-[#71809A]">Availability could not be checked right now. We will verify it when you continue.</p>}
                 <p className="mt-1 text-xs leading-5 text-[#71809A]">Use 3–30 lowercase letters, numbers, periods, or underscores.</p>
               </div>
 

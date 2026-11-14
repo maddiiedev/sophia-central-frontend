@@ -1,5 +1,5 @@
 import { NotificationsPage } from './pages/NotificationsPage';
-import { Link, Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,6 +54,7 @@ function destinationForUser(user?: { role?: string; isProfileComplete?: boolean 
 
 function LoginPage() {
   const { login, isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accountNotice = searchParams.get('account');
   const [submitError, setSubmitError] = useState('');
@@ -68,7 +69,8 @@ function LoginPage() {
   const onSubmit = async (values: LoginValues) => {
     setSubmitError('');
     try {
-      await login(values.identifier.trim(), values.password);
+      const result = await login(values.identifier.trim(), values.password);
+      if (result.requiresOnboarding) navigate('/onboarding/profile', { replace: true });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Sign in failed. Check your email or username and password, then try again.');
     }

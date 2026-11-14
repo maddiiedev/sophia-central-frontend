@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { authApi } from '../api/auth';
 import { academicApi } from '../api/academic';
 import { setCsrfToken } from '../lib/api/client';
-import { clearPreAccountSession } from '../lib/registration-session';
+import { clearPreAccountSession, savePreAccountSession } from '../lib/registration-session';
 import type { User, UserRole } from '../types';
 
 type RegisterPayload = {
@@ -13,7 +13,7 @@ type RegisterPayload = {
   [key: string]: unknown;
 };
 type OnboardingPayload = Parameters<typeof academicApi.completeOnboarding>[0];
-type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<void>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
+type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<{ requiresOnboarding: boolean }>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -56,9 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (identifier: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
     const response = await authApi.login({ identifier, password });
+    if (!('user' in response)) {
+      savePreAccountSession({ ...response.preAccount, onboardingToken: response.onboardingToken });
+      setUser(null);
+      return { requiresOnboarding: true };
+    }
     setUser(response.user);
     try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
+    return { requiresOnboarding: false };
   }, [initializeCsrf]);
 
   const register = useCallback(async (payload: RegisterPayload) => {
