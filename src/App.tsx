@@ -1,7 +1,6 @@
 import { NotificationsPage } from './pages/NotificationsPage';
 import { Link, Navigate, Route, Routes, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from './context/AuthContext';
@@ -9,6 +8,7 @@ import { apiRequest } from './lib/api/client';
 import { ThemeProvider } from './context/ThemeContext';
 import { AppShell } from './components/layout/AppShell';
 import { BrandLogo } from './components/brand/BrandLogo';
+import { PasswordInput } from './components/PasswordInput';
 import HomePage from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ModeratorDashboardPage } from './pages/ModeratorDashboardPage';
@@ -56,7 +56,6 @@ function LoginPage() {
   const { login, isAuthenticated, user } = useAuth();
   const [searchParams] = useSearchParams();
   const accountNotice = searchParams.get('account');
-  const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [showDeletionCancellation, setShowDeletionCancellation] = useState(false);
   const [cancelEmail, setCancelEmail] = useState('');
@@ -123,7 +122,7 @@ function LoginPage() {
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                   <p className="text-sm leading-6 text-amber-950">You can cancel the request during the 30-day grace period by verifying your account details.</p>
                   <button type="button" onClick={() => { setShowDeletionCancellation((value) => !value); setCancelEmail(getValues('identifier').includes('@') ? getValues('identifier') : ''); setCancelPassword(getValues('password')); setCancelError(''); }} className="mt-2 text-sm font-semibold text-[#6121D0]">{showDeletionCancellation ? 'Hide cancellation form' : 'Cancel deletion request'}</button>
-                  {showDeletionCancellation && <div className="mt-3 space-y-3"><input value={cancelEmail} onChange={(event) => setCancelEmail(event.target.value)} type="email" autoComplete="email" placeholder="Registered email address" className="brand-input" /><input value={cancelPassword} onChange={(event) => setCancelPassword(event.target.value)} type="password" autoComplete="current-password" placeholder="Current password" className="brand-input" /><input value={cancelAnswer} onChange={(event) => setCancelAnswer(event.target.value)} type="text" autoComplete="off" placeholder="Security answer" className="brand-input" />{cancelError && <p role="alert" className="text-sm text-rose-700">{cancelError}</p>}{cancelMessage && <p role="status" className="text-sm text-emerald-800">{cancelMessage}</p>}<button type="button" onClick={() => void cancelDeletion()} disabled={cancellingDeletion || !cancelEmail.trim() || !cancelPassword || !cancelAnswer.trim()} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white disabled:opacity-60">{cancellingDeletion ? 'Restoring account…' : 'Cancel deletion and sign in'}</button></div>}
+                  {showDeletionCancellation && <div className="mt-3 space-y-3"><input value={cancelEmail} onChange={(event) => setCancelEmail(event.target.value)} type="email" autoComplete="email" placeholder="Registered email address" className="brand-input" /><PasswordInput value={cancelPassword} onChange={(event) => setCancelPassword(event.target.value)} autoComplete="current-password" placeholder="Current password" className="brand-input pr-11" /><input value={cancelAnswer} onChange={(event) => setCancelAnswer(event.target.value)} type="text" autoComplete="off" placeholder="Security answer" className="brand-input" />{cancelError && <p role="alert" className="text-sm text-rose-700">{cancelError}</p>}{cancelMessage && <p role="status" className="text-sm text-emerald-800">{cancelMessage}</p>}<button type="button" onClick={() => void cancelDeletion()} disabled={cancellingDeletion || !cancelEmail.trim() || !cancelPassword || !cancelAnswer.trim()} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white disabled:opacity-60">{cancellingDeletion ? 'Restoring account…' : 'Cancel deletion and sign in'}</button></div>}
                 </div>
               )}
               {submitError.toLowerCase().includes('verify') && <p className="text-center text-sm"><Link to="/verify-email" className="font-semibold text-[#004BEC]">Resend activation email</Link></p>}
@@ -139,10 +138,7 @@ function LoginPage() {
                   <label htmlFor="login-password" className="block text-sm font-medium text-[#091F5B]">Password</label>
                   <Link to="/forgot-password" className="text-xs font-semibold text-[#004BEC] hover:text-[#6121D0]">Forgot password?</Link>
                 </div>
-                <div className="relative">
-                  <input id="login-password" {...register('password')} type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" aria-invalid={Boolean(errors.password)} className="brand-input pr-11" />
-                  <button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#5C6982] transition hover:bg-[#F3F6FC] hover:text-[#004BEC]" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
-                </div>
+                <PasswordInput id="login-password" {...register('password')} autoComplete="current-password" placeholder="Enter your password" aria-invalid={Boolean(errors.password)} className="brand-input pr-11" />
                 {errors.password && <p className="mt-1 text-sm text-rose-600">{errors.password.message}</p>}
               </div>
 

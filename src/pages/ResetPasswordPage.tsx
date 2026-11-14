@@ -1,16 +1,14 @@
 import { useState, type FormEvent } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { authApi } from '../api/auth';
+import { PasswordInput } from '../components/PasswordInput';
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,21 +43,11 @@ export function ResetPasswordPage() {
     <form onSubmit={handleSubmit} className="mt-6 space-y-4">
       <div>
         <label htmlFor="new-password" className="mb-2 block text-sm font-medium text-[#091F5B]">New password</label>
-        <div className="relative">
-          <input id="new-password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required minLength={8} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} className="brand-input pr-12" disabled={complete} />
-          <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#5C6982] transition hover:bg-[#F3F6FC] focus:outline-none focus:ring-2 focus:ring-[#6121D0]" aria-label={showPassword ? 'Hide new password' : 'Show new password'} aria-pressed={showPassword} disabled={complete}>
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        </div>
+        <PasswordInput id="new-password" autoComplete="new-password" required minLength={8} maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} className="brand-input pr-12" disabled={complete} />
       </div>
       <div>
         <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-[#091F5B]">Confirm new password</label>
-        <div className="relative">
-          <input id="confirm-password" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" required minLength={8} maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="brand-input pr-12" disabled={complete} aria-invalid={Boolean(confirmPassword) && !passwordsMatch} />
-          <button type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#5C6982] transition hover:bg-[#F3F6FC] focus:outline-none focus:ring-2 focus:ring-[#6121D0]" aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} aria-pressed={showConfirmPassword} disabled={complete}>
-            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        </div>
+        <PasswordInput id="confirm-password" autoComplete="new-password" required minLength={8} maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="brand-input pr-12" disabled={complete} aria-invalid={Boolean(confirmPassword) && !passwordsMatch} />
         {confirmPassword && !passwordsMatch && <p className="mt-1 text-sm text-rose-600">Passwords do not match.</p>}
         {passwordsMatch && <p className="mt-1 text-sm text-emerald-700">Passwords match.</p>}
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/auth';
+import { PasswordInput } from '../components/PasswordInput';
 import { clearRegistrationDraft, readRegistrationDraft, savePreAccountSession } from '../lib/registration-session';
 
 export function VerifyEmailPage() {
@@ -88,9 +89,9 @@ export function VerifyEmailPage() {
             <p className="mt-5 text-sm leading-6 text-[#5C6982]">For security, Sophis Central does not create an account or store your password in the database at this stage. Choose your password now. After email verification, you will complete your academic profile before your account and permanent ID are created. The verification link expires after 24 hours.</p>
             <form onSubmit={confirm} className="mt-6 space-y-3">
               <label htmlFor="verified-password" className="block text-sm font-medium text-[#091F5B]">Create password</label>
-              <input id="verified-password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} className="brand-input" />
+              <PasswordInput id="verified-password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} className="brand-input pr-11" />
               <label htmlFor="verified-password-confirm" className="block text-sm font-medium text-[#091F5B]">Confirm password</label>
-              <input id="verified-password-confirm" type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="brand-input" />
+              <PasswordInput id="verified-password-confirm" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="brand-input pr-11" />
               <button type="submit" disabled={verificationState === 'loading'} className="brand-button w-full px-4 py-3 font-semibold disabled:opacity-60">{verificationState === 'loading' ? 'Verifying email…' : 'Verify email and continue'}</button>
             </form>
           </>
