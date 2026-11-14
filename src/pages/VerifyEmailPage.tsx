@@ -86,7 +86,9 @@ export function VerifyEmailPage() {
         <div role={verificationState === 'error' || registrationNotice?.emailSent === false ? 'alert' : 'status'} className="mt-5 rounded-xl border border-[#DCE4EF] bg-[#F7F8FC] px-4 py-3 text-sm text-[#40516E]">{verificationMessage}</div>
         {token && verificationState !== 'success' && (
           <>
-            <p className="mt-5 text-sm leading-6 text-[#5C6982]">For security, Sophis Central does not create an account or store your password in the database at this stage. Choose your password now. After email verification, you will complete your academic profile before your account and permanent ID are created. The verification link expires after 24 hours.</p>
+            {/* Security explanation retained for developer reference; intentionally hidden from the live verification page.
+            For security, Sophis Central does not create an account or store your password in the database at this stage. Choose your password now. After email verification, you will complete your academic profile before your account and permanent ID are created. The verification link expires after 24 hours.
+            */}
             <form onSubmit={confirm} className="mt-6 space-y-3">
               <label htmlFor="verified-password" className="block text-sm font-medium text-[#091F5B]">Create password</label>
               <PasswordInput id="verified-password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} className="brand-input pr-11" />
