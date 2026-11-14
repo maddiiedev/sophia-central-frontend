@@ -42,7 +42,7 @@ export interface CompleteOnboardingPayload {
   institution: string;
   faculty: string;
   department: string;
-  programme?: string;
+  program?: string;
   studyLevel?: string;
   coursesTaught?: string[];
   teachingAssignments?: TeachingAssignmentPayload[];
