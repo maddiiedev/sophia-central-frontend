@@ -21,15 +21,15 @@ export function ContactUsPage() {
   const emailReady = isConfiguredEmail(contactEmail);
 
   return (
-    <main className="min-h-screen bg-[#F8FAFD] px-4 py-8 text-[#1F2937] sm:px-6 sm:py-12">
+    <main className="min-h-screen bg-[#F3F6FC] px-4 py-8 text-[#1F2937] sm:px-6 sm:py-10">
       <div className="mx-auto max-w-4xl">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <BrandLogo variant="full" tone="dark" />
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-[#2C36D9] hover:text-[#6121D0]"><ArrowLeft size={16} /> Back to home</Link>
         </header>
-        <article className="rounded-3xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-10">
+        <article className="rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Contact Sophis Central</p>
-          <h1 className="mt-3 text-3xl font-bold text-[#091F5B] sm:text-4xl">We're here to help you learn and grow.</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#091F5B] sm:text-4xl">We're here to help you learn and grow.</h1>
           <p className="mt-5 text-base leading-7 text-[#374151]">Do you have a question, need help accessing academic resources, want to report an issue, or have a suggestion for improving Sophis Central? We would love to hear from you.</p>
           <p className="mt-3 text-base leading-7 text-[#374151]">Our goal is to make your academic experience simpler, more organized, and more productive.</p>
 

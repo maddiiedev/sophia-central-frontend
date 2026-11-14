@@ -660,3 +660,62 @@ html[data-theme='dark'] .app-shell .chat-page textarea.chat-edit-input {
     animation-iteration-count: 1 !important; transition-duration: .01ms !important;
   }
 }
+
+
+/* Shared route styling: one restrained, consistent workspace across existing pages.
+   These rules standardize surfaces and spacing without changing brand colours or behaviour. */
+.app-shell .page-shell {
+  background-color: #F3F6FC;
+}
+.app-shell .route-content {
+  min-width: 0;
+}
+.app-shell .route-content h1,
+.app-shell .route-content h2 {
+  letter-spacing: -0.02em;
+}
+.app-shell .route-content h2 {
+  font-weight: 600;
+}
+.app-shell .route-content .glass-panel,
+.app-shell .route-content .brand-card {
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(9, 31, 91, 0.04);
+}
+.app-shell .route-content input:not([type="checkbox"]):not([type="radio"]),
+.app-shell .route-content select,
+.app-shell .route-content textarea {
+  border-radius: 0.75rem;
+}
+.app-shell .route-content button,
+.app-shell .route-content a {
+  -webkit-tap-highlight-color: transparent;
+}
+@media (max-width: 639px) {
+  .app-shell .page-shell {
+    padding: 1rem;
+  }
+  .app-shell .route-content {
+    width: 100%;
+  }
+}
+html[data-theme='dark'] .app-shell .page-shell {
+  background-color: #0F172A !important;
+}
+
+
+/* Bring legacy page-specific bordered cards into the same restrained surface system. */
+.app-shell .route-content [class*="rounded-3xl"][class*="border"][class*="bg-white"],
+.app-shell .route-content article[class*="rounded-3xl"][class*="border"] {
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(9, 31, 91, 0.04);
+}
+.app-shell .route-content [class*="rounded-3xl"][class*="border"][class*="bg-[#F8FAFD]"],
+.app-shell .route-content [class*="rounded-3xl"][class*="border"][class*="bg-[#F3F6FC]"] {
+  border-radius: 1rem;
+}
+.app-shell .route-content h1,
+.app-shell .route-content h2,
+.app-shell .route-content h3 {
+  line-height: 1.25;
+}

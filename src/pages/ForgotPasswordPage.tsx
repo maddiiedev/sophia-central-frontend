@@ -24,10 +24,10 @@ export function ForgotPasswordPage() {
     }
   }
 
-  return <main className="flex min-h-screen items-center justify-center bg-white px-4 py-10"><section className="w-full max-w-lg rounded-3xl border border-[#DCE4EF] bg-white p-7 shadow-xl sm:p-10">
+  return <main className="flex min-h-screen items-center justify-center bg-[#F3F6FC] px-4 py-8 sm:px-6"><section className="w-full max-w-lg rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-9">
     <div className="mb-8 inline-flex w-fit items-center justify-center rounded-full bg-white px-1 py-1"><BrandLogo variant="full" linked={false} className="w-fit" /></div>
     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2C36D9]">Account recovery</p>
-    <h1 className="mt-3 text-3xl font-bold text-[#091F5B]">Forgot your password?</h1>
+    <h1 className="mt-3 text-3xl font-semibold text-[#091F5B]">Forgot your password?</h1>
     <p className="mt-4 text-sm leading-6 text-[#5C6982]">Enter the email address associated with your account. If it exists, we'll send a secure reset link that expires in 30 minutes.</p>
     <form onSubmit={handleSubmit} className="mt-6 space-y-4">
       <div><label htmlFor="recovery-email" className="mb-2 block text-sm font-medium text-[#091F5B]">Email address</label><input id="recovery-email" type="email" autoComplete="email" required maxLength={320} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="brand-input" /></div>

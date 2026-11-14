@@ -8,7 +8,7 @@ export function CareersPage() {
   const emailReady = isConfiguredEmail(careersEmail);
 
   return (
-    <main className="min-h-screen bg-[#F8FAFD] px-4 py-8 text-[#1F2937] sm:px-6 sm:py-12">
+    <main className="min-h-screen bg-[#F3F6FC] px-4 py-8 text-[#1F2937] sm:px-6 sm:py-10">
       <div className="mx-auto max-w-3xl">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <BrandLogo variant="full" tone="dark" />
@@ -16,10 +16,10 @@ export function CareersPage() {
             <ArrowLeft size={16} /> Back to home
           </Link>
         </header>
-        <section className="rounded-3xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-10">
+        <section className="rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-9">
           <span className="inline-flex rounded-2xl bg-[#F3F0FF] p-3 text-[#6121D0]"><BriefcaseBusiness size={25} /></span>
           <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Careers at Sophis Central</p>
-          <h1 className="mt-3 text-3xl font-bold text-[#091F5B] sm:text-4xl">Help shape the future of academic learning.</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#091F5B] sm:text-4xl">Help shape the future of academic learning.</h1>
           <p className="mt-5 text-base leading-7 text-[#374151]">Sophis Central is building an organized academic resource and learning platform for students, researchers, lecturers, and educational institutions. We welcome enquiries from people interested in future career opportunities, internships, collaboration, and contributing to our mission.</p>
           <p className="mt-4 text-sm leading-6 text-[#4B5563]">If you would like to introduce yourself or enquire about potential opportunities, contact our careers team by email. Please include a clear subject line and a brief introduction about your interests and experience. Sending an enquiry does not constitute a job application or guarantee an available vacancy.</p>
           <div className="mt-8 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-5">

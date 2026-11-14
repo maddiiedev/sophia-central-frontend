@@ -85,7 +85,7 @@ export function SupportPage() {
   const displayName = user?.firstName || user?.name || 'there';
 
   return <div className="mx-auto max-w-4xl space-y-6">
-    <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Help centre</p><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">Contact support</h2><p className="mt-2 text-sm leading-6 text-[#4B5563]">Hi {displayName}, tell the Sophis Central Support team what you need help with. You can include useful links and screenshots to help us understand the issue.</p></div>
+    <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Help centre</p><h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#091F5B]">Contact support</h2><p className="mt-2 text-sm leading-6 text-[#4B5563]">Hi {displayName}, tell the Sophis Central Support team what you need help with. You can include useful links and screenshots to help us understand the issue.</p></div>
     <section className="glass-panel p-5 sm:p-7">
       <div className="mb-6 flex items-start gap-3"><span className="rounded-xl bg-[#F3F0FF] p-3 text-[#6121D0]"><LifeBuoy size={21}/></span><div><h3 className="font-bold text-[#091F5B]">Submit a support request</h3><p className="mt-1 text-sm text-[#5C6982]">Fields marked with * are required. Your account details are attached automatically.</p></div></div>
       {confirmation && <div role="status" className="mb-5 flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"><CheckCircle2 size={19} className="mt-0.5 shrink-0"/><div><p className="font-semibold">Message sent to Support</p><p className="mt-1 leading-6">{confirmation}</p></div></div>}

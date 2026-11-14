@@ -18,7 +18,7 @@ type MetricCardProps = { label: string; value: number | string; helper: string; 
 function MetricCard({ label, value, helper, icon: Icon }: MetricCardProps) {
   return <div className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm">
     <div className="flex items-center justify-between gap-3"><span className="text-sm font-medium text-[#5C6982]">{label}</span><Icon size={19} className="text-[#6121D0]" /></div>
-    <div className="mt-3 text-3xl font-bold text-[#091F5B]">{value}</div>
+    <div className="mt-3 text-3xl font-semibold tracking-tight text-[#091F5B]">{value}</div>
     <p className="mt-1 text-xs text-[#5C6982]">{helper}</p>
   </div>;
 }

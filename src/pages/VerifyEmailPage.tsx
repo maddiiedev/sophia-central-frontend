@@ -78,10 +78,10 @@ export function VerifyEmailPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F7F8FC] px-4 py-10">
-      <section className="w-full max-w-lg rounded-3xl border border-[#DCE4EF] bg-white p-7 shadow-[0_20px_60px_rgba(7,30,84,0.10)] sm:p-10">
+    <main className="flex min-h-screen items-center justify-center bg-[#F3F6FC] px-4 py-8 sm:px-6">
+      <section className="w-full max-w-lg rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2C36D9]">Sophis Central</p>
-        <h1 className="mt-3 text-3xl font-bold text-[#091F5B]">Verify your email</h1>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#091F5B]">Verify your email</h1>
         <div role={verificationState === 'error' || registrationNotice?.emailSent === false ? 'alert' : 'status'} className="mt-5 rounded-xl border border-[#DCE4EF] bg-[#F7F8FC] px-4 py-3 text-sm text-[#40516E]">{verificationMessage}</div>
         {token && verificationState !== 'success' && (
           <>

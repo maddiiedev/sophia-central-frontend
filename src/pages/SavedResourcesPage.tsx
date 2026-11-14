@@ -48,7 +48,7 @@ export function SavedResourcesPage() {
   };
 
   return <div className="space-y-6">
-    <section className="rounded-3xl border border-[#DCE4EF] bg-[#F3F0FF] p-6 sm:p-7">
+    <section className="rounded-2xl border border-[#DCE4EF] bg-[#F3F0FF] p-6 sm:p-7">
       <div className="flex items-center gap-3"><span className="rounded-xl bg-white p-3 text-[#6121D0]"><Bookmark aria-hidden="true" /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#6121D0]">Personal library</p><h2 className="mt-1 text-2xl font-semibold text-[#091F5B]">{isModerationRole ? 'Saved resources' : 'My resources'}</h2></div></div>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-[#374151]">Keep resources you have saved for later separate from resources downloaded in-app to this account.</p>
     </section>

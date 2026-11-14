@@ -160,7 +160,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         </aside>
 
         <main className="min-w-0 flex-1 bg-white">
-          <header className={`sticky top-0 ${mobileNavOpen ? "z-[60]" : "z-30"} border-b border-[#E5E7EB] bg-white/95 px-4 py-3 backdrop-blur sm:px-6`}>
+          <header className={`sticky top-0 ${mobileNavOpen ? "z-[60]" : "z-30"} border-b border-[#E5E7EB] bg-white px-4 py-3 sm:px-6`}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <button type="button" onClick={() => setMobileNavOpen((open) => !open)} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] lg:hidden" aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileNavOpen}>{mobileNavOpen ? <X size={18} /> : <Menu size={18} />}</button>
@@ -199,7 +199,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
               </div>
             </>
           )}
-          <div className="page-shell bg-white p-4 sm:p-6">{children}</div>
+          <div className="page-shell bg-[#F3F6FC] p-4 sm:p-6 lg:p-7"><div className="route-content mx-auto w-full max-w-[1600px]">{children}</div></div>
         </main>
       </div>
     </div>

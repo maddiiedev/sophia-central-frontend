@@ -50,7 +50,7 @@ export function PublicResourcePage() {
       <Link to="/library" className="inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0]">
         <ArrowLeft size={16} /> Back to public library
       </Link>
-      <article className="overflow-hidden rounded-3xl border border-[#DCE4EF] bg-white">
+      <article className="overflow-hidden rounded-2xl border border-[#DCE4EF] bg-white">
         <header className="bg-[#F8FAFD] p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-[#6121D0]">
             {String(item.type).replace(/_/g, ' ')}

@@ -37,10 +37,10 @@ export function ResetPasswordPage() {
     }
   }
 
-  return <main className="flex min-h-screen items-center justify-center bg-white px-4 py-10"><section className="w-full max-w-lg rounded-3xl border border-[#DCE4EF] bg-white p-7 shadow-xl sm:p-10">
+  return <main className="flex min-h-screen items-center justify-center bg-[#F3F6FC] px-4 py-8 sm:px-6"><section className="w-full max-w-lg rounded-2xl border border-[#DCE4EF] bg-white p-6 shadow-sm sm:p-9">
     <div className="mb-8 inline-flex w-fit items-center justify-center rounded-full bg-white px-1 py-1"><BrandLogo variant="full" linked={false} className="w-fit" /></div>
     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2C36D9]">Account security</p>
-    <h1 className="mt-3 text-3xl font-bold text-[#091F5B]">Set a new password</h1>
+    <h1 className="mt-3 text-3xl font-semibold text-[#091F5B]">Set a new password</h1>
     <p className="mt-4 text-sm leading-6 text-[#5C6982]">Choose a new password with at least 8 characters. Reset links can only be used once and expire after 30 minutes.</p>
     <form onSubmit={handleSubmit} className="mt-6 space-y-4">
       <div>
