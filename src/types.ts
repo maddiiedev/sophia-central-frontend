@@ -10,7 +10,7 @@ export interface User {
   institution?: string;
   faculty?: string;
   department?: string;
-  programme?: string;
+  program?: string;
   coursesTaught?: string[];
   teachingAssignments?: Array<{ courseName: string; courseCode?: string; levels: string[] }>;
   studyLevel?: string;

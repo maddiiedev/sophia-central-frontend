@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, Eye, EyeOff, BrainCircuit, Flame, Copy } from 'lucide-react';
+import { UserRound, Settings, ChevronLeft, ChevronRight, RefreshCw, Eye, EyeOff, BrainCircuit, Flame, Copy, Check } from 'lucide-react';
 import { OverviewCard, UserBadge } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
 import { useAuth } from '../context/AuthContext';
@@ -39,6 +39,7 @@ export function DashboardPage() {
   const [studyStreak, setStudyStreak] = useState<number | null>(null);
   const [wisdomBalance, setWisdomBalance] = useState<number | null>(null);
   const [showWisdomBalance, setShowWisdomBalance] = useState(false);
+  const [institutionIdCopied, setInstitutionIdCopied] = useState(false);
   const firstName = user?.firstName?.trim() || user?.name?.trim().split(/\s+/)[0] || 'there';
 
   useEffect(() => {
@@ -110,7 +111,7 @@ export function DashboardPage() {
   return <div className="space-y-6">
     <section className="rounded-2xl bg-[#2C36D9] p-5 text-white shadow-sm sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">Study dashboard</p><h2 data-hero-middle-heading className="mt-2 text-3xl font-bold !text-white">Your academic momentum is building.</h2><p className="mt-2 text-sm text-white/90">Welcome back, {firstName}.</p>{user?.uniqueId && <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/90"><span>Institution ID:</span><span className="font-semibold tracking-wide">{user.uniqueId}</span><button type="button" onClick={() => { if (user.uniqueId) void navigator.clipboard?.writeText(user.uniqueId); }} className="inline-flex items-center gap-1 rounded-lg border border-white/30 px-2 py-1 font-semibold text-white hover:bg-white/10" aria-label="Copy Institution ID"><Copy size={12}/> Copy</button></div>}{!user?.uniqueId && <p className="mt-2 text-xs text-white/80">Institution ID pending catalogue verification</p>}</div>
+        <div><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">Study dashboard</p><h2 data-hero-middle-heading className="mt-2 text-3xl font-bold !text-white">Your academic momentum is building.</h2><p className="mt-2 text-sm text-white/90">Welcome back, {firstName}.</p>{user?.uniqueId && <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/90"><span>Institution ID:</span><span className="font-semibold tracking-wide">{user.uniqueId}</span><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(user.uniqueId!); setInstitutionIdCopied(true); window.setTimeout(() => setInstitutionIdCopied(false), 1800); } catch { setError('Unable to copy Institution ID. Please copy it manually.'); } }} className="inline-flex items-center gap-1 rounded-lg border border-white/30 px-2 py-1 font-semibold text-white transition hover:bg-white/10 active:scale-95" aria-label="Copy Institution ID"><Copy size={12}/> Copy</button>{institutionIdCopied && <span role="status" aria-live="polite" className="inline-flex items-center gap-1 font-semibold text-white"><Check size={12}/> Copied</span>}</div>}{!user?.uniqueId && <p className="mt-2 text-xs text-white/80">Institution ID pending catalogue verification</p>}</div>
         <UserBadge />
       </div>
     </section>
@@ -120,7 +121,7 @@ export function DashboardPage() {
     <section aria-label="Student account" className="grid gap-4 sm:grid-cols-2">
       <Link to="/profile" className="group flex items-start gap-4 rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm transition hover:border-[#6121D0] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#6121D0]">
         <span className="rounded-xl bg-[#6121D0]/10 p-3 text-[#6121D0]"><UserRound size={22} /></span>
-        <span className="min-w-0"><span className="block font-semibold text-[#091F5B]">My profile</span><span className="mt-1 block text-sm text-[#5C6982]">View and update your institution, faculty, department, programme, and study level.</span><span className="mt-3 inline-block text-sm font-semibold text-[#6121D0]">Edit profile →</span></span>
+        <span className="min-w-0"><span className="block font-semibold text-[#091F5B]">My profile</span><span className="mt-1 block text-sm text-[#5C6982]">View and update your institution, faculty, department, program, and study level.</span><span className="mt-3 inline-block text-sm font-semibold text-[#6121D0]">Edit profile →</span></span>
       </Link>
       <Link to="/settings" className="group flex items-start gap-4 rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm transition hover:border-[#2C36D9] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#2C36D9]">
         <span className="rounded-xl bg-[#2C36D9]/10 p-3 text-[#2C36D9]"><Settings size={22} /></span>
@@ -136,7 +137,7 @@ export function DashboardPage() {
     </div>
 
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <OverviewCard title="Your learning path" action="Personalized"><div className="rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="font-semibold text-[#091F5B]">{user?.programme || user?.department || 'Your programme'}</p><p className="mt-1 text-sm text-[#5C6982]">{[user?.institution, user?.faculty, user?.department].filter(Boolean).join(' · ') || 'Complete your academic profile to personalize your learning path.'}</p></div></OverviewCard>
+      <OverviewCard title="Your learning path" action="Personalized"><div className="rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="font-semibold text-[#091F5B]">{user?.program || user?.department || 'Your program'}</p><p className="mt-1 text-sm text-[#5C6982]">{[user?.institution, user?.faculty, user?.department].filter(Boolean).join(' · ') || 'Complete your academic profile to personalize your learning path.'}</p></div></OverviewCard>
 
     </div>
 

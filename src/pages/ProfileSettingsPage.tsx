@@ -21,7 +21,7 @@ const academicHandleError = (value: string) => {
 export function ProfileSettingsPage() {
   const { user, refreshSession, logout } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ institution: '', faculty: '', department: '', programme: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
+  const [form, setForm] = useState({ institution: '', faculty: '', department: '', program: '', studyLevel: '', coursesTaught: '', bio: '', handle: '' });
   const [academicInstitutions, setAcademicInstitutions] = useState<InstitutionOption[]>([]);
   const [catalogueLoading, setCatalogueLoading] = useState(true);
   const [facultyFocused, setFacultyFocused] = useState(false);
@@ -56,7 +56,7 @@ export function ProfileSettingsPage() {
       institution: user.institution ?? '',
       faculty: user.faculty ?? '',
       department: user.department ?? '',
-      programme: user.programme ?? '',
+      program: user.program ?? '',
       studyLevel: user.studyLevel ?? '',
       coursesTaught: (user.coursesTaught ?? []).join(', '),
       bio: user.bio ?? '',
@@ -101,12 +101,12 @@ export function ProfileSettingsPage() {
           institution: selectedInstitution.name,
           faculty: selectedFaculty?.name ?? facultyName,
           department: selectedDepartment?.name ?? departmentName,
-          ...(user.role === 'student' ? { programme: form.programme.trim() } : {}),
+          ...(user.role === 'student' ? { program: form.program.trim() } : {}),
         }),
       });
       await refreshSession();
       setEditingInstitution(false);
-      setMessage(`Academic placement updated successfully. ${user.role === 'student' ? 'Your Student Group Chat now uses institution, faculty and department; programme remains a separate profile field.' : 'Your academic sections use the selected institution, faculty and department.'} Missing catalogue entries are saved to your profile and are not sent for moderation review.`);
+      setMessage(`Academic placement updated successfully. ${user.role === 'student' ? 'Your Student Group Chat now uses institution, faculty and department; program remains a separate profile field.' : 'Your academic sections use the selected institution, faculty and department.'} Missing catalogue entries are saved to your profile and are not sent for moderation review.`);
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update academic placement.');
@@ -155,7 +155,7 @@ export function ProfileSettingsPage() {
       await apiRequest(`/users/${encodeURIComponent(user.id)}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          ...(user.role === 'student' ? { programme: form.programme.trim(), studyLevel: form.studyLevel.trim() } : { teachingAssignments, coursesTaught }),
+          ...(user.role === 'student' ? { program: form.program.trim(), studyLevel: form.studyLevel.trim() } : { teachingAssignments, coursesTaught }),
           bio: form.bio.trim(),
           academicHandle: normalizeAcademicHandle(form.handle),
         }),
@@ -282,10 +282,10 @@ export function ProfileSettingsPage() {
               {form.department.trim() && !departmentOptions.some((item) => item.name.toLocaleLowerCase() === form.department.trim().toLocaleLowerCase()) && <p className="mt-1 text-xs leading-5 text-amber-700">This department is not in the selected faculty's catalogue yet. You can still save it directly to your profile.</p>}
             </div>
           </div>
-          <p className="text-xs leading-5 text-[#5C6982]">Choose a matching suggestion when available, or type your exact faculty and department names. Missing entries are saved directly to your profile and are not sent for moderation review. Group Chat membership uses institution, faculty/school/college and department only; programme is stored separately.</p>
+          <p className="text-xs leading-5 text-[#5C6982]">Choose a matching suggestion when available, or type your exact faculty and department names. Missing entries are saved directly to your profile and are not sent for moderation review. Group Chat membership uses institution, faculty/school/college and department only; program is stored separately.</p>
           <div className="flex justify-end"><button type="button" onClick={() => void saveAcademicPlacement()} disabled={savingField !== null || !form.faculty.trim() || !form.department.trim() || !selectedInstitution} className="rounded-lg bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{savingField === 'faculty' ? 'Saving…' : 'Save academic placement'}</button></div>
         </div>
-        {user.role === 'student' && textField('programme', 'Programme / Course of Study', 'e.g. B.Sc. Computer Science')}
+        {user.role === 'student' && textField('program', 'Program / Course of Study', 'e.g. B.Sc. Computer Science')}
         {user.role === 'student' && textField('studyLevel', 'Study level', 'e.g. 300 level')}
         {user.role === 'lecturer' && <div className="space-y-3 sm:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
