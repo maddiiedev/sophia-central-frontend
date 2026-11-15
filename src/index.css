@@ -794,3 +794,30 @@ input, select, textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Message bubbles and their editor must share the same bounded width.
+   Long words, URLs and pasted text wrap inside the bubble on desktop and mobile. */
+.app-shell .chat-page article {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 85%;
+  width: fit-content;
+  overflow-wrap: anywhere;
+}
+.app-shell .chat-page article > p {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.app-shell .chat-page textarea.chat-edit-input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

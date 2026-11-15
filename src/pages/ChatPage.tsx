@@ -759,8 +759,15 @@ export function ChatPage() {
   };
 
   const saveEdit = async (id: string) => {
+    const nextText = editText.trim();
+    if (!nextText) {
+      setError('A message cannot be empty.');
+      return;
+    }
+
     try {
-      const updated = await chatApi.edit(id, editText);
+      setError('');
+      const updated = await chatApi.edit(id, nextText);
 
       setMessages(current =>
         current.map(message => (message.id === id ? updated : message)),
@@ -1423,7 +1430,7 @@ export function ChatPage() {
       {(mode === 'group' || recipient) && (
       <div
         ref={listRef}
-        className="flex-1 space-y-3 overflow-y-auto bg-[#F3F6FC] p-4 dark:bg-[#0B1120]"
+        className="flex-1 min-w-0 w-full space-y-3 overflow-y-auto bg-[#F3F6FC] p-4 dark:bg-[#0B1120]"
       >
         {hasMore && !loading && (
           <div className="text-center">
@@ -1495,7 +1502,7 @@ export function ChatPage() {
                   setSelectedMessage(message);
                 }
               }}
-              className={`w-fit max-w-[85%] min-w-0 rounded-2xl border p-3 shadow-sm ${
+              className={`w-fit max-w-[85%] min-w-0 rounded-2xl border p-3 shadow-sm [overflow-wrap:anywhere] ${
                 message.isOwn
                   ? 'ml-auto border-violet-300 bg-violet-100 text-violet-950 dark:border-[#6D5AA8] dark:bg-[#31234B] dark:text-[#F3E8FF] lg:dark:border-violet-300 lg:dark:bg-violet-100 lg:dark:text-violet-950'
                   : 'mr-auto border-blue-200 bg-blue-50 text-blue-950 dark:border-[#334155] dark:bg-[#172033] dark:text-[#F1F5F9] lg:dark:border-blue-200 lg:dark:bg-blue-100 lg:dark:text-blue-950'
@@ -1590,21 +1597,26 @@ export function ChatPage() {
               ) : editing === message.id ? (
                 <div className="space-y-2">
                   <textarea
+                    aria-label="Edit message"
+                    rows={Math.max(2, Math.min(6, (message.text ?? '').split('\n').length))}
+                    maxLength={4000}
                     value={editText}
                     onChange={event => setEditText(event.target.value)}
-                    className="chat-edit-input w-full rounded-lg border border-[#D7DEEA] bg-white p-2 text-sm text-[#091F5B] outline-none focus:border-[#2C36D9] dark:border-[#475569] dark:bg-[#0B1120] dark:text-white"
+                    className="chat-edit-input block box-border w-full min-w-0 max-w-full resize-y whitespace-pre-wrap break-words rounded-lg border border-[#D7DEEA] bg-white p-2 text-sm text-[#091F5B] outline-none [overflow-wrap:anywhere] focus:border-[#2C36D9] dark:border-[#475569] dark:bg-[#0B1120] dark:text-white"
                   />
 
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => void saveEdit(message.id)}
-                      className="text-xs font-semibold text-violet-800 hover:underline dark:text-[#D8CCFF]"
+                      disabled={!editText.trim()}
+                      className="text-xs font-semibold text-violet-800 hover:underline disabled:cursor-not-allowed disabled:opacity-40 dark:text-[#D8CCFF]"
                     >
                       Save
                     </button>
 
                     <button
-                      onClick={() => setEditing(null)}
+                      onClick={() => { setEditing(null); setEditText(''); setError(''); }}
                       className="text-xs font-medium text-[#4B5563] hover:underline dark:text-[#CBD5E1]"
                     >
                       Cancel
@@ -1613,7 +1625,7 @@ export function ChatPage() {
                 </div>
               ) : (
                 <p
-                  className={`whitespace-pre-wrap break-words text-sm ${
+                  className={`min-w-0 max-w-full whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere] ${
                     message.isOwn
                       ? 'text-violet-950 dark:text-[#F3E8FF]'
                       : 'text-[#091F5B] dark:text-[#F1F5F9]'
