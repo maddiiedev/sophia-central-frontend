@@ -1,13 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-NG">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="description" content="Sophis Central academic platform" />
+    <meta name="description" content="Find course materials, past questions, research papers and projects. Connect with students and lecturers and get AI-powered study support on Sophis Central." />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+    <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
     <meta name="theme-color" content="#091F5B" />
     <meta name="color-scheme" content="light dark" />
-    <link rel="canonical" href="https://sophiscentral.vercel.app/" />
-    <meta property="og:url" content="https://sophiscentral.vercel.app/" />
+    <meta name="application-name" content="Sophis Central" />
+    <link rel="canonical" href="/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sophis Central" />
+    <meta property="og:title" content="Sophis Central | AI-Powered Academic Learning Platform" />
+    <meta property="og:description" content="Discover academic resources, get AI-powered study support, and connect with your academic community." />
+    <meta property="og:url" content="/" />
+    <meta property="og:image" content="/sophia-central-logo.png" />
+    <meta property="og:image:alt" content="Sophis Central logo" />
+    <meta property="og:locale" content="en_NG" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sophis Central | AI-Powered Academic Learning Platform" />
+    <meta name="twitter:description" content="Discover academic resources, get AI-powered study support, and connect with your academic community." />
+    <meta name="twitter:image" content="/sophia-central-logo.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/x-icon" href="/sophis-central-favicon.ico" />
     <link rel="icon" type="image/png" href="/sophis-central-favicon.png" />
@@ -16,7 +30,22 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Sophis Central" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <title>Sophis Central</title>
+    <title>Sophis Central | AI-Powered Academic Learning Platform</title>
+    <script>
+      (() => {
+        const origin = window.location.origin;
+        const canonical = new URL(window.location.pathname, origin).toString();
+        const set = (selector, attribute, value) => {
+          const element = document.querySelector(selector);
+          if (element) element.setAttribute(attribute, value);
+        };
+        set('link[rel="canonical"]', 'href', canonical);
+        set('meta[property="og:url"]', 'content', canonical);
+        const image = new URL('/sophia-central-logo.png', origin).toString();
+        set('meta[property="og:image"]', 'content', image);
+        set('meta[name="twitter:image"]', 'content', image);
+      })();
+    </script>
   </head>
   <body class="bg-slate-950">
     <div id="root"></div>

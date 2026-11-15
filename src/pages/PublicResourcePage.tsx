@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, ExternalLink } from 'lucide-react';
@@ -14,6 +15,74 @@ export function PublicResourcePage() {
     queryFn: () => resourcesApi.publicById(id),
     enabled: Boolean(id),
   });
+  useEffect(() => {
+    if (!resource.data) {
+      const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+      if (robots) robots.content = 'noindex,nofollow';
+      return;
+    }
+
+    const item = resource.data;
+    const resourceTitle = typeof item.title === 'string' && item.title.trim()
+      ? item.title.trim()
+      : 'Academic Learning Resource';
+    const resourceDescription = typeof item.description === 'string' && item.description.trim()
+      ? item.description.replace(/\s+/g, ' ').trim().slice(0, 160)
+      : 'Explore this academic learning resource shared with the Sophis Central community.';
+    const configuredOrigin = import.meta.env.VITE_SITE_URL?.trim();
+    const origin = new URL(configuredOrigin || window.location.origin).origin;
+    const canonicalUrl = new URL(`/open-resource/${encodeURIComponent(id)}`, `${origin}/`).toString();
+    const imageUrl = new URL('/sophia-central-logo.png', `${origin}/`).toString();
+
+    document.title = `${resourceTitle} | Academic Resource | Sophis Central`;
+    const setMeta = (kind: 'name' | 'property', key: string, value: string) => {
+      let element = document.head.querySelector<HTMLMetaElement>('meta[' + kind + '="' + key + '"]');
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute(kind, key);
+        document.head.appendChild(element);
+      }
+      element.content = value;
+    };
+    setMeta('name', 'description', resourceDescription);
+    setMeta('name', 'robots', 'index,follow,max-image-preview:large');
+    setMeta('name', 'googlebot', 'index,follow');
+    setMeta('property', 'og:type', 'article');
+    setMeta('property', 'og:title', `${resourceTitle} | Sophis Central`);
+    setMeta('property', 'og:description', resourceDescription);
+    setMeta('property', 'og:url', canonicalUrl);
+    setMeta('property', 'og:image', imageUrl);
+    setMeta('name', 'twitter:card', 'summary_large_image');
+    setMeta('name', 'twitter:title', `${resourceTitle} | Sophis Central`);
+    setMeta('name', 'twitter:description', resourceDescription);
+    setMeta('name', 'twitter:image', imageUrl);
+
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = canonicalUrl;
+
+    let structuredData = document.getElementById('sophis-central-structured-data');
+    if (!structuredData) {
+      structuredData = document.createElement('script');
+      structuredData.id = 'sophis-central-structured-data';
+      structuredData.setAttribute('type', 'application/ld+json');
+      document.head.appendChild(structuredData);
+    }
+    structuredData.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'LearningResource',
+      name: resourceTitle,
+      description: resourceDescription,
+      learningResourceType: String(item.type || 'Academic material'),
+      url: canonicalUrl,
+      provider: { '@type': 'Organization', name: 'Sophis Central', url: origin },
+    });
+  }, [id, resource.data]);
+
   const file = useQuery({
     queryKey: ['public-resource-file', id],
     queryFn: () => resourcesApi.publicFileUrl(id),

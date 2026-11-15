@@ -1,6 +1,6 @@
 import { NotificationsPage } from './pages/NotificationsPage';
-import { Link, Navigate, Route, Routes, useNavigate, useSearchParams } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from './context/AuthContext';
@@ -43,6 +43,139 @@ import { ChatPage } from './pages/ChatPage';
 import { MyReportsPage } from './pages/MyReportsPage';
 import { ContactUsPage } from './pages/ContactUsPage';
 import { CareersPage } from './pages/CareersPage';
+
+const PUBLIC_PAGE_SEO: Record<string, { title: string; description: string }> = {
+  '/': {
+    title: 'Sophis Central | AI-Powered Academic Learning Platform',
+    description: 'Find course materials, past questions, research papers and projects. Connect with students and lecturers and get AI-powered study support on Sophis Central.',
+  },
+  '/library': {
+    title: 'Open Academic Library | Sophis Central',
+    description: 'Explore academic learning materials, lecture notes, past questions, research papers and student projects on Sophis Central.',
+  },
+  '/contact': {
+    title: 'Contact Sophis Central | Student and Lecturer Support',
+    description: 'Get in touch with Sophis Central for platform questions, academic partnerships, support and general enquiries.',
+  },
+  '/careers': {
+    title: 'Careers | Build the Future of Academic Learning with Sophis Central',
+    description: 'Explore opportunities to contribute to an AI-powered academic learning and collaboration platform.',
+  },
+  '/terms': {
+    title: 'Terms of Use | Sophis Central',
+    description: 'Read the terms governing access to and use of the Sophis Central academic platform.',
+  },
+  '/privacy': {
+    title: 'Privacy Policy | Sophis Central',
+    description: 'Learn how Sophis Central handles account information, academic activity and personal data.',
+  },
+  '/financial-policy': {
+    title: 'Financial and Wisdom Points Policy | Sophis Central',
+    description: 'Understand the platform policies for Wisdom Points, payments and related account transactions.',
+  },
+};
+
+function setMetaTag(attribute: 'name' | 'property', key: string, content: string) {
+  let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
+  if (!element) {
+    element = document.createElement('meta');
+    element.setAttribute(attribute, key);
+    document.head.appendChild(element);
+  }
+  element.content = content;
+}
+
+function RouteSeo() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const pathname = location.pathname.replace(/\/+$/, '') || '/';
+    const isPublicResource = pathname.startsWith('/open-resource/');
+    const page = PUBLIC_PAGE_SEO[pathname] || (isPublicResource
+      ? {
+          title: 'Academic Learning Resource | Sophis Central',
+          description: 'Explore an academic learning resource shared with the Sophis Central community.',
+        }
+      : null);
+    const indexable = Boolean(page) && !isPublicResource;
+    const title = page?.title || 'Your Academic Workspace | Sophis Central';
+    const description = page?.description || 'Sign in to access your Sophis Central academic account and learning tools.';
+    const configuredOrigin = import.meta.env.VITE_SITE_URL?.trim();
+    const origin = (configuredOrigin || window.location.origin).replace(/\/+$/, '');
+    const canonicalUrl = new URL(pathname, `${origin}/`).toString();
+    const imageUrl = new URL('/sophia-central-logo.png', `${origin}/`).toString();
+
+    document.title = title;
+    setMetaTag('name', 'description', description);
+    setMetaTag('name', 'robots', indexable
+      ? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
+      : 'noindex,nofollow');
+    setMetaTag('name', 'googlebot', indexable ? 'index,follow' : 'noindex,nofollow');
+    setMetaTag('property', 'og:type', 'website');
+    setMetaTag('property', 'og:site_name', 'Sophis Central');
+    setMetaTag('property', 'og:title', title);
+    setMetaTag('property', 'og:description', description);
+    setMetaTag('property', 'og:url', canonicalUrl);
+    setMetaTag('property', 'og:image', imageUrl);
+    setMetaTag('property', 'og:image:alt', 'Sophis Central logo');
+    setMetaTag('name', 'twitter:card', 'summary_large_image');
+    setMetaTag('name', 'twitter:title', title);
+    setMetaTag('name', 'twitter:description', description);
+    setMetaTag('name', 'twitter:image', imageUrl);
+
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = canonicalUrl;
+
+    let structuredData = document.getElementById('sophis-central-structured-data');
+    if (!structuredData) {
+      structuredData = document.createElement('script');
+      structuredData.id = 'sophis-central-structured-data';
+      structuredData.setAttribute('type', 'application/ld+json');
+      document.head.appendChild(structuredData);
+    }
+    structuredData.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'Organization',
+          name: 'Sophis Central',
+          url: origin,
+          logo: imageUrl,
+        },
+        {
+          '@type': 'WebSite',
+          name: 'Sophis Central',
+          url: origin,
+          inLanguage: 'en',
+        },
+        {
+          '@type': 'SoftwareApplication',
+          name: 'Sophis Central',
+          applicationCategory: 'EducationalApplication',
+          operatingSystem: 'Web',
+          description: 'An AI-powered higher-education platform for academic resources, study support and student-lecturer collaboration.',
+          url: origin,
+          image: imageUrl,
+        },
+        ...(indexable ? [{
+          '@type': 'WebPage',
+          name: title,
+          description,
+          url: canonicalUrl,
+          isPartOf: { '@type': 'WebSite', name: 'Sophis Central', url: origin },
+          inLanguage: 'en',
+        }] : []),
+      ],
+    });
+  }, [location.pathname]);
+
+  return null;
+}
 
 function destinationForUser(user?: { role?: string; isProfileComplete?: boolean } | null) {
   if (user?.role === 'student' || user?.role === 'lecturer') { if (user.isProfileComplete === false) return '/onboarding/profile'; }
@@ -160,5 +293,5 @@ function LoginPage() {
 
 export default function App() {
   const { isAuthenticated, user, isLoading } = useAuth();
-  return <ThemeProvider><Routes><Route path="/" element={<HomePage />} /><Route path="/contact" element={<ContactUsPage />} /><Route path="/careers" element={<CareersPage />} /><Route path="/terms" element={<LegalPage />} /><Route path="/privacy" element={<LegalPage />} /><Route path="/financial-policy" element={<LegalPage />} /><Route path="/login" element={isAuthenticated ? <Navigate to={destinationForUser(user)} replace /> : <LoginPage />} /><Route path="/forgot-password" element={<ForgotPasswordPage />} /><Route path="/reset-password" element={<ResetPasswordPage />} /><Route path="/verify-email" element={<VerifyEmailPage />} /><Route path="/onboarding" element={isAuthenticated ? <Navigate to={destinationForUser(user)} replace /> : <OnboardingPage />} /><Route path="/onboarding/profile" element={isLoading ? <div className="p-6 text-slate-500">Loading your onboarding session…</div> : isAuthenticated ? <ProtectedRoute allowedRoles={['student', 'lecturer']}><ProfileOnboardingPage /></ProtectedRoute> : <ProfileOnboardingPage />} /><Route path="/profile" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="My Profile"><ProfileSettingsPage /></AppShell></ProtectedRoute>} /><Route path="/settings" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="Settings"><SettingsPage /></AppShell></ProtectedRoute>} /><Route path="/reports" element={<ProtectedRoute allowedRoles={['student', 'lecturer']}><AppShell title="My reports"><MyReportsPage /></AppShell></ProtectedRoute>} /><Route path="/notifications" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="Notifications"><NotificationsPage /></AppShell></ProtectedRoute>} /><Route path="/support" element={<ProtectedRoute allowedRoles={['student', 'lecturer']}><AppShell title="Contact support"><SupportPage /></AppShell></ProtectedRoute>} /><Route path="/chat/group" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Group Chat"><ChatPage /></AppShell></ProtectedRoute>} /><Route path="/messages" element={<ProtectedRoute allowedRoles={['student', 'lecturer']}><AppShell title="Messages"><ChatPage /></AppShell></ProtectedRoute>} /><Route path="/dashboard" element={<Navigate to={destinationForUser(user)} replace />} /><Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Student Dashboard"><DashboardPage /></AppShell></ProtectedRoute>} /><Route path="/lecturer" element={<Navigate to="/lecturer/dashboard" replace />} /><Route path="/lecturer/dashboard" element={<ProtectedRoute allowedRoles={['lecturer']}><AppShell title="Lecturer Dashboard"><LecturerDashboardPage /></AppShell></ProtectedRoute>} /><Route path="/moderator/dashboard" element={<ProtectedRoute allowedRoles={['moderator']}><AppShell title="Moderator Dashboard"><ModeratorDashboardPage /></AppShell></ProtectedRoute>} /><Route path="/lecturer/analytics" element={<ProtectedRoute allowedRoles={['lecturer']}><AppShell title="My Analytics"><AnalyticsWorkspacePage /></AppShell></ProtectedRoute>} /><Route path="/library" element={<AppShell title="Open Academic Library"><LibraryPage /></AppShell>} /><Route path="/open-resource/:id" element={<AppShell title="Public Resource"><PublicResourcePage /></AppShell>} /><Route path="/my-resources" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="My resources"><SavedResourcesPage /></AppShell></ProtectedRoute>} /><Route path="/saved" element={<Navigate to="/my-resources" replace />} /><Route path="/resource/:id" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="Resource Reader"><ResourceReaderPage /></AppShell></ProtectedRoute>} /><Route path="/upload" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Upload Student Resource"><UploadPage /></AppShell></ProtectedRoute>} /><Route path="/lecturer/upload" element={<ProtectedRoute allowedRoles={['lecturer']}><AppShell title="Upload Resource"><LecturerUploadPage /></AppShell></ProtectedRoute>} /><Route path="/ai" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="AI Tutor"><AITutorPage /></AppShell></ProtectedRoute>} /><Route path="/wallet" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Wallet"><WalletPage /></AppShell></ProtectedRoute>} /><Route path="/moderation" element={<ProtectedRoute allowedRoles={['reviewer', 'moderator', 'admin']}><AppShell title="Moderation"><ModerationPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/analytics" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Analytics"><AnalyticsWorkspacePage /></AppShell></ProtectedRoute>} /><Route path="/moderation/management" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Management"><ModerationManagementPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/management/wisdom-points" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Manage Wisdom Points"><WisdomPointsManagementPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/management/wisdom-points/:userId" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Account Wallet Review"><WisdomPointsManagementPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/support" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Support requests"><SupportRequestsPanel /></AppShell></ProtectedRoute>} /><Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AppShell title="Users"><AdminUsersPage /></AppShell></ProtectedRoute>} /><Route path="/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AppShell title="Admin Analytics"><AdminAnalyticsPage /></AppShell></ProtectedRoute>} /><Route path="*" element={<Navigate to={isAuthenticated ? destinationForUser(user) : '/login'} replace />} /></Routes></ThemeProvider>;
+  return <ThemeProvider><RouteSeo /><Routes><Route path="/" element={<HomePage />} /><Route path="/contact" element={<ContactUsPage />} /><Route path="/careers" element={<CareersPage />} /><Route path="/terms" element={<LegalPage />} /><Route path="/privacy" element={<LegalPage />} /><Route path="/financial-policy" element={<LegalPage />} /><Route path="/login" element={isAuthenticated ? <Navigate to={destinationForUser(user)} replace /> : <LoginPage />} /><Route path="/forgot-password" element={<ForgotPasswordPage />} /><Route path="/reset-password" element={<ResetPasswordPage />} /><Route path="/verify-email" element={<VerifyEmailPage />} /><Route path="/onboarding" element={isAuthenticated ? <Navigate to={destinationForUser(user)} replace /> : <OnboardingPage />} /><Route path="/onboarding/profile" element={isLoading ? <div className="p-6 text-slate-500">Loading your onboarding session…</div> : isAuthenticated ? <ProtectedRoute allowedRoles={['student', 'lecturer']}><ProfileOnboardingPage /></ProtectedRoute> : <ProfileOnboardingPage />} /><Route path="/profile" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="My Profile"><ProfileSettingsPage /></AppShell></ProtectedRoute>} /><Route path="/settings" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="Settings"><SettingsPage /></AppShell></ProtectedRoute>} /><Route path="/reports" element={<ProtectedRoute allowedRoles={['student', 'lecturer']}><AppShell title="My reports"><MyReportsPage /></AppShell></ProtectedRoute>} /><Route path="/notifications" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="Notifications"><NotificationsPage /></AppShell></ProtectedRoute>} /><Route path="/support" element={<ProtectedRoute allowedRoles={['student', 'lecturer']}><AppShell title="Contact support"><SupportPage /></AppShell></ProtectedRoute>} /><Route path="/chat/group" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Group Chat"><ChatPage /></AppShell></ProtectedRoute>} /><Route path="/messages" element={<ProtectedRoute allowedRoles={['student', 'lecturer']}><AppShell title="Messages"><ChatPage /></AppShell></ProtectedRoute>} /><Route path="/dashboard" element={<Navigate to={destinationForUser(user)} replace />} /><Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Student Dashboard"><DashboardPage /></AppShell></ProtectedRoute>} /><Route path="/lecturer" element={<Navigate to="/lecturer/dashboard" replace />} /><Route path="/lecturer/dashboard" element={<ProtectedRoute allowedRoles={['lecturer']}><AppShell title="Lecturer Dashboard"><LecturerDashboardPage /></AppShell></ProtectedRoute>} /><Route path="/moderator/dashboard" element={<ProtectedRoute allowedRoles={['moderator']}><AppShell title="Moderator Dashboard"><ModeratorDashboardPage /></AppShell></ProtectedRoute>} /><Route path="/lecturer/analytics" element={<ProtectedRoute allowedRoles={['lecturer']}><AppShell title="My Analytics"><AnalyticsWorkspacePage /></AppShell></ProtectedRoute>} /><Route path="/library" element={<AppShell title="Open Academic Library"><LibraryPage /></AppShell>} /><Route path="/open-resource/:id" element={<AppShell title="Public Resource"><PublicResourcePage /></AppShell>} /><Route path="/my-resources" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="My resources"><SavedResourcesPage /></AppShell></ProtectedRoute>} /><Route path="/saved" element={<Navigate to="/my-resources" replace />} /><Route path="/resource/:id" element={<ProtectedRoute allowedRoles={['student', 'lecturer', 'reviewer', 'moderator', 'admin']}><AppShell title="Resource Reader"><ResourceReaderPage /></AppShell></ProtectedRoute>} /><Route path="/upload" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Upload Student Resource"><UploadPage /></AppShell></ProtectedRoute>} /><Route path="/lecturer/upload" element={<ProtectedRoute allowedRoles={['lecturer']}><AppShell title="Upload Resource"><LecturerUploadPage /></AppShell></ProtectedRoute>} /><Route path="/ai" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="AI Tutor"><AITutorPage /></AppShell></ProtectedRoute>} /><Route path="/wallet" element={<ProtectedRoute allowedRoles={['student']}><AppShell title="Wallet"><WalletPage /></AppShell></ProtectedRoute>} /><Route path="/moderation" element={<ProtectedRoute allowedRoles={['reviewer', 'moderator', 'admin']}><AppShell title="Moderation"><ModerationPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/analytics" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Analytics"><AnalyticsWorkspacePage /></AppShell></ProtectedRoute>} /><Route path="/moderation/management" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Management"><ModerationManagementPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/management/wisdom-points" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Manage Wisdom Points"><WisdomPointsManagementPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/management/wisdom-points/:userId" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Account Wallet Review"><WisdomPointsManagementPage /></AppShell></ProtectedRoute>} /><Route path="/moderation/support" element={<ProtectedRoute allowedRoles={['moderator', 'admin']}><AppShell title="Support requests"><SupportRequestsPanel /></AppShell></ProtectedRoute>} /><Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AppShell title="Users"><AdminUsersPage /></AppShell></ProtectedRoute>} /><Route path="/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AppShell title="Admin Analytics"><AdminAnalyticsPage /></AppShell></ProtectedRoute>} /><Route path="*" element={<Navigate to={isAuthenticated ? destinationForUser(user) : '/login'} replace />} /></Routes></ThemeProvider>;
 }
