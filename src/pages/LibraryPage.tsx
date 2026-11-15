@@ -92,12 +92,10 @@ export function LibraryPage() {
     staleTime: 30_000,
   });
   const departmentHighlightsQuery = useQuery({
-    queryKey: ['library-department-highlights', user?.institution, user?.faculty, user?.department],
+    queryKey: ['library-department-open-source-highlights', user?.department],
     queryFn: () => resourcesApi.publicList({
-      departmentOnly: true,
-      institution: user?.institution,
-      faculty: user?.faculty,
-      department: user?.department,
+      q: user?.department,
+      origin: 'open_source',
       page: 1,
       limit: 10,
     }),
@@ -131,9 +129,9 @@ export function LibraryPage() {
       {!isModerationRole && <div className="mt-5 flex flex-wrap gap-3"><Link to="/onboarding" className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-[#2C36D9]">Join the community</Link></div>}
     </section>
     <section className="grid min-w-0 grid-cols-1 gap-3 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-3 min-[480px]:grid-cols-2 sm:p-4 xl:grid-cols-4" aria-label="Search and filter resources">
-      <form className="flex min-w-0 flex-col gap-2 min-[480px]:col-span-2 min-[420px]:flex-row" role="search" onSubmit={event=>{event.preventDefault();setQ(searchInput.trim());setPage(1);}}>
-        <label className="relative min-w-0 flex-1"><span className="sr-only">Search resources</span><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6121D0]"/><input className={input+' pl-10'} value={searchInput} onChange={e=>setSearchInput(e.target.value)} placeholder="Search titles, topics, courses…"/></label>
-        <button type="submit" className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#4F1DB0] focus:outline-none focus:ring-2 focus:ring-[#6121D0]/30 min-[420px]:w-auto"><Search size={16}/><span>Search</span></button>
+      <form className="flex min-w-0 flex-row gap-0 overflow-hidden rounded-xl min-[480px]:col-span-2" role="search" onSubmit={event=>{event.preventDefault();setQ(searchInput.trim());setPage(1);}}>
+        <label className="relative min-w-0 flex-1"><span className="sr-only">Search resources</span><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6121D0]"/><input className={input+' rounded-r-none border-r-0 pl-10'} value={searchInput} onChange={e=>setSearchInput(e.target.value)} placeholder="Search titles, topics, courses…"/></label>
+        <button type="submit" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-l-none rounded-r-xl bg-[#6121D0] px-3 py-3 text-sm font-semibold text-white transition hover:bg-[#4F1DB0] focus:outline-none focus:ring-2 focus:ring-[#6121D0]/30 sm:px-4"><Search size={16}/><span className="hidden sm:inline">Search</span></button>
       </form>
       <input className={input} value={course} onChange={e=>{setCourse(e.target.value);setPage(1)}} placeholder="Course / subject"/>
       <input className={input} value={topic} onChange={e=>{setTopic(e.target.value);setPage(1)}} placeholder="Topic"/>
@@ -143,7 +141,7 @@ export function LibraryPage() {
     </section>
     {!departmentOnly && !isModerationRole && hasDepartmentProfile && <section className="space-y-4" aria-labelledby="department-highlights-heading">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <div><p className="text-xs font-semibold uppercase tracking-[.16em] text-[#6121D0]">Selected for your department</p><h3 id="department-highlights-heading" className="mt-1 text-xl font-bold text-[#091F5B]">Top 10 department-related materials</h3><p className="mt-1 text-sm text-[#5C6982]">Approved materials matched to your institution, faculty and department.</p></div>
+        <div><p className="text-xs font-semibold uppercase tracking-[.16em] text-[#6121D0]">Selected for your department</p><h3 id="department-highlights-heading" className="mt-1 text-xl font-bold text-[#091F5B]">Top 10 department-related materials</h3><p className="mt-1 text-sm text-[#5C6982]">Open-source research imported into Sophis Central and matched to your department.</p></div>
         <Link to="/library?departmentOnly=1" className="text-sm font-semibold text-[#6121D0] underline">View department library</Link>
       </div>
       {departmentHighlightsQuery.isLoading ? <p className="rounded-xl border border-[#DCE4EF] bg-white p-4 text-sm text-[#5C6982]">Loading department materials…</p>
@@ -155,13 +153,13 @@ export function LibraryPage() {
         <p className="mt-3 line-clamp-2 text-xs text-[#5C6982]">{[item.course,item.topic,item.department].filter(Boolean).join(' · ')}</p>
         <Link to={`/open-resource/${encodeURIComponent(item.id)}`} className="mt-4 inline-flex items-center gap-2 border-t border-[#DCE4EF] pt-3 text-sm font-semibold text-[#6121D0]"><BookOpen size={15}/> View material</Link>
       </article>)}</div>
-      : <div className="rounded-2xl border border-dashed border-[#DCE4EF] bg-white p-6 text-center"><BookOpen className="mx-auto text-[#6121D0]" size={25}/><h4 className="mt-2 font-semibold text-[#091F5B]">No department materials yet</h4><p className="mt-1 text-sm text-[#5C6982]">New approved materials for your department will appear here. Use the search above to explore the full library.</p></div>}
+      : <div className="rounded-2xl border border-dashed border-[#DCE4EF] bg-white p-6 text-center"><BookOpen className="mx-auto text-[#6121D0]" size={25}/><h4 className="mt-2 font-semibold text-[#091F5B]">No department materials yet</h4><p className="mt-1 text-sm text-[#5C6982]">Imported open-source research related to your department will appear here. Use the search above to explore the full library.</p></div>}
     </section>}
     {canImportOpenSource && !departmentOnly && <section className="space-y-4 rounded-2xl border border-[#DCE4EF] bg-white p-5" aria-label="Import open-access research into the General Library">
       <div><p className="text-xs font-semibold uppercase tracking-[.16em] text-[#6121D0]">Open-source research importer</p><h3 className="mt-1 text-lg font-bold text-[#091F5B]">Find research materials online</h3><p className="mt-1 text-sm leading-6 text-[#5C6982]">Search OpenAlex for open-access research by title, topic, author or DOI. Imported records become available to everyone in the General Library. Full text is copied only when an explicit redistribution licence permits it; otherwise, only bibliographic details and the original source link are added.</p></div>
-      <form className="flex flex-col gap-2 sm:flex-row" onSubmit={event => { event.preventDefault(); void searchOpenSource(); }}>
-        <label className="relative min-w-0 flex-1"><span className="sr-only">Search open-access research</span><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6121D0]"/><input className={input+' pl-10'} value={researchQuery} onChange={event=>setResearchQuery(event.target.value)} placeholder="Search research title, topic, author or DOI…"/></label>
-        <button type="submit" disabled={researchLoading || researchQuery.trim().length < 2} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><Search size={16}/>{researchLoading ? 'Searching…' : 'Search research'}</button>
+      <form className="flex min-w-0 flex-row gap-0 overflow-hidden rounded-xl" onSubmit={event => { event.preventDefault(); void searchOpenSource(); }}>
+        <label className="relative min-w-0 flex-1"><span className="sr-only">Search open-access research</span><Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6121D0]"/><input className={input+' rounded-r-none border-r-0 pl-10'} value={researchQuery} onChange={event=>setResearchQuery(event.target.value)} placeholder="Search research title, topic, author or DOI…"/></label>
+        <button type="submit" disabled={researchLoading || researchQuery.trim().length < 2} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-l-none rounded-r-xl bg-[#6121D0] px-3 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"><Search size={16}/><span className="hidden sm:inline">{researchLoading ? 'Searching…' : 'Search'}</span></button>
       </form>
       {researchError && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{researchError}</p>}{researchNotice && <p role="status" className="rounded-xl bg-[#F3F0FF] px-3 py-2 text-sm text-[#45209A]">{researchNotice}</p>}
       {bulkImportReport && <div className="space-y-2 rounded-xl border border-[#DCE4EF] p-3" aria-label="Bulk research import report"><h4 className="text-sm font-semibold text-[#091F5B]">Import report</h4>{bulkImportReport.results.map(item => <div key={item.identifier} className="flex flex-wrap items-start justify-between gap-2 text-xs"><span className="min-w-0 flex-1 break-all text-[#5C6982]">{item.identifier}</span><span className={item.status === 'failed' ? 'font-semibold text-red-700' : 'font-semibold text-emerald-700'}>{item.status === 'imported' ? 'Imported' : item.status === 'duplicate' ? 'Already in library' : 'Failed'}</span>{item.error && <p className="w-full text-red-700">{item.error}</p>}</div>)}</div>}
