@@ -1666,6 +1666,20 @@ export function ChatPage() {
               {selectedMessage.contentType === 'text' && selectedMessage.text && (
                 <button type="button" onClick={() => { void navigator.clipboard.writeText(selectedMessage.text ?? '').then(() => setError('Message copied.')).catch(() => setError('Could not copy this message.')); setSelectedMessage(null); }} className="rounded-xl bg-violet-50 px-3 py-3 text-sm font-semibold text-violet-900 hover:bg-violet-100 dark:bg-[#31234B] dark:text-violet-100">Copy</button>
               )}
+              {selectedMessage.isOwn && !selectedMessage.isDeleted && selectedMessage.contentType === 'text' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(selectedMessage.id);
+                    setEditText(selectedMessage.text ?? '');
+                    setSelectedMessage(null);
+                  }}
+                  disabled={Date.now() - new Date(selectedMessage.createdAt).getTime() > 15 * 60 * 1000}
+                  className="rounded-xl bg-violet-50 px-3 py-3 text-sm font-semibold text-violet-900 hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#31234B] dark:text-violet-100 dark:hover:bg-[#3B2B59]"
+                >
+                  Edit message
+                </button>
+              )}
               {selectedMessage.isOwn && !selectedMessage.isDeleted && (
                 <button type="button" onClick={() => { const id = selectedMessage.id; setSelectedMessage(null); void remove(id); }} className="rounded-xl bg-rose-50 px-3 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100 dark:bg-rose-950/50 dark:text-rose-300">Delete</button>
               )}
