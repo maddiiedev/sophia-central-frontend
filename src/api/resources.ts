@@ -11,6 +11,28 @@ type ApiResource = Resource & {
   hasFile?: boolean;
   uploader?: { id?: string; displayName?: string };
 };
+
+export type OpenSourceResearchResult = {
+  id: string;
+  doi: string | null;
+  title: string;
+  publicationYear: number | null;
+  authors: string[];
+  source: string | null;
+  landingPageUrl: string | null;
+  pdfAvailable: boolean;
+  openAccess: boolean;
+  licence: string | null;
+  redistributionAllowedByLicence: boolean;
+};
+export type OpenSourceResearchImportResult = {
+  imported: boolean;
+  duplicate: boolean;
+  copyStatus?: 'copied_to_platform' | 'metadata_only';
+  copySkippedReason?: string;
+  resource: { id: string; title: string; sourceUrl?: string; hasFile?: boolean };
+};
+
 export type PublicResourceFilters = { q?: string; course?: string; topic?: string; institution?: string; faculty?: string; department?: string; departmentOnly?: boolean; origin?: 'community_upload' | 'open_source'; level?: string; type?: string; license?: string; page?: number; limit?: number };
 export type PublicResourcePage = { items: ApiResource[]; page: number; limit: number; total: number; totalPages: number };
 
@@ -24,6 +46,8 @@ function queryString(filters: PublicResourceFilters = {}) {
   return query ? `?${query}` : '';
 }
 export const resourcesApi = {
+  searchOpenSource: (query: string) => apiRequest<OpenSourceResearchResult[]>(`/resources/open-source/search?q=${encodeURIComponent(query)}`, { method: 'GET' }),
+  importOpenSource: (identifier: string) => apiRequest<OpenSourceResearchImportResult>('/resources/open-source/import', { method: 'POST', body: JSON.stringify({ identifier }) }),
   publicList: async (filters: PublicResourceFilters = {}) => {
     const page = await apiRequest<PublicResourcePage>(`/resources/public${queryString(filters)}`, { method: 'GET' });
     return { ...page, items: page.items.map(mapResource) };
