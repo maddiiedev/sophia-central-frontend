@@ -4,6 +4,7 @@ import { moderationApi } from './moderation';
 
 type AiChatResponse = {
   sessionId?: string;
+  userMessageId?: string;
   assistantMessage?: string;
   pointsUsed?: number;
   balanceRemaining?: number;
@@ -44,6 +45,34 @@ export const aiService = {
     return {
       answer: response.assistantMessage,
       sessionId: response.sessionId,
+      userMessageId: response.userMessageId,
+      pointsUsed: response.pointsUsed,
+      balanceRemaining: response.balanceRemaining,
+    };
+  },
+
+  async editMessage(payload: { sessionId: string; messageId: string; question: string }) {
+    const response = await apiRequest<AiChatResponse>(
+      `/ai/sessions/${encodeURIComponent(payload.sessionId)}/messages/${encodeURIComponent(payload.messageId)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ question: payload.question }),
+        timeoutMs: 110_000,
+      },
+    );
+
+    if (response.error) {
+      throw new Error(
+        response.error === 'Insufficient Wisdom Points'
+          ? `You need ${response.required ?? 2} Wisdom Points to regenerate this answer. Your current balance is ${response.balance ?? 0}.`
+          : response.error,
+      );
+    }
+    if (!response.assistantMessage) throw new Error('Sophis AI returned an empty response.');
+    return {
+      answer: response.assistantMessage,
+      sessionId: response.sessionId,
+      userMessageId: response.userMessageId,
       pointsUsed: response.pointsUsed,
       balanceRemaining: response.balanceRemaining,
     };

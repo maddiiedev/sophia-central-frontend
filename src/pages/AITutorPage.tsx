@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MarkdownContent } from '../components/ai/MarkdownContent';
 import { BrainCircuit, SendHorizontal, Download, RotateCcw } from 'lucide-react';
 import { OverviewCard, SectionTitle } from '../components/layout/AppShell';
 import { sophiaApi } from '../api/sophiaApi';
@@ -6,7 +7,7 @@ import { resourcesApi } from '../api/resources';
 import { useAuth } from '../context/AuthContext';
 import type { Resource } from '../types';
 
-type TutorMessage = { role: 'user' | 'assistant'; content: string };
+type TutorMessage = { id?: string; role: 'user' | 'assistant'; content: string };
 
 const suggestedQuestions = [
   'Explain binary search with a worked example.',
@@ -16,6 +17,8 @@ const suggestedQuestions = [
 
 export function AITutorPage() {
   const [question, setQuestion] = useState('');
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState('');
   const [conversation, setConversation] = useState<TutorMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +43,8 @@ export function AITutorPage() {
     if (!trimmedQuestion || isLoading) return;
     setIsLoading(true);
     setError('');
-    setConversation((current) => [...current, { role: 'user', content: trimmedQuestion }]);
+    const pendingMessageId = crypto.randomUUID();
+    setConversation((current) => [...current, { id: pendingMessageId, role: 'user', content: trimmedQuestion }]);
     setQuestion('');
 
     try {
@@ -50,7 +54,7 @@ export function AITutorPage() {
         ...(selectedResourceId ? { resourceId: selectedResourceId } : {}),
       });
       if (response.sessionId) setSessionId(response.sessionId);
-      setConversation((current) => [...current, { role: 'assistant', content: response.answer }]);
+      setConversation((current) => [...current.map((message) => message.id === pendingMessageId ? { ...message, id: response.userMessageId ?? pendingMessageId } : message), { role: 'assistant', content: response.answer }]);
       setLastPointsUsed(response.pointsUsed ?? null);
       setBalanceRemaining(response.balanceRemaining ?? null);
     } catch (requestError) {
@@ -62,9 +66,47 @@ export function AITutorPage() {
     }
   };
 
+
+  const saveEditedQuestion = async (messageId: string) => {
+    const nextQuestion = editDraft.trim();
+    if (!nextQuestion || !sessionId || isLoading) return;
+    const targetIndex = conversation.findIndex((message) => message.id === messageId);
+    if (targetIndex < 0) return;
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await sophiaApi.ai.editMessage({
+        sessionId,
+        messageId,
+        question: nextQuestion,
+      });
+      setConversation((current) => {
+        const index = current.findIndex((message) => message.id === messageId);
+        if (index < 0) return current;
+        return [
+          ...current.slice(0, index),
+          { ...current[index], id: response.userMessageId ?? messageId, content: nextQuestion },
+          { role: 'assistant', content: response.answer },
+        ];
+      });
+      if (response.sessionId) setSessionId(response.sessionId);
+      setLastPointsUsed(response.pointsUsed ?? null);
+      setBalanceRemaining(response.balanceRemaining ?? null);
+      setEditingMessageId(null);
+      setEditDraft('');
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Sophis could not regenerate this answer. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const startNewChat = () => {
     if (isLoading) return;
     setConversation([]);
+    setEditingMessageId(null);
+    setEditDraft('');
     setSessionId(undefined);
     setError('');
     setLastPointsUsed(null);
@@ -104,9 +146,41 @@ export function AITutorPage() {
         <div className="mb-4 max-h-[440px] min-h-24 space-y-3 overflow-y-auto rounded-xl bg-[#F8FAFD] p-3" aria-live="polite">
           {conversation.length === 0 && <p className="py-6 text-center text-sm text-[#71809A]">Your answers will appear here. Start by asking Sophis a question.</p>}
           {conversation.map((message, index) => (
-            <div key={index} className={message.role === 'user' ? 'ml-6 rounded-xl bg-[#6121D0] p-3 text-sm leading-6 text-white' : 'mr-6 whitespace-pre-wrap rounded-xl border border-[#DCE4EF] bg-white p-3 text-sm leading-7 text-[#1F2937]'}>
-              <p className={message.role === 'user' ? 'mb-1 text-xs font-semibold text-white/75' : 'mb-1 text-xs font-semibold text-[#6121D0]'}>{message.role === 'user' ? 'You' : 'Sophis'}</p>
-              {message.content}
+            <div key={message.id ?? index} className={message.role === 'user' ? 'ml-6 min-w-0 rounded-xl bg-[#6121D0] p-3 text-sm leading-6 text-white' : 'mr-6 min-w-0 rounded-xl border border-[#DCE4EF] bg-white p-3 text-sm leading-7 text-[#1F2937]'}>
+              <div className="mb-1 flex items-center justify-between gap-3">
+                <p className={message.role === 'user' ? 'text-xs font-semibold text-white/75' : 'text-xs font-semibold text-[#6121D0]'}>{message.role === 'user' ? 'You' : 'Sophis'}</p>
+                {message.role === 'user' && message.id && sessionId && (
+                  <button
+                    type="button"
+                    disabled={isLoading}
+                    onClick={() => { setEditingMessageId(message.id ?? null); setEditDraft(message.content); setError(''); }}
+                    className="text-xs font-semibold text-white/90 underline underline-offset-2 hover:text-white disabled:opacity-40"
+                  >
+                    Edit question
+                  </button>
+                )}
+              </div>
+              {editingMessageId === message.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    aria-label="Edit your Sophis AI question"
+                    value={editDraft}
+                    onChange={(event) => setEditDraft(event.target.value)}
+                    maxLength={4000}
+                    rows={Math.max(2, Math.min(6, editDraft.split('\\n').length))}
+                    className="w-full rounded-lg border border-white/40 bg-white p-2 text-sm leading-6 text-[#091F5B] outline-none focus:ring-2 focus:ring-white/70"
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <button type="button" onClick={() => void saveEditedQuestion(message.id!)} disabled={!editDraft.trim() || isLoading} className="text-xs font-bold text-white underline underline-offset-2 disabled:opacity-40">Save and regenerate</button>
+                    <button type="button" onClick={() => { setEditingMessageId(null); setEditDraft(''); }} className="text-xs font-medium text-white/80 underline underline-offset-2">Cancel</button>
+                  </div>
+                  <p className="text-[11px] leading-4 text-white/75">Regenerating an answer uses 2 Wisdom Points. Messages after this question will be replaced.</p>
+                </div>
+              ) : message.role === 'assistant' ? (
+                <MarkdownContent content={message.content} />
+              ) : (
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.content}</p>
+              )}
             </div>
           ))}
           {isLoading && <div className="mr-6 rounded-xl border border-[#DCE4EF] bg-white p-3 text-sm text-[#6121D0]">Sophis is thinking…</div>}
