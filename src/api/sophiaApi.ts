@@ -24,6 +24,8 @@ export const aiService = {
       {
         method: 'POST',
         body: JSON.stringify(payload),
+        // Allow Gemini to finish while staying below Vercel's 120-second proxy ceiling.
+        timeoutMs: 110_000,
       },
     );
 

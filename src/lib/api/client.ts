@@ -1,7 +1,10 @@
 
 import { appConfig } from '../../config/env';
 
-export type ApiRequestOptions = RequestInit;
+export type ApiRequestOptions = RequestInit & {
+  /** Per-request override for APIs that legitimately need longer processing time. */
+  timeoutMs?: number;
+};
 
 let csrfToken: string | null = null;
 let csrfRefresh: Promise<string> | null = null;
@@ -103,7 +106,7 @@ export async function apiRequest<T>(
   options: ApiRequestOptions = {},
   _legacyToken?: string | null,
 ): Promise<T> {
-  const { headers, ...rest } = options;
+  const { headers, timeoutMs = 20_000, ...rest } = options;
 
   const method = (rest.method ?? 'GET').toUpperCase();
 
@@ -140,7 +143,7 @@ export async function apiRequest<T>(
 
     const timeoutId = window.setTimeout(
       () => controller.abort(),
-      20000,
+      timeoutMs,
     );
 
     try {
