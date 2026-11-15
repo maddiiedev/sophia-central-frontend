@@ -821,3 +821,244 @@ input, select, textarea {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+
+/* Sophis AI tutor: keep the conversation panel, thread and response typography
+   coordinated with the active workspace theme. These rules are page-scoped. */
+.app-shell .ai-tutor-page .ai-tutor-panel {
+  background-color: #FFFFFF !important;
+  border-color: #DCE4EF !important;
+  color: #243047 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-thread {
+  background-color: #F3F6FC !important;
+  color: #243047 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-message,
+.app-shell .ai-tutor-page .ai-tutor-thinking {
+  background-color: #FFFFFF !important;
+  border-color: #DCE4EF !important;
+  color: #243047 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content,
+.app-shell .ai-tutor-page .ai-tutor-assistant-content p,
+.app-shell .ai-tutor-page .ai-tutor-assistant-content li,
+.app-shell .ai-tutor-page .ai-tutor-assistant-content th,
+.app-shell .ai-tutor-page .ai-tutor-assistant-content td,
+.app-shell .ai-tutor-page .ai-tutor-assistant-content strong,
+.app-shell .ai-tutor-page .ai-tutor-assistant-content em,
+.app-shell .ai-tutor-page .ai-tutor-assistant-content del {
+  color: #243047 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content a {
+  color: #5B21B6 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content code {
+  background-color: #EEF2FF !important;
+  color: #312E81 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content pre {
+  background-color: #172033 !important;
+  color: #F1F5F9 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content pre code {
+  background-color: transparent !important;
+  color: #F1F5F9 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content th {
+  background-color: #F3F6FC !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content blockquote {
+  border-color: #C4B5FD !important;
+  color: #475569 !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-assistant-content hr {
+  border-color: #DCE4EF !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-user-message {
+  background-color: #6121D0 !important;
+  color: #FFFFFF !important;
+}
+.app-shell .ai-tutor-page .ai-tutor-user-message p,
+.app-shell .ai-tutor-page .ai-tutor-user-message button {
+  color: #FFFFFF !important;
+}
+
+/* Dark theme uses a soft slate thread with a lifted assistant surface, while
+   preserving a distinct purple user bubble and accessible text contrast. */
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-panel {
+  background-color: #172033 !important;
+  border-color: #334155 !important;
+  color: #E2E8F0 !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-thread {
+  background-color: #0F172A !important;
+  color: #E2E8F0 !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-message,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-thinking {
+  background-color: #1E293B !important;
+  border-color: #475569 !important;
+  color: #E2E8F0 !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content p,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content li,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content th,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content td,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content strong,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content em,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content del {
+  color: #E2E8F0 !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content a {
+  color: #C4B5FD !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content code {
+  background-color: #334155 !important;
+  color: #E9D5FF !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content pre {
+  background-color: #0B1120 !important;
+  color: #F8FAFC !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content pre code {
+  background-color: transparent !important;
+  color: #F8FAFC !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content th {
+  background-color: #263449 !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content blockquote {
+  border-color: #8B5CF6 !important;
+  color: #CBD5E1 !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-assistant-content hr {
+  border-color: #475569 !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-user-message {
+  background-color: #4C2D78 !important;
+  color: #F8FAFC !important;
+}
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-user-message p,
+html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-user-message button {
+  color: #F8FAFC !important;
+}
+
+
+/* Sophis AI responsive layout: prevent grid children and rich responses from
+   forcing horizontal overflow, from narrow phones through wide desktop screens. */
+.app-shell .ai-tutor-page,
+.app-shell .ai-tutor-page * {
+  box-sizing: border-box;
+}
+.app-shell .ai-tutor-page,
+.app-shell .ai-tutor-layout,
+.app-shell .ai-tutor-layout > *,
+.app-shell .ai-tutor-panel,
+.app-shell .ai-tutor-thread,
+.app-shell .ai-tutor-message,
+.app-shell .ai-tutor-assistant-content {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-shell .ai-tutor-page {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.app-shell .ai-tutor-thread {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+.app-shell .ai-tutor-message {
+  width: fit-content;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.app-shell .ai-tutor-assistant-content p,
+.app-shell .ai-tutor-assistant-content li,
+.app-shell .ai-tutor-assistant-content h1,
+.app-shell .ai-tutor-assistant-content h2,
+.app-shell .ai-tutor-assistant-content h3,
+.app-shell .ai-tutor-assistant-content a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.app-shell .ai-tutor-assistant-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+}
+.app-shell .ai-tutor-assistant-content table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  -webkit-overflow-scrolling: touch;
+}
+.app-shell .ai-tutor-question-input,
+.app-shell .ai-tutor-resource-select {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+.app-shell .ai-tutor-conversation-header > * {
+  min-width: 0;
+}
+.app-shell .ai-tutor-resource-box label {
+  flex-wrap: wrap;
+}
+@media (max-width: 639px) {
+  .app-shell .ai-tutor-page {
+    gap: 1rem;
+  }
+  .app-shell .ai-tutor-panel {
+    padding: 0.75rem;
+  }
+  .app-shell .ai-tutor-thread {
+    max-height: min(55vh, 440px);
+    padding: 0.625rem;
+  }
+  .app-shell .ai-tutor-message {
+    max-width: 96%;
+    padding: 0.7rem;
+  }
+  .app-shell .ai-tutor-conversation-header {
+    align-items: flex-start;
+  }
+  .app-shell .ai-tutor-conversation-header button {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+  .app-shell .ai-tutor-page button {
+    white-space: normal;
+  }
+  .app-shell .ai-tutor-page textarea {
+    resize: vertical;
+  }
+}
+@media (max-width: 380px) {
+  .app-shell .ai-tutor-panel {
+    padding: 0.625rem;
+  }
+  .app-shell .ai-tutor-thread {
+    padding: 0.5rem;
+  }
+  .app-shell .ai-tutor-message {
+    max-width: 98%;
+    padding: 0.625rem;
+  }
+}
+@media (min-width: 640px) and (max-width: 1279px) {
+  .app-shell .ai-tutor-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .app-shell .ai-tutor-layout {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  }
+}
