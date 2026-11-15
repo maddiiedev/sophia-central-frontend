@@ -11,6 +11,9 @@ type AiChatResponse = {
   error?: string;
   required?: number;
   balance?: number;
+  messages?: Array<{ id: string; role: 'user' | 'assistant' | 'system'; content: string; createdAt?: string }>;
+  title?: string;
+  resourceId?: string;
 };
 
 export const aiService = {
@@ -48,6 +51,27 @@ export const aiService = {
       userMessageId: response.userMessageId,
       pointsUsed: response.pointsUsed,
       balanceRemaining: response.balanceRemaining,
+    };
+  },
+
+  async getSession(sessionId: string) {
+    const response = await apiRequest<AiChatResponse & { id?: string; title?: string; resourceId?: string }>(
+      `/ai/sessions/${encodeURIComponent(sessionId)}`,
+      { method: 'GET' },
+    );
+    if (response.error) throw new Error(response.error);
+    return {
+      sessionId: response.id ?? response.sessionId ?? sessionId,
+      title: response.title,
+      resourceId: response.resourceId,
+      messages: (response.messages ?? [])
+        .filter((message) => message.role === 'user' || message.role === 'assistant')
+        .sort((left, right) => {
+          const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+          const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+          return leftTime - rightTime;
+        })
+        .map((message) => ({ id: message.id, role: message.role as 'user' | 'assistant', content: message.content })),
     };
   },
 

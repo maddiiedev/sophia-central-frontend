@@ -26,6 +26,7 @@ export function AITutorPage() {
   const [lastPointsUsed, setLastPointsUsed] = useState<number | null>(null);
   const [balanceRemaining, setBalanceRemaining] = useState<number | null>(null);
   const { user } = useAuth();
+  const activeSessionStorageKey = user?.id ? `sophis-ai-active-session:${user.id}` : null;
   const [downloadedResources, setDownloadedResources] = useState<Resource[]>([]);
   const [selectedResourceId, setSelectedResourceId] = useState('');
 
@@ -37,6 +38,36 @@ export function AITutorPage() {
     }).catch(() => { if (active) setDownloadedResources([]); });
     return () => { active = false; };
   }, [user?.id]);
+
+
+  useEffect(() => {
+    if (!activeSessionStorageKey) return;
+    let active = true;
+    let savedSessionId: string | null = null;
+    try {
+      savedSessionId = window.localStorage.getItem(activeSessionStorageKey);
+    } catch {
+      // Private browsing/storage restrictions should not prevent AI chat from working.
+    }
+    if (!savedSessionId) return;
+
+    void sophiaApi.ai.getSession(savedSessionId)
+      .then((savedSession) => {
+        if (!active) return;
+        setSessionId(savedSession.sessionId);
+        setConversation(savedSession.messages);
+        if (savedSession.resourceId) setSelectedResourceId(savedSession.resourceId);
+      })
+      .catch(() => {
+        if (!active) return;
+        try {
+          window.localStorage.removeItem(activeSessionStorageKey);
+        } catch {
+          // Ignore storage cleanup failures; the backend remains the source of truth.
+        }
+      });
+    return () => { active = false; };
+  }, [activeSessionStorageKey]);
 
   const handleAsk = async () => {
     const trimmedQuestion = question.trim();
@@ -53,7 +84,12 @@ export function AITutorPage() {
         ...(sessionId ? { sessionId } : {}),
         ...(selectedResourceId ? { resourceId: selectedResourceId } : {}),
       });
-      if (response.sessionId) setSessionId(response.sessionId);
+      if (response.sessionId) {
+        setSessionId(response.sessionId);
+        if (activeSessionStorageKey) {
+          try { window.localStorage.setItem(activeSessionStorageKey, response.sessionId); } catch { /* Server-side session remains saved. */ }
+        }
+      }
       setConversation((current) => [...current.map((message) => message.id === pendingMessageId ? { ...message, id: response.userMessageId ?? pendingMessageId } : message), { role: 'assistant', content: response.answer }]);
       setLastPointsUsed(response.pointsUsed ?? null);
       setBalanceRemaining(response.balanceRemaining ?? null);
@@ -108,6 +144,9 @@ export function AITutorPage() {
     setEditingMessageId(null);
     setEditDraft('');
     setSessionId(undefined);
+    if (activeSessionStorageKey) {
+      try { window.localStorage.removeItem(activeSessionStorageKey); } catch { /* Starting a new chat must still work. */ }
+    }
     setError('');
     setLastPointsUsed(null);
     setBalanceRemaining(null);
