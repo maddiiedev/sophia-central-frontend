@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BookOpen, Search, FileText } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { resourcesApi, type OpenSourceResearchResult } from '../api/resources';
+import { resourcesApi, type OpenSourceResearchResult, type OpenSourceResearchBulkImportReport } from '../api/resources';
 import type { Resource } from '../types';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
@@ -29,13 +29,24 @@ export function LibraryPage() {
   const [researchError, setResearchError] = useState('');
   const [importingIdentifier, setImportingIdentifier] = useState('');
   const [researchNotice, setResearchNotice] = useState('');
+  const [researchPage, setResearchPage] = useState(1);
+  const [researchHasMore, setResearchHasMore] = useState(false);
+  const [selectedResearchIds, setSelectedResearchIds] = useState<string[]>([]);
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkImportReport, setBulkImportReport] = useState<OpenSourceResearchBulkImportReport | null>(null);
   const canImportOpenSource = isModerator || isAdmin;
-  const searchOpenSource = async () => {
+  const searchOpenSource = async (nextPage = 1) => {
     const term = researchQuery.trim();
     if (term.length < 2) { setResearchError('Enter at least 2 characters to search open-access research.'); setResearchResults([]); return; }
     setResearchLoading(true); setResearchError(''); setResearchNotice('');
-    try { const results = await resourcesApi.searchOpenSource(term); setResearchResults(results); if (!results.length) setResearchNotice('No open-access research matches were found. Try another title, topic, author or DOI.'); }
-    catch (error) { setResearchError(error instanceof Error ? error.message : 'Unable to search the research index. Please try again.'); setResearchResults([]); }
+    try {
+      const response = await resourcesApi.searchOpenSource(term, nextPage, 12);
+      setResearchResults(response.results);
+      setResearchPage(response.page);
+      setResearchHasMore(response.hasMore);
+      setSelectedResearchIds([]);
+      if (!response.results.length) setResearchNotice('No open-access research matches were found. Try another title, topic, author or DOI.');
+    } catch (error) { setResearchError(error instanceof Error ? error.message : 'Unable to search the research index. Please try again.'); setResearchResults([]); }
     finally { setResearchLoading(false); }
   };
   const importOpenSource = async (result: OpenSourceResearchResult) => {
@@ -45,6 +56,23 @@ export function LibraryPage() {
       await platformQuery.refetch();
     } catch (error) { setResearchError(error instanceof Error ? error.message : 'Unable to import this research work.'); }
     finally { setImportingIdentifier(''); }
+  };
+  const importSelectedResearch = async () => {
+    const identifiers = researchResults
+      .filter(result => selectedResearchIds.includes(result.id))
+      .map(result => result.doi || result.id)
+      .filter((identifier): identifier is string => Boolean(identifier));
+    if (!identifiers.length) return;
+    setBulkImporting(true); setResearchError(''); setResearchNotice(''); setBulkImportReport(null);
+    try {
+      const report = await resourcesApi.importOpenSourceBulk(identifiers);
+      setBulkImportReport(report);
+      setResearchNotice(`Batch complete: ${report.imported} imported, ${report.duplicates} already in the library, ${report.failed} failed.`);
+      setSelectedResearchIds([]);
+      await platformQuery.refetch();
+    } catch (error) {
+      setResearchError(error instanceof Error ? error.message : 'Unable to import the selected research batch.');
+    } finally { setBulkImporting(false); }
   };
   const [course, setCourse] = useState('');
   const [topic, setTopic] = useState('');
@@ -103,13 +131,25 @@ export function LibraryPage() {
         <button type="submit" disabled={researchLoading || researchQuery.trim().length < 2} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"><Search size={16}/>{researchLoading ? 'Searching…' : 'Search research'}</button>
       </form>
       {researchError && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{researchError}</p>}{researchNotice && <p role="status" className="rounded-xl bg-[#F3F0FF] px-3 py-2 text-sm text-[#45209A]">{researchNotice}</p>}
-      {researchResults.length > 0 && <div className="space-y-3">{researchResults.map(result => { const identifier = result.doi || result.id; return <article key={result.id} className="rounded-xl border border-[#E5E7EB] p-4">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#6121D0]"><span>Open access</span>{result.publicationYear && <span>· {result.publicationYear}</span>}{result.pdfAvailable && <span>· PDF listed by source</span>}</div>
-        <h4 className="mt-2 font-semibold leading-6 text-[#091F5B]">{result.title}</h4>{result.authors.length > 0 && <p className="mt-1 text-sm text-[#5C6982]">{result.authors.join(', ')}</p>}
-        <p className="mt-1 text-xs text-[#5C6982]">{[result.source, result.licence ? 'Licence: ' + result.licence : 'Licence not specified'].filter(Boolean).join(' · ')}</p>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">{result.landingPageUrl && <a href={result.landingPageUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#6121D0] underline">View original source</a>}<button type="button" disabled={Boolean(importingIdentifier) || !identifier} onClick={()=>void importOpenSource(result)} className="rounded-xl bg-[#2C36D9] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{importingIdentifier === identifier ? 'Importing…' : 'Import to General Library'}</button></div>
-        {!result.redistributionAllowedByLicence && <p className="mt-2 text-xs leading-5 text-amber-700">Metadata and source link only. The source does not provide an explicitly accepted redistribution licence for copying full text.</p>}
-      </article>; })}</div>}
+      {bulkImportReport && <div className="space-y-2 rounded-xl border border-[#DCE4EF] p-3" aria-label="Bulk research import report"><h4 className="text-sm font-semibold text-[#091F5B]">Import report</h4>{bulkImportReport.results.map(item => <div key={item.identifier} className="flex flex-wrap items-start justify-between gap-2 text-xs"><span className="min-w-0 flex-1 break-all text-[#5C6982]">{item.identifier}</span><span className={item.status === 'failed' ? 'font-semibold text-red-700' : 'font-semibold text-emerald-700'}>{item.status === 'imported' ? 'Imported' : item.status === 'duplicate' ? 'Already in library' : 'Failed'}</span>{item.error && <p className="w-full text-red-700">{item.error}</p>}</div>)}</div>}
+      {researchResults.length > 0 && <>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#F8FAFD] p-3">
+          <label className="flex items-center gap-2 text-sm font-medium text-[#091F5B]"><input type="checkbox" checked={researchResults.length > 0 && researchResults.every(result => selectedResearchIds.includes(result.id))} onChange={event => setSelectedResearchIds(event.target.checked ? researchResults.map(result => result.id) : [])}/> Select all results on this page</label>
+          <button type="button" disabled={!selectedResearchIds.length || bulkImporting || Boolean(importingIdentifier)} onClick={() => void importSelectedResearch()} className="rounded-xl bg-[#2C36D9] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{bulkImporting ? 'Importing batch…' : `Import selected (${selectedResearchIds.length})`}</button>
+        </div>
+        <div className="space-y-3">{researchResults.map(result => { const identifier = result.doi || result.id; const selected = selectedResearchIds.includes(result.id); return <article key={result.id} className="rounded-xl border border-[#E5E7EB] p-4">
+          <div className="flex items-start gap-3"><input type="checkbox" aria-label={`Select ${result.title}`} checked={selected} onChange={event => setSelectedResearchIds(current => event.target.checked ? [...current, result.id] : current.filter(id => id !== result.id))} className="mt-1 h-4 w-4 accent-[#6121D0]"/>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#6121D0]"><span>Open access</span>{result.publicationYear && <span>· {result.publicationYear}</span>}{result.pdfAvailable && <span>· PDF listed by source</span>}</div>
+              <h4 className="mt-2 font-semibold leading-6 text-[#091F5B]">{result.title}</h4>{result.authors.length > 0 && <p className="mt-1 text-sm text-[#5C6982]">{result.authors.join(', ')}</p>}
+              <p className="mt-1 text-xs text-[#5C6982]">{[result.source, result.licence ? 'Licence: ' + result.licence : 'Licence not specified'].filter(Boolean).join(' · ')}</p>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">{result.landingPageUrl && <a href={result.landingPageUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-[#6121D0] underline">View original source</a>}<button type="button" disabled={Boolean(importingIdentifier) || bulkImporting || !identifier} onClick={()=>void importOpenSource(result)} className="rounded-xl bg-[#2C36D9] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{importingIdentifier === identifier ? 'Importing…' : 'Import to General Library'}</button></div>
+              {!result.redistributionAllowedByLicence && <p className="mt-2 text-xs leading-5 text-amber-700">Metadata and source link only. The source does not provide an explicitly accepted redistribution licence for copying full text.</p>}
+            </div>
+          </div>
+        </article>; })}</div>
+        <div className="flex items-center justify-between gap-3"><button type="button" disabled={researchPage <= 1 || researchLoading || bulkImporting} onClick={() => void searchOpenSource(researchPage - 1)} className="rounded-xl border border-[#DCE4EF] px-4 py-2 text-sm font-semibold disabled:opacity-40">Previous results</button><span className="text-xs text-[#5C6982]">Research results page {researchPage}</span><button type="button" disabled={!researchHasMore || researchLoading || bulkImporting} onClick={() => void searchOpenSource(researchPage + 1)} className="rounded-xl border border-[#DCE4EF] px-4 py-2 text-sm font-semibold disabled:opacity-40">More results</button></div>
+      </>}
     </section>}
     {departmentOnly && !isModerationRole && !hasDepartmentProfile ? <div className="rounded-2xl border border-dashed border-[#DCE4EF] p-8 text-center"><h3 className="font-semibold text-[#091F5B]">Complete your academic profile</h3><p className="mt-1 text-sm text-[#5C6982]">Set your institution, faculty and department to browse this scoped library.</p><Link to="/profile" className="mt-3 inline-flex text-sm font-semibold text-[#6121D0] underline">Update academic profile</Link></div> : isLoading ? <LoadingState message="Loading the academic resource library…"/> : isError ? <ErrorState message={error instanceof Error ? error.message : 'Unable to load resources.'} onRetry={()=>void refetch()}/> : <>
       {items.length ? <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{items.map(item=><article key={item.id} className="rounded-2xl border border-[#DCE4EF] bg-white p-5 transition hover:border-[#6121D0]"><div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#6121D0]"><FileText size={15}/>{String(item.type).replace(/_/g,' ')}<span className="rounded-full bg-[#F3F0FF] px-2 py-1">{item.origin === 'open_source' ? 'Open source' : 'Community'}</span>{isPlatformOversightRole && <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-800">{String(item.moderationStatus || 'pending').replace(/_/g,' ')}</span>}</div><h3 className="mt-3 text-lg font-bold text-[#091F5B]">{item.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-[#4B5563]">{item.description || 'Open this resource for details.'}</p><p className="mt-3 text-xs text-[#5C6982]">{[item.course,item.topic,item.institution,item.faculty,item.department,item.level].filter(Boolean).join(' · ')}</p><div className="mt-4 border-t border-[#DCE4EF] pt-3"><p className="text-xs text-[#5C6982]">Licence: {String(item.license || 'Not specified')}</p><p className="mt-1 text-xs text-[#5C6982]">Attribution: {String(item.attribution || 'See resource details')}</p><div className="mt-3 flex flex-wrap items-center justify-between gap-2"><Link to={isPlatformOversightRole ? `/resource/${encodeURIComponent(item.id)}` : `/open-resource/${encodeURIComponent(item.id)}`} className="inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0]"><BookOpen size={15}/> {isModerator ? 'Open & download' : isAdmin ? 'Open resource' : 'View resource'}</Link>{(user?.role === 'student' || user?.role === 'lecturer') && <ReportContentButton targetType="resource" targetId={item.id} label="Report resource" compact />}</div></div></article>)}</div> : <div className="rounded-2xl border border-dashed border-[#DCE4EF] p-10 text-center"><BookOpen className="mx-auto text-[#6121D0]" size={28}/><h3 className="mt-3 font-semibold text-[#091F5B]">No matching resources</h3><p className="mt-1 text-sm text-[#5C6982]">Try another search or check back as materials are added.</p></div>}

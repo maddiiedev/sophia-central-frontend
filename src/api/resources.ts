@@ -32,6 +32,24 @@ export type OpenSourceResearchImportResult = {
   copySkippedReason?: string;
   resource: { id: string; title: string; sourceUrl?: string; hasFile?: boolean };
 };
+export type OpenSourceResearchSearchPage = {
+  results: OpenSourceResearchResult[];
+  page: number;
+  perPage: number;
+  hasMore: boolean;
+};
+export type OpenSourceResearchBulkImportReport = {
+  requested: number;
+  imported: number;
+  duplicates: number;
+  failed: number;
+  results: Array<{
+    identifier: string;
+    status: 'imported' | 'duplicate' | 'failed';
+    result?: OpenSourceResearchImportResult;
+    error?: string;
+  }>;
+};
 
 export type PublicResourceFilters = { q?: string; course?: string; topic?: string; institution?: string; faculty?: string; department?: string; departmentOnly?: boolean; origin?: 'community_upload' | 'open_source'; level?: string; type?: string; license?: string; page?: number; limit?: number };
 export type PublicResourcePage = { items: ApiResource[]; page: number; limit: number; total: number; totalPages: number };
@@ -46,8 +64,9 @@ function queryString(filters: PublicResourceFilters = {}) {
   return query ? `?${query}` : '';
 }
 export const resourcesApi = {
-  searchOpenSource: (query: string) => apiRequest<OpenSourceResearchResult[]>(`/resources/open-source/search?q=${encodeURIComponent(query)}`, { method: 'GET' }),
+  searchOpenSource: (query: string, page = 1, perPage = 12) => apiRequest<OpenSourceResearchSearchPage>(`/resources/open-source/search?q=${encodeURIComponent(query)}&page=${page}&perPage=${perPage}`, { method: 'GET' }),
   importOpenSource: (identifier: string) => apiRequest<OpenSourceResearchImportResult>('/resources/open-source/import', { method: 'POST', body: JSON.stringify({ identifier }) }),
+  importOpenSourceBulk: (identifiers: string[]) => apiRequest<OpenSourceResearchBulkImportReport>('/resources/open-source/import/bulk', { method: 'POST', body: JSON.stringify({ identifiers }) }),
   publicList: async (filters: PublicResourceFilters = {}) => {
     const page = await apiRequest<PublicResourcePage>(`/resources/public${queryString(filters)}`, { method: 'GET' });
     return { ...page, items: page.items.map(mapResource) };
