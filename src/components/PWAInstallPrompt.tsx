@@ -5,6 +5,9 @@ type InstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 };
 
+const DISMISSAL_KEY = 'sophis-central-pwa-install-dismissed-at';
+const DISMISSAL_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+
 function isStandalone() {
   const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
   return window.matchMedia('(display-mode: standalone)').matches || navigatorWithStandalone.standalone === true;
@@ -15,27 +18,59 @@ function isIosDevice() {
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
+function wasRecentlyDismissed() {
+  try {
+    const dismissedAt = Number(window.localStorage.getItem(DISMISSAL_KEY));
+    return Number.isFinite(dismissedAt) && dismissedAt > 0 && Date.now() - dismissedAt < DISMISSAL_PERIOD_MS;
+  } catch {
+    return false;
+  }
+}
+
+function rememberDismissal() {
+  try {
+    window.localStorage.setItem(DISMISSAL_KEY, String(Date.now()));
+  } catch {
+    // The install prompt remains dismissible for the current session if storage is unavailable.
+  }
+}
+
+function clearDismissal() {
+  try {
+    window.localStorage.removeItem(DISMISSAL_KEY);
+  } catch {
+    // Ignore unavailable storage.
+  }
+}
+
 export function PWAInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [iosInstructions, setIosInstructions] = useState(false);
 
   useEffect(() => {
-    if (isStandalone()) return;
+    if (isStandalone() || wasRecentlyDismissed()) return;
+
     const ios = isIosDevice();
     setIosInstructions(ios);
+
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as InstallPromptEvent);
       setVisible(true);
     };
+
     const onAppInstalled = () => {
+      clearDismissal();
       setVisible(false);
       setInstallEvent(null);
     };
+
     if (ios) setVisible(true);
+
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
     window.addEventListener('appinstalled', onAppInstalled);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onAppInstalled);
@@ -44,9 +79,21 @@ export function PWAInstallPrompt() {
 
   const install = async () => {
     if (!installEvent) return;
-    await installEvent.prompt();
-    const choice = await installEvent.userChoice;
-    setInstallEvent(null);
+
+    try {
+      await installEvent.prompt();
+      const choice = await installEvent.userChoice;
+      if (choice.outcome === 'dismissed') rememberDismissal();
+    } catch (error) {
+      console.error('Sophis Central installation prompt failed:', error);
+    } finally {
+      setInstallEvent(null);
+      setVisible(false);
+    }
+  };
+
+  const dismiss = () => {
+    rememberDismissal();
     setVisible(false);
   };
 
@@ -55,6 +102,7 @@ export function PWAInstallPrompt() {
   return (
     <aside
       aria-label="Install Sophis Central"
+      aria-live="polite"
       className="fixed inset-x-3 z-[70] mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-[#DCE4EF] bg-white p-3 shadow-[0_12px_40px_rgba(9,31,91,0.18)]"
       style={{ bottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
@@ -70,7 +118,7 @@ export function PWAInstallPrompt() {
           Install
         </button>
       )}
-      <button type="button" onClick={() => setVisible(false)} aria-label="Dismiss install message" className="shrink-0 rounded-lg p-2 text-[#64748B] hover:bg-[#F3F6FC]">
+      <button type="button" onClick={dismiss} aria-label="Dismiss install message" className="shrink-0 rounded-lg p-2 text-[#64748B] hover:bg-[#F3F6FC]">
         <span aria-hidden="true">×</span>
       </button>
     </aside>
