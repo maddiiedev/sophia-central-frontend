@@ -1,16 +1,10 @@
-import { ArrowLeft, ArrowUpRight, Facebook, Globe2, Instagram, Linkedin, Mail, MessageCircle, Users } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Globe2, Mail, MessageCircle, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { publicContactEmails } from '../config/publicContact';
 
 export function CommunityPage() {
   const generalEmail = publicContactEmails.general;
-
-  const socialLinks = [
-    { label: 'Facebook', href: 'https://www.facebook.com/', Icon: Facebook },
-    { label: 'Instagram', href: 'https://www.instagram.com/', Icon: Instagram },
-    { label: 'LinkedIn', href: 'https://www.linkedin.com/', Icon: Linkedin },
-  ];
 
   return (
     <main className="min-h-screen bg-[#F6F8FC] text-[#1F2937]">
@@ -42,7 +36,7 @@ export function CommunityPage() {
           <span className="inline-flex rounded-2xl bg-[#F0EBFF] p-3 text-[#6121D0]"><Users size={24} /></span>
           <h2 className="mt-5 break-words text-xl font-bold text-[#091F5B] sm:text-2xl">One community, many academic journeys.</h2>
           <p className="mt-4 text-sm leading-7 text-[#5C6982]">
-            Sophis Central is for students, lecturers, researchers, graduates and supporters of education.
+            Sophis Central community is for all students, lecturers, researchers, graduates and supporters of education.
           </p>
           <p className="mt-3 text-sm leading-7 text-[#5C6982]">
             Visit our social platforms and stay connected as the community grows.
@@ -53,23 +47,10 @@ export function CommunityPage() {
           <span className="inline-flex rounded-2xl bg-[#EAF1FF] p-3 text-[#004BEC]"><MessageCircle size={24} /></span>
           <h2 className="mt-5 break-words text-xl font-bold text-[#091F5B] sm:text-2xl">Connect with Sophis Central</h2>
           <p className="mt-3 text-sm leading-7 text-[#5C6982]">
-            Visit Facebook, Instagram or LinkedIn. These temporary links open the platforms themselves; Sophis Central profile links can be added when the pages are ready.
+            Our official social media pages are coming soon. Stay tuned for updates and new ways to connect with the Sophis Central community.
           </p>
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {socialLinks.map(({ label, href, Icon }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Open ${label}`}
-                className="inline-flex min-w-0 items-center justify-center gap-2 rounded-xl border border-[#DCE4EF] bg-[#F8FAFF] px-3 py-3 text-sm font-semibold text-[#334155] transition hover:border-[#B9C8F5] hover:bg-[#F3F6FC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6121D0] focus-visible:ring-offset-2"
-              >
-                <Icon size={18} aria-hidden="true" />
-                {label}
-                <ArrowUpRight size={15} className="shrink-0 text-[#6121D0]" aria-hidden="true" />
-              </a>
-            ))}
+          <div className="mt-5 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFF] px-4 py-4 text-sm font-semibold text-[#334155]">
+            Official social links will be shared here soon.
           </div>
           <a href={`mailto:${generalEmail}?subject=${encodeURIComponent('Sophis Central Community')}`} className="mt-5 inline-flex w-full min-w-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFF] px-4 py-4 text-left transition hover:border-[#B9C8F5] hover:bg-[#F3F6FC]">
             <span className="flex min-w-0 items-center gap-3">
