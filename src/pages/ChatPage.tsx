@@ -393,14 +393,19 @@ export function ChatPage() {
   const markConversationRead = useCallback(async (userId: string) => {
     try {
       await chatApi.markRead(userId);
-      await loadInbox();
+      // Wait for the authoritative server inbox after the read cursor is saved.
+      // Do not treat a swallowed refresh failure as a successful read sync.
+      await refreshInbox();
+      setInboxRefreshError('');
       setReadReceiptError('');
     } catch (cause) {
-      setReadReceiptError(cause instanceof Error
+      const message = cause instanceof Error
         ? cause.message
-        : 'Your read receipt could not be synchronized. Please keep this conversation open while it reconnects.');
+        : 'Your read receipt could not be synchronized. Please keep this conversation open while it reconnects.';
+      setReadReceiptError(message);
+      setInboxRefreshError(message);
     }
-  }, [loadInbox]);
+  }, [refreshInbox]);
 
   const loadMessages = useCallback(
     async (quiet = false) => {
