@@ -1154,3 +1154,21 @@ html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-user-message button 
     padding-right: 1.5rem;
   }
 }
+
+
+/* Library hero copy: keep every heading and supporting text strongly white
+   on the blue hero background, overriding the app-wide legacy text reset.
+   The white CTA remains unchanged so its blue label keeps its contrast. */
+.app-shell .library-page > section:first-child > p,
+.app-shell .library-page > section:first-child > h1,
+.app-shell .open-source-library-page > section:first-child > p,
+.app-shell .open-source-library-page > section:first-child > h1 {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+.app-shell .library-page > section:first-child > p:not(:first-child),
+.app-shell .open-source-library-page > section:first-child > p:not(:first-child) {
+  font-weight: 600 !important;
+}
