@@ -187,7 +187,7 @@ export function AITutorPage() {
           {conversation.map((message, index) => (
             <div key={message.id ?? index} className={message.role === 'user' ? 'ai-tutor-message ai-tutor-user-message ml-auto min-w-0 max-w-[94%] rounded-xl bg-[#6121D0] p-3 text-sm leading-6 text-white sm:max-w-[88%]' : 'ai-tutor-message ai-tutor-assistant-message mr-auto min-w-0 max-w-[94%] rounded-xl border border-[#DCE4EF] bg-white p-3 text-sm leading-7 text-[#1F2937] sm:max-w-[92%]'}>
               <div className="mb-1 flex items-center justify-between gap-3">
-                <p className={message.role === 'user' ? 'text-xs font-semibold text-white/75' : 'text-xs font-semibold text-[#6121D0]'}>{message.role === 'user' ? 'You' : 'Sophis'}</p>
+                <p className={message.role === 'user' ? 'text-xs font-semibold text-white/75' : 'text-xs font-semibold text-[#6121D0]'}>{message.role === 'user' ? 'You' : 'Sophis AI'}</p>
                 {message.role === 'user' && message.id && sessionId && (
                   <button
                     type="button"
