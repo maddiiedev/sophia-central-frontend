@@ -1,0 +1,95 @@
+.sc-branded-page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: sc-loader-appear 140ms ease-out both;
+}
+
+.sc-branded-page-loader__content {
+  display: flex;
+  width: min(80vw, 240px);
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.sc-branded-page-loader__logo {
+  display: block;
+  width: auto;
+  height: 40px;
+  max-width: min(72vw, 200px);
+  object-fit: contain;
+  /* Trim the tiny stray pixels at the source image's bottom edge. */
+  clip-path: inset(0 0 1.8% 0);
+  animation: sc-logo-breathe 1.8s ease-in-out infinite;
+}
+
+.sc-branded-page-loader__progress {
+  position: relative;
+  width: 132px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(97, 33, 208, 0.14);
+}
+
+.sc-branded-page-loader__progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2C36D9, #6121D0);
+  animation: sc-loader-sweep 1.25s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .sc-branded-page-loader__logo { height: 48px; }
+  .sc-branded-page-loader__content { gap: 20px; }
+}
+
+@media (min-width: 1024px) {
+  .sc-branded-page-loader__logo { height: 56px; }
+}
+
+@keyframes sc-loader-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sc-logo-breathe {
+  0%, 100% { opacity: 0.94; }
+  50% { opacity: 1; }
+}
+
+@keyframes sc-loader-sweep {
+  0% { transform: translateX(-115%); }
+  100% { transform: translateX(390%); }
+}
+
+html[data-theme='dark'] .sc-branded-page-loader {
+  background: rgba(11, 17, 32, 0.97);
+}
+
+html[data-theme='dark'] .sc-branded-page-loader__progress {
+  background: rgba(196, 181, 253, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-branded-page-loader,
+  .sc-branded-page-loader__logo,
+  .sc-branded-page-loader__progress span {
+    animation: none;
+  }
+
+  .sc-branded-page-loader__progress span {
+    width: 100%;
+    transform: none;
+    opacity: 0.8;
+  }
+}
