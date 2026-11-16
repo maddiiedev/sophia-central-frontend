@@ -11,7 +11,7 @@ export type CookieConsent = {
   analytics: boolean;
   conversion: boolean;
   updatedAt: string;
-  choice: 'accepted-all' | 'rejected-optional' | 'custom';
+  choice: 'accepted-all' | 'accepted-recommended' | 'rejected-optional' | 'custom';
 };
 
 function readConsent(): CookieConsent | null {
@@ -88,15 +88,15 @@ export function CookieConsentBanner() {
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-base font-bold text-[#091F5B]">Your privacy matters</h2>
+          <h2 className="text-base font-bold text-[#091F5B]">We use cookies</h2>
           <p id="cookie-consent-description" className="mt-1 max-w-2xl text-sm leading-6 text-[#52627B]">
-            We use essential cookies to keep Sophis Central secure and working. With your permission, we also use optional technologies to improve your experience and understand platform usage. <Link to="/cookie-policy" className="font-semibold text-[#6121D0] underline">Cookie Policy</Link>.
+            We use cookies to ensure Sophis Central works properly and to enhance your experience. Essential cookies keep the platform functioning. You can choose whether to allow optional cookies for personalization, analytics and conversion measurement. Read our <Link to="/cookie-policy" className="font-semibold text-[#6121D0] underline">Cookie Policy</Link> and <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.
           </p>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <button type="button" onClick={() => saveCookieConsent(false, false, false, 'rejected-optional')} className="rounded-xl border border-[#CBD5E1] px-3.5 py-2.5 text-sm font-semibold text-[#334155] transition hover:bg-[#F8FAFC]">Reject Optional</button>
+        <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[260px] sm:justify-end">
           <Link to="/cookie-settings" className="rounded-xl border border-[#C4B5FD] px-3.5 py-2.5 text-sm font-semibold text-[#5B21B6] transition hover:bg-[#F5F3FF]">Manage Preferences</Link>
-          <button type="button" onClick={() => saveCookieConsent(true, true, true, 'accepted-all')} className="rounded-xl bg-[#6121D0] px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4C1D95]">Accept All</button>
+          <button type="button" onClick={() => saveCookieConsent(true, true, false, 'accepted-recommended')} className="rounded-xl border border-[#CBD5E1] px-3.5 py-2.5 text-sm font-semibold text-[#334155] transition hover:bg-[#F8FAFC]">Accept Recommended Cookies</button>
+          <button type="button" onClick={() => saveCookieConsent(true, true, true, 'accepted-all')} className="rounded-xl bg-[#6121D0] px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4C1D95]">Accept All Cookies</button>
         </div>
       </div>
     </section>
