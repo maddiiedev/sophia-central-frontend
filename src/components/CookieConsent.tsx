@@ -90,7 +90,7 @@ export function CookieConsentBanner() {
         <div className="min-w-0">
           <h2 className="text-base font-bold text-[#091F5B]">We use cookies</h2>
           <p id="cookie-consent-description" className="mt-1 max-w-2xl text-sm leading-6 text-[#52627B]">
-            We use cookies to ensure Sophis Central works properly and to enhance your experience. Essential cookies keep the platform functioning. You can choose whether to allow optional cookies for personalization, analytics and conversion measurement. Read our <Link to="/cookie-policy" className="font-semibold text-[#6121D0] underline">Cookie Policy</Link> and <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.
+            We use cookies to ensure Sophis Central works properly and to enhance your experience. Essential cookies help keep the platform secure and functioning. You can choose whether to allow optional cookies for personalization, analytics and conversion measurement. Read our <Link to="/cookie-policy" className="font-semibold text-[#6121D0] underline">Cookie Policy</Link> and <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[260px] sm:justify-end">
