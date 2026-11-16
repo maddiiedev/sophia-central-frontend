@@ -1224,3 +1224,20 @@ body,
     padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
   }
 }
+
+
+/* iOS installed-PWA safe-area handling for every top-level navigation header.
+   The status bar is opaque (index.html), and this spacing also protects devices
+   that report a non-zero top inset in standalone mode. */
+@media (display-mode: standalone) {
+  .app-shell > .flex > main > header,
+  .homepage > header,
+  #root > main > header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem) !important;
+    scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  }
+
+  .app-shell #mobile-main-navigation {
+    top: calc(env(safe-area-inset-top, 0px) + 76px) !important;
+  }
+}

@@ -216,7 +216,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
               />
               <div
                 id="mobile-main-navigation"
-                className="fixed inset-x-3 bottom-3 top-[76px] z-50 overflow-y-auto overscroll-contain rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xl lg:hidden"
+                className="fixed inset-x-3 bottom-3 top-[calc(env(safe-area-inset-top)+76px)] z-50 overflow-y-auto overscroll-contain rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xl lg:hidden"
               >
                 <div className="mb-3 flex items-center justify-between border-b border-[#E5E7EB] pb-3">
                   <span className="text-sm font-bold text-[#091F5B]">Navigation</span>
