@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'sophis-central-';
-const CACHE_NAME = 'sophis-central-shell-v9';
+const CACHE_NAME = 'sophis-central-shell-v10';
 const APP_SHELL = [
   '/',
   '/index.html',

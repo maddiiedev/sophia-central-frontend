@@ -26,6 +26,8 @@ export const chatApi = {
     const baseUrl = appConfig.apiBaseUrl.endsWith('/') ? appConfig.apiBaseUrl.slice(0, -1) : appConfig.apiBaseUrl;
     const source = new EventSource(`${baseUrl}/chat/events`, { withCredentials: true });
     source.onmessage = () => onRefresh();
+    // EventSource reconnects automatically; refresh immediately after reconnection.
+    source.onopen = () => onRefresh();
     return () => source.close();
   },
   contacts: (search = '') => apiRequest<ChatContact[]>(`/chat/contacts${search.trim() ? `?search=${encodeURIComponent(search.trim().replace(/^@+/, ''))}` : ''}`),

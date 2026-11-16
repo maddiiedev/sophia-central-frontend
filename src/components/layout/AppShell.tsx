@@ -24,7 +24,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { BrandLogo } from '../brand/BrandLogo';
 import { notificationsApi } from '../../api/notifications';
-import { chatApi } from '../../api/chat';
+import { usePrivateDmInbox } from '../../context/PrivateDmInboxContext';
 import { ProfileImage } from '../ProfileImage';
 
 const studentNav = [
@@ -90,7 +90,8 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [privateDmUnreadCount, setPrivateDmUnreadCount] = useState(0);
+  const { inbox: privateDmInbox } = usePrivateDmInbox();
+  const privateDmUnreadCount = privateDmInbox.reduce((total, item) => total + (item.unreadCount || 0), 0);
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -122,24 +123,6 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
     return () => { active = false; window.clearInterval(interval); };
   }, [user?.id]);
 
-
-  useEffect(() => {
-    const canUsePrivateDm = user?.role === 'student' || user?.role === 'lecturer';
-    if (!user || !canUsePrivateDm) { setPrivateDmUnreadCount(0); return; }
-    let active = true;
-    const refreshPrivateDmUnread = async () => {
-      try {
-        const conversations = await chatApi.inbox();
-        if (active) setPrivateDmUnreadCount(conversations.reduce((total, item) => total + (item.unreadCount || 0), 0));
-      } catch {
-        // Keep navigation available if the inbox is temporarily unavailable.
-      }
-    };
-    void refreshPrivateDmUnread();
-    const unsubscribe = chatApi.subscribe(() => { void refreshPrivateDmUnread(); });
-    const interval = window.setInterval(() => { void refreshPrivateDmUnread(); }, 15000);
-    return () => { active = false; unsubscribe(); window.clearInterval(interval); };
-  }, [user?.id, user?.role]);
 
   const navItems = user?.role === 'lecturer' ? lecturerNav : user?.role === 'reviewer' ? reviewerNav : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : studentNav;
   const goBack = () => {

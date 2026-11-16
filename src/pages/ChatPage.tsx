@@ -1,7 +1,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Mic, Pause, Play, Send, Smile, Trash2 } from 'lucide-react';
-import { chatApi, type ChatContact, type ChatInboxItem, type ChatMessage, type ChatRetentionPeriod } from '../api/chat';
+import { chatApi, type ChatContact, type ChatMessage, type ChatRetentionPeriod } from '../api/chat';
+import { usePrivateDmInbox } from '../context/PrivateDmInboxContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ReportContentButton } from '../components/ReportContentButton';
@@ -170,7 +171,7 @@ export function ChatPage() {
       : 'direct';
 
   const [contacts, setContacts] = useState<ChatContact[]>([]);
-  const [inbox, setInbox] = useState<ChatInboxItem[]>([]);
+  const { inbox, refreshInbox, eventVersion } = usePrivateDmInbox();
   const knownInboxMessageIdsRef = useRef<Set<string> | null>(null);
   const [onlineContactIds, setOnlineContactIds] = useState<Set<string>>(() => new Set());
 
@@ -214,6 +215,8 @@ export function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [inboxRefreshError, setInboxRefreshError] = useState('');
+  const [readReceiptError, setReadReceiptError] = useState('');
 
   const [editing, setEditing] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
@@ -362,32 +365,42 @@ export function ChatPage() {
 
   const loadInbox = useCallback(async () => {
     try {
-      const result = await chatApi.inbox();
-      const nextInbox = Array.isArray(result) ? result : [];
-      const previousIds = knownInboxMessageIdsRef.current;
+      await refreshInbox();
+      setInboxRefreshError('');
+    } catch (cause) {
+      setInboxRefreshError(cause instanceof Error
+        ? cause.message
+        : 'Private conversations could not be refreshed. Reconnecting…');
+    }
+  }, [refreshInbox]);
 
-      const incoming = previousIds
-        ? nextInbox.filter(item =>
-            !item.lastMessage.isOwn && !previousIds.has(item.lastMessage.id),
-          )
-        : [];
-
+  useEffect(() => {
+    const previousIds = knownInboxMessageIdsRef.current;
+    if (previousIds) {
+      const incoming = inbox.filter(item =>
+        !item.lastMessage.isOwn && !previousIds.has(item.lastMessage.id),
+      );
       const hasUnfocusedIncoming = incoming.some(
         item => mode !== 'direct' || recipient !== item.contact.id,
       );
-
-      if (hasUnfocusedIncoming && !mutedDirect) {
-        playSophisTone('receive');
-      }
-
-      knownInboxMessageIdsRef.current = new Set(
-        nextInbox.map(item => item.lastMessage.id),
-      );
-      setInbox(nextInbox);
-    } catch {
-      // Keep the conversation composer usable if inbox summaries are temporarily unavailable.
+      if (hasUnfocusedIncoming && !mutedDirect) playSophisTone('receive');
     }
-  }, [mode, recipient, mutedDirect]);
+    knownInboxMessageIdsRef.current = new Set(
+      inbox.map(item => item.lastMessage.id),
+    );
+  }, [inbox, mode, recipient, mutedDirect]);
+
+  const markConversationRead = useCallback(async (userId: string) => {
+    try {
+      await chatApi.markRead(userId);
+      await loadInbox();
+      setReadReceiptError('');
+    } catch (cause) {
+      setReadReceiptError(cause instanceof Error
+        ? cause.message
+        : 'Your read receipt could not be synchronized. Please keep this conversation open while it reconnects.');
+    }
+  }, [loadInbox]);
 
   const loadMessages = useCallback(
     async (quiet = false) => {
@@ -432,7 +445,7 @@ export function ChatPage() {
           }
 
           if (mode === 'direct' && recipient && incoming.length) {
-            void chatApi.markRead(recipient).then(loadInbox).catch(() => undefined);
+            void markConversationRead(recipient);
           }
 
           setMessages(current => {
@@ -466,7 +479,7 @@ export function ChatPage() {
           setNextBefore(result.nextBefore ?? null);
 
           if (mode === 'direct' && recipient) {
-            void chatApi.markRead(recipient).then(loadInbox).catch(() => undefined);
+            void markConversationRead(recipient);
           }
         }
 
@@ -481,7 +494,7 @@ export function ChatPage() {
         }
       }
     },
-    [mode, recipient, mutedGroup, mutedDirect, loadInbox],
+    [mode, recipient, mutedGroup, mutedDirect, markConversationRead, user?.id],
   );
 
   const changeRetention = async (period: ChatRetentionPeriod) => {
@@ -622,10 +635,19 @@ export function ChatPage() {
 
   useEffect(() => {
     setRecipient('');
+    setMessages([]);
+    setContacts([]);
+    setOnlineContactIds(new Set());
+    setInboxRefreshError('');
+    setReadReceiptError('');
+    setError('');
+    knownMessageIdsRef.current = null;
+    knownInboxMessageIdsRef.current = null;
+    requestSequenceRef.current += 1;
     setShowContactDropdown(false);
     setShowEmoji(false);
     setShowStickers(false);
-  }, [location.pathname, user?.role]);
+  }, [location.pathname, user?.id, user?.role]);
 
   // Notification links can open a specific private conversation directly.
   useEffect(() => {
@@ -650,20 +672,8 @@ export function ChatPage() {
   }, [loadMessages]);
 
   useEffect(() => {
-    return chatApi.subscribe(() => {
-      void loadMessages(true);
-      void loadInbox();
-    });
-  }, [loadMessages, loadInbox]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      void loadMessages(true);
-      void loadInbox();
-    }, 30000);
-
-    return () => window.clearInterval(timer);
-  }, [loadMessages, loadInbox]);
+    if (eventVersion > 0) void loadMessages(true);
+  }, [eventVersion, loadMessages]);
 
   useEffect(() => {
     const container = listRef.current;
@@ -1144,7 +1154,8 @@ export function ChatPage() {
   }
 
   return (
-    <section className="chat-page mx-auto flex h-[calc(100vh-110px)] min-h-[640px] max-w-6xl flex-col overflow-hidden rounded-2xl border border-[#DCE4EF] bg-white text-[#091F5B] shadow-sm dark:border-[#334155] dark:bg-[#172033] dark:text-[#F1F5F9]">
+    <section className="chat-page mx-auto flex h-[calc(100dvh-110px)] min-h-[420px] sm:min-h-[640px] max-w-6xl flex-col overflow-hidden rounded-2xl border border-[#DCE4EF] bg-white text-[#091F5B] shadow-sm dark:border-[#334155] dark:bg-[#172033] dark:text-[#F1F5F9]">
+      {(inboxRefreshError || readReceiptError) && <p role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">{readReceiptError || inboxRefreshError}</p>}
       {/* Chat header */}
       <div data-chat-desktop-header className="flex flex-wrap items-center justify-between gap-3 border-b border-violet-200 bg-violet-100 p-4 dark:border-[#334155] dark:bg-[#172033]">
         <div>
