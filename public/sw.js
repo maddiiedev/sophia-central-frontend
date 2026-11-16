@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'sophis-central-';
-const CACHE_NAME = 'sophis-central-shell-v5';
+const CACHE_NAME = 'sophis-central-shell-v6';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -76,9 +76,26 @@ self.addEventListener('fetch', (event) => {
   if (!isPublicStaticAsset(request, url)) return;
 
   event.respondWith(
-    caches.match(request).then(async (cached) => {
-      if (cached) return cached;
+    (async () => {
+      const isBrandAsset = PUBLIC_ASSET_PATHS.has(url.pathname);
+      const cached = await caches.match(request);
 
+      // Always prefer the current deployed brand assets. Older phones may
+      // otherwise keep showing a previous logo indefinitely from cache.
+      if (isBrandAsset) {
+        try {
+          const response = await fetch(request, { cache: 'no-cache' });
+          if (response.ok && response.type === 'basic') {
+            const copy = response.clone();
+            void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        } catch {
+          return cached || Response.error();
+        }
+      }
+
+      if (cached) return cached;
       try {
         const response = await fetch(request);
         if (response.ok && response.type === 'basic') {
@@ -89,6 +106,6 @@ self.addEventListener('fetch', (event) => {
       } catch {
         return Response.error();
       }
-    })
+    })()
   );
 });

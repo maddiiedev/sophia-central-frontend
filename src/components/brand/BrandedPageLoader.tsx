@@ -16,11 +16,13 @@ const BrandedLoadingContext = createContext<BrandedLoadingContextValue | null>(n
 export function BrandedPageLoaderProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const previousPath = useRef(location.pathname);
+  const [initialPending, setInitialPending] = useState(true);
   const [routePending, setRoutePending] = useState(false);
   const [suspensePending, setSuspensePendingState] = useState(false);
 
   const setSuspensePending = useCallback((pending: boolean) => {
     setSuspensePendingState(pending);
+    if (!pending) setInitialPending(false);
   }, []);
   const contextValue = useMemo(() => ({ setSuspensePending }), [setSuspensePending]);
 
@@ -37,7 +39,7 @@ export function BrandedPageLoaderProvider({ children }: { children: ReactNode })
   return (
     <BrandedLoadingContext.Provider value={contextValue}>
       {children}
-      {(routePending || suspensePending) && <BrandedPageLoaderView />}
+      {(initialPending || routePending || suspensePending) && <BrandedPageLoaderView />}
     </BrandedLoadingContext.Provider>
   );
 }
@@ -51,11 +53,10 @@ export function BrandedPageLoaderFallback() {
   }
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => context.setSuspensePending(true), 120);
-    return () => {
-      window.clearTimeout(timeout);
-      context.setSuspensePending(false);
-    };
+    // Show the shared branded loader immediately on the first React commit.
+    // The provider keeps it visible until the initial lazy page has resolved.
+    context.setSuspensePending(true);
+    return () => context.setSuspensePending(false);
   }, [context]);
 
   return null;
@@ -70,6 +71,7 @@ function BrandedPageLoaderView() {
           alt="Sophis Central"
           className="sc-branded-page-loader__logo"
           decoding="async"
+          fetchPriority="high"
         />
         <div className="sc-branded-page-loader__progress" aria-hidden="true">
           <span />

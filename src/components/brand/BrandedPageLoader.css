@@ -27,7 +27,11 @@
   object-fit: contain;
   /* Trim the tiny stray pixels at the source image's bottom edge. */
   clip-path: inset(0 0 1.8% 0);
-  animation: sc-logo-breathe 1.8s ease-in-out infinite;
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+  animation:
+    sc-logo-reveal 420ms cubic-bezier(.2,.7,.2,1) forwards,
+    sc-logo-breathe 1.8s ease-in-out 420ms infinite;
 }
 
 .sc-branded-page-loader__progress {
@@ -62,6 +66,11 @@
   to { opacity: 1; }
 }
 
+@keyframes sc-logo-reveal {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @keyframes sc-logo-breathe {
   0%, 100% { opacity: 0.94; }
   50% { opacity: 1; }
@@ -85,6 +94,11 @@ html[data-theme='dark'] .sc-branded-page-loader__progress {
   .sc-branded-page-loader__logo,
   .sc-branded-page-loader__progress span {
     animation: none;
+  }
+
+  .sc-branded-page-loader__logo {
+    opacity: 1;
+    transform: none;
   }
 
   .sc-branded-page-loader__progress span {
