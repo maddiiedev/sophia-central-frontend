@@ -1,16 +1,16 @@
 const CACHE_PREFIX = 'sophis-central-';
-const CACHE_NAME = 'sophis-central-shell-v6';
+const CACHE_NAME = 'sophis-central-shell-v7';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/sophis-central-favicon.png',
+  '/sophis-central-icon.svg',
   '/sophia-central-logo.png'
 ];
 
 const PUBLIC_ASSET_PATHS = new Set([
   '/manifest.webmanifest',
-  '/sophis-central-favicon.png',
+  '/sophis-central-icon.svg',
   '/sophia-central-logo.png'
 ]);
 
