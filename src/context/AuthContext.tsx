@@ -84,12 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeOnboarding = useCallback(async (payload: OnboardingPayload) => {
     const response = await academicApi.completeOnboarding(payload);
-    setUser(response.user);
+    // The onboarding endpoint has successfully completed the profile; keep the
+    // client route guard in sync even if the response contains a stale flag.
+    setUser({ ...response.user, isProfileComplete: true });
   }, []);
   const completePreAccountOnboarding = useCallback(async (token: string, payload: OnboardingPayload) => {
     await initializeCsrf();
     const response = await authApi.completePreAccountOnboarding(token, payload);
-    setUser(response.user);
+    // A successful pre-account conversion means profile onboarding is complete.
+    setUser({ ...response.user, isProfileComplete: true });
     clearPreAccountSession();
     try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
