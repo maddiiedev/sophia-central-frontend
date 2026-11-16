@@ -1538,6 +1538,10 @@ export function ChatPage() {
                 </time>
                 {!message.isOwn && message.senderId && <ReportContentButton targetType="user" targetId={message.senderId} label="Report account" compact />}
 
+                {message.isRead && message.isOwn && mode === 'direct' && (
+                  <span className="font-semibold text-violet-800 dark:text-[#D8CCFF] lg:dark:text-violet-900">Seen</span>
+                )}
+
                 {message.editedAt && (
                   <span
                     className={

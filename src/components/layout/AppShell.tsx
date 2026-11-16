@@ -25,6 +25,7 @@ import { useAuth } from '../../context/AuthContext';
 import { roleUsers } from '../../lib/mock-data';
 import { BrandLogo } from '../brand/BrandLogo';
 import { notificationsApi } from '../../api/notifications';
+import { chatApi } from '../../api/chat';
 import { ProfileImage } from '../ProfileImage';
 
 const studentNav = [
@@ -90,6 +91,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [privateDmUnreadCount, setPrivateDmUnreadCount] = useState(0);
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -121,6 +123,25 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
     return () => { active = false; window.clearInterval(interval); };
   }, [user?.id]);
 
+
+  useEffect(() => {
+    const canUsePrivateDm = user?.role === 'student' || user?.role === 'lecturer';
+    if (!user || !canUsePrivateDm) { setPrivateDmUnreadCount(0); return; }
+    let active = true;
+    const refreshPrivateDmUnread = async () => {
+      try {
+        const conversations = await chatApi.inbox();
+        if (active) setPrivateDmUnreadCount(conversations.reduce((total, item) => total + (item.unreadCount || 0), 0));
+      } catch {
+        // Keep navigation available if the inbox is temporarily unavailable.
+      }
+    };
+    void refreshPrivateDmUnread();
+    const unsubscribe = chatApi.subscribe(() => { void refreshPrivateDmUnread(); });
+    const interval = window.setInterval(() => { void refreshPrivateDmUnread(); }, 15000);
+    return () => { active = false; unsubscribe(); window.clearInterval(interval); };
+  }, [user?.id, user?.role]);
+
   const navItems = user?.role === 'lecturer' ? lecturerNav : user?.role === 'reviewer' ? reviewerNav : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : studentNav;
   const goBack = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
@@ -135,6 +156,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
           <Icon size={17} />
           <span className="min-w-0 flex-1">{label}</span>
           {href === '/notifications' && unreadCount > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+          {href === '/messages' && privateDmUnreadCount > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{privateDmUnreadCount > 99 ? '99+' : privateDmUnreadCount}</span>}
         </NavLink>
       ))}
       {[

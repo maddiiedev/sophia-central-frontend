@@ -3,7 +3,7 @@ import { appConfig } from '../config/env';
 
 export type ChatContact = { id: string; academicHandle: string; role: 'student' | 'lecturer'; institution?: string; faculty?: string; department?: string; isDeleted?: boolean };
 export type ChatQuotedMessage = { id: string; senderHandle: string; contentType: 'text' | 'voice' | 'sticker'; text: string | null; stickerId?: string | null; isDeleted: boolean };
-export type ChatMessage = { id: string; kind: 'group' | 'direct'; senderId: string | null; senderHandle: string; contentType: 'text' | 'voice' | 'sticker'; text: string | null; voiceUrl: string | null; stickerId?: string | null; isDeleted: boolean; editedAt: string | null; createdAt: string; isOwn: boolean; replyToMessageId?: string | null; forwardedFromMessageId?: string | null; quotedMessage?: ChatQuotedMessage | null };
+export type ChatMessage = { id: string; kind: 'group' | 'direct'; senderId: string | null; senderHandle: string; contentType: 'text' | 'voice' | 'sticker'; text: string | null; voiceUrl: string | null; stickerId?: string | null; isDeleted: boolean; editedAt: string | null; createdAt: string; isOwn: boolean; isRead?: boolean; replyToMessageId?: string | null; forwardedFromMessageId?: string | null; quotedMessage?: ChatQuotedMessage | null };
 export type ChatRetentionPeriod = '90_days' | '7_days' | '24_hours' | 'off';
 export type ChatPage = { items: ChatMessage[]; hasMore: boolean; nextBefore: string | null; hiddenMessageIds?: string[]; retentionPeriod?: ChatRetentionPeriod };
 export type ChatInboxItem = {
