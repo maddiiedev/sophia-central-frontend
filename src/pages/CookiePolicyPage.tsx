@@ -17,54 +17,38 @@ export function CookiePolicyPage() {
           <div className="mt-7 space-y-7 text-sm leading-7 text-[#475569]">
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">1. About this policy</h2>
-              <p className="mt-2">This policy explains how essential cookies and similar technologies support Sophis Central, and how you can manage optional choices. It should be read alongside our <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.</p>
+              <p className="mt-2">This policy explains how Sophis Central uses cookies and similar browser technologies to support secure access and core platform functions. It should be read alongside our <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.</p>
             </section>
 
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">2. What are cookies?</h2>
-              <p className="mt-2">Cookies are small files stored in your browser when you visit a website. Similar technologies, such as local storage and session storage, may also remember information or support website features.</p>
+              <p className="mt-2">Cookies are small files stored in your browser when you visit a website. Similar technologies, such as local storage and session storage, can also retain information or support website features.</p>
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-[#091F5B]">3. How we use cookies</h2>
-              <div className="mt-3 space-y-4">
-                <div>
-                  <h3 className="font-semibold text-[#091F5B]">Strictly Necessary</h3>
-                  <p className="mt-1">These technologies support secure access, account sessions, platform security and essential website functions. They are always active and cannot be switched off through the preference manager.</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-[#091F5B]">Preferences</h3>
-                  <p className="mt-1">If available and enabled, these technologies may remember selected preferences and settings.</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-[#091F5B]">Platform Usage</h3>
-                  <p className="mt-1">If available and enabled, these technologies may help us understand general platform usage and identify areas for improvement.</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-[#091F5B]">Campaign Measurement</h3>
-                  <p className="mt-1">If available and enabled, these technologies may help measure visits from outreach campaigns.</p>
-                </div>
-              </div>
+              <h2 className="text-lg font-bold text-[#091F5B]">3. How we use these technologies</h2>
+              <p className="mt-2">Sophis Central uses essential cookies and browser storage where needed for secure access, account sessions, security and core website functions. The cookie notice also stores your acknowledgement in browser local storage so it does not need to be shown on every visit.</p>
+              <p className="mt-3">Optional third-party analytics and advertising cookies are not currently enabled on the platform.</p>
             </section>
 
             <section>
-              <h2 className="text-lg font-bold text-[#091F5B]">4. Information that may be collected</h2>
-              <p className="mt-2">Depending on the technologies in use and your choices, cookies may process limited technical information such as browser and device details, pages visited, and referral information. We do not use cookies to intentionally collect sensitive personal information.</p>
+              <h2 className="text-lg font-bold text-[#091F5B]">4. Information involved</h2>
+              <p className="mt-2">Essential technologies may process information needed to maintain a session, remember the cookie notice acknowledgement, support security, and operate requested features. Other account, resource and platform activity information is described in our <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.</p>
             </section>
 
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">5. Third-party services</h2>
-              <p className="mt-2">If a feature uses a third-party service that places cookies or similar technologies, that use will be explained where relevant and handled according to your choices and applicable consent requirements.</p>
+              <p className="mt-2">Some features may link to external websites or use service providers to deliver core platform functions. Those providers may have their own privacy notices and technologies. Optional third-party analytics and advertising cookies are not currently enabled. If this changes, we will update this policy and request consent where required by applicable law.</p>
             </section>
 
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">6. Managing your preferences</h2>
-              <p className="mt-2">You can accept or reject optional cookies, or choose your preferences by category. You can change your choices at any time through <Link to="/cookie-settings" className="font-semibold text-[#6121D0] underline">Manage Cookie Preferences</Link>. You can also clear or block cookies through your browser settings. Disabling essential cookies may affect sign-in and core platform functions.</p>
+              <p className="mt-2">You can review the technologies currently used on our <Link to="/cookie-settings" className="font-semibold text-[#6121D0] underline">Cookie Settings</Link> page. You can also clear or block cookies and browser storage through your browser settings. Blocking essential technologies may affect sign-in, session continuity and core platform functions.</p>
             </section>
 
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">7. Changes to this policy</h2>
-              <p className="mt-2">We may update this policy when our services, technologies or applicable requirements change. The latest version and its update date will always be available on this page.</p>
+              <p className="mt-2">We may update this policy when our services, technologies or applicable requirements change. The latest version and its update date will be available on this page.</p>
             </section>
 
             <section>
@@ -76,7 +60,7 @@ export function CookiePolicyPage() {
           <div className="mt-8 flex flex-wrap gap-4 border-t border-[#DCE4EF] pt-6 text-sm">
             <Link to="/privacy" className="font-semibold text-[#6121D0] hover:underline">Privacy Policy</Link>
             <Link to="/terms" className="font-semibold text-[#6121D0] hover:underline">Terms of Use</Link>
-            <Link to="/cookie-settings" className="font-semibold text-[#6121D0] hover:underline">Manage Cookie Preferences</Link>
+            <Link to="/cookie-settings" className="font-semibold text-[#6121D0] hover:underline">Cookie Settings</Link>
             <Link to="/contact" className="font-semibold text-[#6121D0] hover:underline">Contact Us</Link>
           </div>
         </article>
