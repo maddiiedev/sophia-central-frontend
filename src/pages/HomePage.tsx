@@ -43,7 +43,6 @@ export default function HomePage() {
           <nav aria-label="Primary navigation" className="hidden items-center gap-6 text-sm font-semibold text-[#091F5B] lg:flex">
             <a href="#features" className="homepage-nav-link">Features</a>
             <a href="#resources" className="homepage-nav-link">Resources</a>
-            <a href="#community" className="homepage-nav-link">Community</a>
             <a href="/community" target="_blank" rel="noopener noreferrer" className="homepage-nav-link">Academic community</a>
             <a href="#about" className="homepage-nav-link">About Us</a>
           </nav>
