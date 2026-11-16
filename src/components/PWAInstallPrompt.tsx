@@ -106,8 +106,8 @@ export function PWAInstallPrompt() {
       className="fixed inset-x-3 z-[70] mx-auto flex max-w-xl items-center gap-3 rounded-2xl border border-[#DCE4EF] bg-white p-3 shadow-[0_12px_40px_rgba(9,31,91,0.18)]"
       style={{ bottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F3F6FC] p-1.5">
-        <img src="/sophis-central-pwa-icon.svg" alt="" className="h-full w-full object-contain object-center" />
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#F3F6FC] p-1">
+        <img src="/sophis-central-favicon.png" alt="" className="h-full w-full object-contain object-center" width="512" height="512" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-[#091F5B]">Use Sophis Central like an app</p>

@@ -278,7 +278,7 @@ html[data-theme='dark'] .app-shell [class*="bg-[#2C36D9]"][class~="text-white"] 
 
 
 /* In dark mode, invert transparent brand artwork to the white logo treatment. */
-html[data-theme='dark'] [data-logo-tone] img {
+html[data-theme='dark'] [data-logo-tone][data-logo-variant='full'] img {
   filter: brightness(0) invert(1) !important;
 }
 /* Light theme: keep legacy dark utility surfaces and their text readable. */

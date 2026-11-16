@@ -6,16 +6,19 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
   "background_color": "#F3F6FC",
   "theme_color": "#091F5B",
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/sophis-central-pwa-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/sophis-central-favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
