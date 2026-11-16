@@ -41,6 +41,10 @@ export interface Resource {
   faculty?: string;
   department?: string;
   origin?: 'community_upload' | 'open_source';
+  sourceUrl?: string;
+  license?: string;
+  attribution?: string;
+  hasFile?: boolean;
   level?: string;
   author?: string;
   tags?: string[];

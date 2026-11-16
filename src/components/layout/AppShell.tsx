@@ -29,7 +29,8 @@ import { ProfileImage } from '../ProfileImage';
 
 const studentNav = [
   { label: 'Dashboard', href: '/student/dashboard', icon: LayoutGrid },
-  { label: 'Academic & research materials', href: '/library', icon: BookOpen },
+  { label: 'Academic Library', href: '/library', icon: BookOpen },
+  { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'Contribute resource', href: '/upload', icon: Upload },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'AI Tutor', href: '/ai', icon: BrainCircuit },
@@ -41,7 +42,8 @@ const studentNav = [
 
 const lecturerNav = [
   { label: 'Dashboard', href: '/lecturer/dashboard', icon: LayoutGrid },
-  { label: 'Resource library', href: '/library', icon: BookOpen },
+  { label: 'Academic Library', href: '/library', icon: BookOpen },
+  { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Upload Resource', href: '/lecturer/upload', icon: Upload },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
@@ -51,7 +53,8 @@ const lecturerNav = [
 const moderatorNav = [
   { label: 'Dashboard', href: '/moderator/dashboard', icon: LayoutGrid },
   { label: 'Reports & moderation', href: '/moderation', icon: ShieldCheck },
-  { label: 'Platform resource library', href: '/library', icon: BookOpen },
+  { label: 'Academic Library', href: '/library', icon: BookOpen },
+  { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'Saved resources', href: '/my-resources', icon: Bookmark },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
   { label: 'Notifications', href: '/notifications', icon: Bell },
@@ -63,7 +66,8 @@ const moderatorNav = [
 
 const reviewerNav = [
   { label: 'Assigned review queue', href: '/moderation', icon: ShieldCheck },
-  { label: 'Resource library', href: '/library', icon: BookOpen },
+  { label: 'Academic Library', href: '/library', icon: BookOpen },
+  { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'My saved resources', href: '/my-resources', icon: Bookmark },
   { label: 'Notifications', href: '/notifications', icon: Bell },
 ];
@@ -72,7 +76,8 @@ const adminNav = [
   { label: 'Dashboard', href: '/analytics', icon: LayoutGrid },
   { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Resource review', href: '/moderation', icon: ShieldCheck },
-  { label: 'Resource library', href: '/library', icon: BookOpen },
+  { label: 'Academic Library', href: '/library', icon: BookOpen },
+  { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Analytics', href: '/analytics', icon: LayoutGrid },
   { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },

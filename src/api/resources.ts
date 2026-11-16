@@ -9,6 +9,7 @@ type ApiResource = Resource & {
   department?: string;
   origin?: 'community_upload' | 'open_source';
   hasFile?: boolean;
+  sourceUrl?: string;
   uploader?: { id?: string; displayName?: string };
 };
 
@@ -67,6 +68,12 @@ export const resourcesApi = {
   searchOpenSource: (query: string, page = 1, perPage = 12) => apiRequest<OpenSourceResearchSearchPage>(`/resources/open-source/search?q=${encodeURIComponent(query)}&page=${page}&perPage=${perPage}`, { method: 'GET' }),
   importOpenSource: (identifier: string) => apiRequest<OpenSourceResearchImportResult>('/resources/open-source/import', { method: 'POST', body: JSON.stringify({ identifier }) }),
   importOpenSourceBulk: (identifiers: string[]) => apiRequest<OpenSourceResearchBulkImportReport>('/resources/open-source/import/bulk', { method: 'POST', body: JSON.stringify({ identifiers }) }),
+  openSourceList: async (filters: PublicResourceFilters = {}) => {
+    const page = await apiRequest<PublicResourcePage>(`/resources/open-source-library${queryString(filters)}`, { method: 'GET' });
+    return { ...page, items: page.items.map(mapResource) };
+  },
+  openSourceById: async (id: string) => mapResource(await apiRequest<ApiResource>(`/resources/open-source-library/${encodeURIComponent(id)}`, { method: 'GET' })),
+  openSourceFileUrl: (id: string) => apiRequest<{ url: string; filename: string; contentType?: string; license: string; attribution: string }>(`/resources/open-source-library/${encodeURIComponent(id)}/file-url`, { method: 'GET' }),
   publicList: async (filters: PublicResourceFilters = {}) => {
     const page = await apiRequest<PublicResourcePage>(`/resources/public${queryString(filters)}`, { method: 'GET' });
     return { ...page, items: page.items.map(mapResource) };
