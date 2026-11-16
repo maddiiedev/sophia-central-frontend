@@ -735,7 +735,7 @@ html, body {
   overflow-x: clip;
 }
 body {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: 0;
   -webkit-text-size-adjust: 100%;
 }
 img, video, canvas, svg {
@@ -1180,4 +1180,47 @@ html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-user-message button 
 .app-shell .library-page > section:first-child > p:not(:first-child),
 .app-shell .open-source-library-page > section:first-child > p:not(:first-child) {
   font-weight: 400 !important;
+}
+
+
+/* iOS installed-PWA viewport alignment. Keep the app shell sized to the
+   actual dynamic viewport and let page content, not the document body, own
+   the home-indicator safe-area spacing. */
+html,
+body,
+#root,
+.app-shell,
+.app-shell > .flex {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@supports (height: 100svh) {
+  html,
+  body,
+  #root {
+    min-height: 100svh;
+  }
+}
+
+@media (display-mode: standalone) {
+  html,
+  body,
+  #root,
+  .app-shell,
+  .app-shell > .flex {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* The iOS standalone status bar is translucent, so reserve its safe area
+     inside the sticky app header before rendering the title and controls. */
+  .app-shell > .flex > main > header {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    scroll-margin-top: env(safe-area-inset-top);
+  }
+
+  .app-shell .page-shell {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
 }

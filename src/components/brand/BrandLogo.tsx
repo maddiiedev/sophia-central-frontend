@@ -25,7 +25,7 @@ export function BrandLogo({
       className={
         variant === 'full'
           ? 'block h-10 w-auto max-w-full object-contain sm:h-12 lg:h-14'
-          : 'block h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10'
+          : 'block h-9 w-9 shrink-0 rounded-lg bg-white object-contain p-1 sm:h-10 sm:w-10'
       }
       decoding="async"
     />

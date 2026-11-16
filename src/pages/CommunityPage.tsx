@@ -14,7 +14,7 @@ export function CommunityPage() {
 
   return (
     <main className="min-h-screen bg-[#F6F8FC] text-[#1F2937]">
-      <header className="border-b border-[#E4EAF5] bg-white">
+      <header className="sticky top-0 z-50 border-b border-[#E4EAF5] bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-3 py-3 sm:gap-4 sm:px-6 sm:py-4 lg:px-8">
           <BrandLogo variant="full" tone="dark" />
           <Link to="/" className="inline-flex max-w-full shrink-0 items-center gap-2 rounded-xl border border-[#DCE4EF] px-3 py-2 text-xs font-semibold text-[#334155] transition hover:border-[#B9C8F5] hover:bg-[#F3F6FC] sm:px-3.5 sm:py-2.5 sm:text-sm">
@@ -30,8 +30,8 @@ export function CommunityPage() {
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide text-white/90">
             <Globe2 size={15} /> BEYOND CAMPUS, CONNECTED
           </span>
-          <h1 className="mt-6 break-words text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">The Sophis Central Community</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[#E5E7EB] sm:text-lg">
+          <h1 className="mt-6 break-words text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">The Sophis Central Community</h1>
+          <p className="mx-auto mt-5 max-w-2xl text-base font-normal leading-8 text-[#E7E7EB] sm:text-lg">
             A shared space for everyone interested in learning, research and academic collaboration—wherever you study, teach or live.
           </p>
         </div>
@@ -42,7 +42,7 @@ export function CommunityPage() {
           <span className="inline-flex rounded-2xl bg-[#F0EBFF] p-3 text-[#6121D0]"><Users size={24} /></span>
           <h2 className="mt-5 break-words text-xl font-bold text-[#091F5B] sm:text-2xl">One community, many academic journeys.</h2>
           <p className="mt-4 text-sm leading-7 text-[#5C6982]">
-            Sophis Central is for students, lecturers, researchers, graduates and supporters of education. You do not need to belong to a particular institution, faculty, department, country, region or level to be part of the wider community.
+            Sophis Central is for students, lecturers, researchers, graduates and supporters of education.
           </p>
           <p className="mt-3 text-sm leading-7 text-[#5C6982]">
             Visit our social platforms and stay connected as the community grows.

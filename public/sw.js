@@ -1,16 +1,36 @@
 const CACHE_PREFIX = 'sophis-central-';
-const CACHE_NAME = 'sophis-central-shell-v7';
+const CACHE_NAME = 'sophis-central-shell-v9';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
   '/sophis-central-icon.svg',
+  '/sophis-central-pwa-icon.svg',
+  '/apple-touch-icon.png',
+  '/sophis-central-favicon.png',
+  '/sophis-central-favicon-32.png',
+  '/sophis-central-favicon-48.png',
+  '/sophis-central-favicon.ico',
+  '/sophis-central-192.png',
+  '/sophis-central-512.png',
+  '/sophis-central-maskable-512.png',
+  '/sophia-central-mark.png',
   '/sophia-central-logo.png'
 ];
 
 const PUBLIC_ASSET_PATHS = new Set([
   '/manifest.webmanifest',
   '/sophis-central-icon.svg',
+  '/sophis-central-pwa-icon.svg',
+  '/apple-touch-icon.png',
+  '/sophis-central-favicon.png',
+  '/sophis-central-favicon-32.png',
+  '/sophis-central-favicon-48.png',
+  '/sophis-central-favicon.ico',
+  '/sophis-central-192.png',
+  '/sophis-central-512.png',
+  '/sophis-central-maskable-512.png',
+  '/sophia-central-mark.png',
   '/sophia-central-logo.png'
 ]);
 
@@ -71,8 +91,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Only cache versioned app bundles and explicitly public static assets.
-  // User uploads, API responses, and other potentially private images are network-only.
   if (!isPublicStaticAsset(request, url)) return;
 
   event.respondWith(
@@ -80,8 +98,7 @@ self.addEventListener('fetch', (event) => {
       const isBrandAsset = PUBLIC_ASSET_PATHS.has(url.pathname);
       const cached = await caches.match(request);
 
-      // Always prefer the current deployed brand assets. Older phones may
-      // otherwise keep showing a previous logo indefinitely from cache.
+      // Prefer current deployed brand assets so installed devices can refresh icons.
       if (isBrandAsset) {
         try {
           const response = await fetch(request, { cache: 'no-cache' });
@@ -108,4 +125,4 @@ self.addEventListener('fetch', (event) => {
       }
     })()
   );
-});
+})
