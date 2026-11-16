@@ -1062,3 +1062,95 @@ html[data-theme='dark'] .app-shell .ai-tutor-page .ai-tutor-user-message button 
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   }
 }
+
+
+/* Academic and Open Source Library responsive containment: compact phones,
+   landscape phones, tablets, laptops, and wide desktop displays. */
+.library-page,
+.open-source-library-page,
+.library-page *,
+.open-source-library-page * {
+  box-sizing: border-box;
+}
+.library-page,
+.open-source-library-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+.library-page > *,
+.open-source-library-page > *,
+.library-page section,
+.open-source-library-page section,
+.library-page article,
+.open-source-library-page article,
+.library-page form,
+.open-source-library-page form,
+.library-page label,
+.open-source-library-page label {
+  min-width: 0;
+  max-width: 100%;
+}
+.library-page input:not([type="checkbox"]):not([type="radio"]),
+.library-page select,
+.open-source-library-page input:not([type="checkbox"]):not([type="radio"]),
+.open-source-library-page select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.library-page h1,
+.library-page h2,
+.library-page h3,
+.library-page p,
+.library-page a,
+.open-source-library-page h1,
+.open-source-library-page h2,
+.open-source-library-page h3,
+.open-source-library-page p,
+.open-source-library-page a {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.library-page button,
+.open-source-library-page button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.library-page article > *,
+.open-source-library-page article > * {
+  min-width: 0;
+}
+@media (max-width: 479px) {
+  .library-page,
+  .open-source-library-page {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+  .library-page section,
+  .open-source-library-page section {
+    border-radius: 0.875rem;
+  }
+  .library-page input,
+  .library-page select,
+  .open-source-library-page input,
+  .open-source-library-page select {
+    min-height: 44px;
+  }
+}
+@media (min-width: 480px) and (max-width: 1023px) {
+  .library-page,
+  .open-source-library-page {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1535px) {
+  .library-page,
+  .open-source-library-page {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
