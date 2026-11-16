@@ -62,7 +62,7 @@ export function LibraryPage() {
     <section className="min-w-0 rounded-2xl bg-[#2C36D9] p-4 text-white shadow-sm sm:p-6 lg:p-8">
       <p className="text-xs font-semibold uppercase tracking-[.18em] text-white/80">Sophis Central · Academic Library</p>
       <h1 className="mt-3 break-words text-2xl font-bold leading-tight sm:text-3xl lg:text-4xl">{departmentOnly ? 'Department uploads' : 'Academic Library'}</h1>
-      <p className="mt-3 max-w-3xl break-words text-sm leading-6 text-white/90 sm:text-base">Browse learning materials contributed by students and lecturers, including lecture notes, past questions, projects and research shared with the Sophis Central community.</p>
+      <p className="mt-3 max-w-3xl break-words text-sm leading-6 text-[#E5E7EB] sm:text-base">Browse learning materials contributed by students and lecturers, including lecture notes, past questions, projects and research shared with the Sophis Central community.</p>
       <Link to="/open-source-library" className="mt-4 inline-flex max-w-full items-center justify-center rounded-xl bg-white px-4 py-2.5 text-center text-sm font-semibold text-[#2C36D9]">Explore Open Source Library</Link>
     </section>
     <section className="min-w-0 space-y-3 rounded-2xl border border-[#DCE4EF] bg-white p-3 shadow-sm sm:p-5" aria-label="Search community uploads">

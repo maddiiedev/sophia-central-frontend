@@ -1,6 +1,7 @@
 import {
   ArrowDown,
   ArrowRight,
+  ArrowUp,
   BookOpen,
   BookMarked,
   BrainCircuit,
@@ -35,20 +36,30 @@ const steps = [
 
 export default function HomePage() {
   return (
-    <div className="homepage min-h-screen overflow-hidden bg-white text-[#1F2937]">
+    <div id="top" className="homepage min-h-screen overflow-hidden bg-white text-[#1F2937]">
       <header className="homepage-nav sticky top-0 z-50 border-b border-[#E5EAF4] bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-3 py-3 sm:gap-4 sm:px-6 lg:px-8">
           <BrandLogo variant="full" tone="dark" />
-          <nav aria-label="Primary navigation" className="hidden items-center gap-8 text-sm font-semibold text-[#091F5B] md:flex">
+          <nav aria-label="Primary navigation" className="hidden items-center gap-6 text-sm font-semibold text-[#091F5B] lg:flex">
             <a href="#features" className="homepage-nav-link">Features</a>
             <a href="#resources" className="homepage-nav-link">Resources</a>
             <a href="#community" className="homepage-nav-link">Community</a>
+            <a href="/community" target="_blank" rel="noopener noreferrer" className="homepage-nav-link">Academic community</a>
             <a href="#about" className="homepage-nav-link">About Us</a>
           </nav>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Link to="/login" className="rounded-xl border border-[#004BEC]/30 bg-white px-3.5 py-2.5 text-sm font-semibold text-[#004BEC] transition hover:border-[#004BEC] hover:bg-[#F3F6FC] sm:px-4">Sign in</Link>
             <Link to="/onboarding" className="brand-button gap-2 px-3.5 py-2.5 text-sm font-semibold shadow-md shadow-[#6121D0]/20 sm:px-5">Get started <ArrowRight size={16} /></Link>
           </div>
+        </div>
+        <div className="border-t border-[#E5EAF4] px-4 py-2 lg:hidden">
+          <nav aria-label="Mobile primary navigation" className="mx-auto flex max-w-7xl items-center gap-5 overflow-x-auto whitespace-nowrap text-xs font-semibold text-[#091F5B]">
+            <a href="#features" className="homepage-nav-link py-1">Features</a>
+            <a href="#resources" className="homepage-nav-link py-1">Resources</a>
+            <a href="#community" className="homepage-nav-link py-1">Community</a>
+            <a href="/community" target="_blank" rel="noopener noreferrer" className="homepage-nav-link py-1">Academic community</a>
+            <a href="#about" className="homepage-nav-link py-1">About Us</a>
+          </nav>
         </div>
       </header>
 
@@ -305,9 +316,9 @@ export default function HomePage() {
           <div className="min-w-0"><h3 className="font-semibold text-white">Company</h3><div className="mt-4 space-y-3 break-words text-sm text-blue-100"><a href="#about" className="block transition hover:text-white">About Us</a><Link to="/careers" className="block transition hover:text-white">Careers</Link></div></div>
           <div className="min-w-0"><h3 className="font-semibold text-white">Support</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><Link to="/contact" className="block transition hover:text-white">Contact Us</Link><a href={'mailto:' + publicContactEmails.support + '?subject=' + encodeURIComponent('Sophis Central Support Enquiry')} className="block transition hover:text-white">Email Support</a></div></div>
           <div className="min-w-0"><h3 className="font-semibold text-white">Policies</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><Link to="/terms" className="block transition hover:text-white">Terms of Use</Link><Link to="/privacy" className="block transition hover:text-white">Privacy Policy</Link><Link to="/financial-policy" className="block transition hover:text-white">Financial Policy</Link></div></div>
-          <div className="min-w-0"><h3 className="font-semibold text-white">Explore</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#features" className="block transition hover:text-white">Features</a><a href="#community" className="block transition hover:text-white">Academic community</a><Link to="/library" className="block transition hover:text-white">Academic library</Link></div></div>
+          <div className="min-w-0"><h3 className="font-semibold text-white">Explore</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#features" className="block transition hover:text-white">Features</a><a href="/community" target="_blank" rel="noopener noreferrer" className="block transition hover:text-white">Academic community</a><Link to="/library" className="block transition hover:text-white">Academic library</Link></div></div>
         </div>
-        <div className="border-t border-white/15"><div className="mx-auto max-w-7xl px-4 py-4 text-center text-xs text-blue-100 sm:px-6 lg:px-8">© {new Date().getFullYear()} Sophis Central. All rights reserved.</div></div>
+        <div className="border-t border-white/15"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-xs text-blue-100 sm:flex-row sm:px-6 lg:px-8"><span>© {new Date().getFullYear()} Sophis Central. All rights reserved.</span><a href="#top" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><ArrowUp size={14} />Back to top</a></div></div>
       </footer>
     </div>
   );
