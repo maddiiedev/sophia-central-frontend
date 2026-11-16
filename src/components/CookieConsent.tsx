@@ -90,7 +90,7 @@ export function CookieConsentBanner() {
         <div className="min-w-0">
           <h2 className="text-base font-bold text-[#091F5B]">We use cookies</h2>
           <p id="cookie-consent-description" className="mt-1 max-w-2xl text-sm leading-6 text-[#52627B]">
-            We use cookies to ensure Sophis Central works properly and to enhance your experience. Essential cookies help keep the platform secure and functioning. You can choose whether to allow optional cookies for personalization, analytics and conversion measurement. Read our <Link to="/cookie-policy" className="font-semibold text-[#6121D0] underline">Cookie Policy</Link> and <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.
+            We use essential cookies to keep Sophis Central secure and working properly. You can manage your optional cookie choices at any time. Read our <Link to="/cookie-policy" className="font-semibold text-[#6121D0] underline">Cookie Policy</Link> and <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-[260px] sm:justify-end">
@@ -126,7 +126,7 @@ export function CookieSettingsPage() {
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#6121D0]">Privacy controls</p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#091F5B]">Manage Cookie Preferences</h1>
           <p className="mt-3 text-sm leading-7 text-[#52627B]">
-            Choose which optional cookies and similar technologies Sophis Central may use. You can update your choices at any time.
+            Choose whether to allow optional cookies and similar technologies. Your choices can be updated at any time.
           </p>
 
           <div className="mt-7 divide-y divide-[#E5EAF2] rounded-xl border border-[#E5EAF2]">
@@ -140,24 +140,24 @@ export function CookieSettingsPage() {
             </div>
             <label className="flex cursor-pointer items-start justify-between gap-4 p-4 sm:p-5">
               <span className="min-w-0">
-                <span className="block font-semibold text-[#091F5B]">User Engagement &amp; Personalization</span>
-                <span className="mt-1 block text-sm leading-6 text-[#64748B]">Help remember your preferences and improve relevant platform experiences.</span>
+                <span className="block font-semibold text-[#091F5B]">Preferences</span>
+                <span className="mt-1 block text-sm leading-6 text-[#64748B]">Allow optional technologies to remember selected preferences and settings.</span>
               </span>
-              <input aria-label="User Engagement and Personalization" type="checkbox" checked={engagement} onChange={(event) => { setEngagement(event.target.checked); setSaved(false); }} className="mt-1 h-5 w-5 shrink-0 accent-[#6121D0]" />
+              <input aria-label="Preferences" type="checkbox" checked={engagement} onChange={(event) => { setEngagement(event.target.checked); setSaved(false); }} className="mt-1 h-5 w-5 shrink-0 accent-[#6121D0]" />
             </label>
             <label className="flex cursor-pointer items-start justify-between gap-4 p-4 sm:p-5">
               <span className="min-w-0">
-                <span className="block font-semibold text-[#091F5B]">Performance &amp; Behavior Analytics</span>
-                <span className="mt-1 block text-sm leading-6 text-[#64748B]">Help us understand platform usage, measure performance and improve our services.</span>
+                <span className="block font-semibold text-[#091F5B]">Platform Usage</span>
+                <span className="mt-1 block text-sm leading-6 text-[#64748B]">If enabled and available, help us understand general platform usage and improve the service.</span>
               </span>
-              <input aria-label="Performance and Behavior Analytics" type="checkbox" checked={analytics} onChange={(event) => { setAnalytics(event.target.checked); setSaved(false); }} className="mt-1 h-5 w-5 shrink-0 accent-[#6121D0]" />
+              <input aria-label="Platform Usage" type="checkbox" checked={analytics} onChange={(event) => { setAnalytics(event.target.checked); setSaved(false); }} className="mt-1 h-5 w-5 shrink-0 accent-[#6121D0]" />
             </label>
             <label className="flex cursor-pointer items-start justify-between gap-4 p-4 sm:p-5">
               <span className="min-w-0">
-                <span className="block font-semibold text-[#091F5B]">Conversion Tracking</span>
-                <span className="mt-1 block text-sm leading-6 text-[#64748B]">Help measure the effectiveness of campaigns and understand how visitors discover Sophis Central.</span>
+                <span className="block font-semibold text-[#091F5B]">Campaign Measurement</span>
+                <span className="mt-1 block text-sm leading-6 text-[#64748B]">If enabled and available, help us understand visits from outreach campaigns.</span>
               </span>
-              <input aria-label="Conversion Tracking" type="checkbox" checked={conversion} onChange={(event) => { setConversion(event.target.checked); setSaved(false); }} className="mt-1 h-5 w-5 shrink-0 accent-[#6121D0]" />
+              <input aria-label="Campaign Measurement" type="checkbox" checked={conversion} onChange={(event) => { setConversion(event.target.checked); setSaved(false); }} className="mt-1 h-5 w-5 shrink-0 accent-[#6121D0]" />
             </label>
           </div>
 

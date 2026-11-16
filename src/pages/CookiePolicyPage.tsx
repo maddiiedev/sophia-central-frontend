@@ -17,7 +17,7 @@ export function CookiePolicyPage() {
           <div className="mt-7 space-y-7 text-sm leading-7 text-[#475569]">
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">1. About this policy</h2>
-              <p className="mt-2">This policy explains how Sophis Central uses cookies and similar technologies to support the platform, improve your experience and understand how our services are used. It should be read alongside our <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.</p>
+              <p className="mt-2">This policy explains how essential cookies and similar technologies support Sophis Central, and how you can manage optional choices. It should be read alongside our <Link to="/privacy" className="font-semibold text-[#6121D0] underline">Privacy Policy</Link>.</p>
             </section>
 
             <section>
@@ -33,28 +33,28 @@ export function CookiePolicyPage() {
                   <p className="mt-1">These technologies support secure access, account sessions, platform security and essential website functions. They are always active and cannot be switched off through the preference manager.</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#091F5B]">User Engagement &amp; Personalization</h3>
-                  <p className="mt-1">These technologies may remember selected preferences and help make your experience more relevant and convenient.</p>
+                  <h3 className="font-semibold text-[#091F5B]">Preferences</h3>
+                  <p className="mt-1">If available and enabled, these technologies may remember selected preferences and settings.</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#091F5B]">Performance &amp; Behavior Analytics</h3>
-                  <p className="mt-1">These technologies help us understand how the platform is used, identify areas for improvement and monitor overall performance.</p>
+                  <h3 className="font-semibold text-[#091F5B]">Platform Usage</h3>
+                  <p className="mt-1">If available and enabled, these technologies may help us understand general platform usage and identify areas for improvement.</p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#091F5B]">Conversion Tracking</h3>
-                  <p className="mt-1">These technologies help measure the effectiveness of outreach and campaigns, such as how visitors arrive at or engage with Sophis Central.</p>
+                  <h3 className="font-semibold text-[#091F5B]">Campaign Measurement</h3>
+                  <p className="mt-1">If available and enabled, these technologies may help measure visits from outreach campaigns.</p>
                 </div>
               </div>
             </section>
 
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">4. Information that may be collected</h2>
-              <p className="mt-2">Depending on your choices and the features you use, cookies and similar technologies may collect information such as browser and device details, approximate location, pages visited, interactions with platform features and referral or campaign information. We do not use these technologies to intentionally collect sensitive personal information.</p>
+              <p className="mt-2">Depending on the technologies in use and your choices, cookies may process limited technical information such as browser and device details, pages visited, and referral information. We do not use cookies to intentionally collect sensitive personal information.</p>
             </section>
 
             <section>
               <h2 className="text-lg font-bold text-[#091F5B]">5. Third-party services</h2>
-              <p className="mt-2">Some platform features may involve trusted service providers, who may process technical information in accordance with their own privacy policies. Where optional third-party cookies or similar technologies are used, they will be subject to your applicable preferences and consent.</p>
+              <p className="mt-2">If a feature uses a third-party service that places cookies or similar technologies, that use will be explained where relevant and handled according to your choices and applicable consent requirements.</p>
             </section>
 
             <section>
