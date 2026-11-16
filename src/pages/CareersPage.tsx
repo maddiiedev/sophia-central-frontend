@@ -29,7 +29,7 @@ export function CareersPage() {
                 <Mail size={18} /> {careersEmail}
               </a>
             ) : (
-              <p className="mt-3 text-sm leading-6 text-[#5C6982]">Our dedicated careers email is being configured. Please check back later for the direct email contact.</p>
+              <p className="mt-3 text-sm leading-6 text-[#5C6982]">For career enquiries, please contact our team at <a href={`mailto:${publicContactEmails.general}?subject=${encodeURIComponent('Careers Enquiry – Sophis Central')}`} className="font-semibold text-[#6121D0] hover:underline">{publicContactEmails.general}</a>.</p>
             )}
           </div>
         </section>

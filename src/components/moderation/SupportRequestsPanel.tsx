@@ -65,8 +65,8 @@ export function SupportRequestsPanel() {
     <div className="flex items-start gap-3 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4">
       {emailStatus?.configured ? <MailCheck size={19} className="mt-0.5 shrink-0 text-emerald-700"/> : <MailX size={19} className="mt-0.5 shrink-0 text-amber-700"/>}
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-[#091F5B]">{emailStatus?.configured ? 'Support email delivery is configured' : 'Dedicated support email is ready for configuration'}</p>
-        <p className="mt-1 text-xs leading-5 text-[#5C6982]">{emailStatus?.configured ? 'New requests and resolution updates can be sent through Resend. Inbound email reply synchronization is a separate next step.' : 'The ticket workflow is connected to a configurable Resend email service. The dedicated mailbox and verified sender will be connected in the email setup phase.'}</p>
+        <p className="text-sm font-semibold text-[#091F5B]">{emailStatus?.configured ? 'Support email notifications are enabled' : 'Support email notifications are unavailable'}</p>
+        <p className="mt-1 text-xs leading-5 text-[#5C6982]">{emailStatus?.configured ? 'Users can receive email updates about their support requests.' : 'Support requests remain available for review in this workspace.'}</p>
       </div>
     </div>
     <label className="flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5">

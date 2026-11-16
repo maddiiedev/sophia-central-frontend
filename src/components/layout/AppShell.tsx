@@ -22,7 +22,6 @@ import {
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { roleUsers } from '../../lib/mock-data';
 import { BrandLogo } from '../brand/BrandLogo';
 import { notificationsApi } from '../../api/notifications';
 import { chatApi } from '../../api/chat';
@@ -235,8 +234,8 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
 
 export function UserBadge() {
   const { user } = useAuth();
-  const current = user ?? roleUsers.student;
-  return <div className="flex items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm"><div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#2C36D9] text-sm font-semibold text-white">{current.profileImage ? <ProfileImage userId={current.id} reference={current.profileImage} className="h-full w-full object-cover" /> : (current.firstName?.[0] || current.name?.slice(0, 1))}</div><div><div className="text-sm font-semibold text-[#091F5B]">{current.name}</div><div className="text-xs text-[#4B5563]">{current.institution || 'Institution not set'}</div></div></div>;
+  if (!user) return null;
+  return <div className="flex items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm"><div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#2C36D9] text-sm font-semibold text-white">{user.profileImage ? <ProfileImage userId={user.id} reference={user.profileImage} className="h-full w-full object-cover" /> : (user.firstName?.[0] || user.name?.slice(0, 1))}</div><div><div className="text-sm font-semibold text-[#091F5B]">{user.name}</div><div className="text-xs text-[#4B5563]">{user.institution || 'Institution not set'}</div></div></div>;
 }
 
 export function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {

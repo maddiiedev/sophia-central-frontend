@@ -279,7 +279,7 @@ export default function HomePage() {
               <div className="space-y-5 text-base leading-8 text-[#52627B]">
                 <p>Sophis Central is an academic resource and learning platform designed to make learning, research, and academic collaboration easier for students, researchers, lecturers, and educational institutions.</p>
                 <p>We understand that finding relevant and reliable academic materials can be difficult when resources are scattered across websites, messaging platforms, personal files, institutional repositories, and online libraries. Sophis Central brings academic resources into a more organised, searchable, and accessible environment.</p>
-                <p>The platform is being developed to serve users across universities, polytechnics, and colleges of education, beginning in Nigeria, with an ambition to support wider academic communities across Africa.</p>
+                <p>Sophis Central is designed to support learners and educators across universities, polytechnics, and colleges of education, starting in Nigeria, with a vision to connect academic communities across Africa.</p>
               </div>
             </div>
             <div className="mt-12 grid gap-5 md:grid-cols-2">

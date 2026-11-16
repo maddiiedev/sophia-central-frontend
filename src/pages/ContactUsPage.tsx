@@ -37,7 +37,7 @@ export function ContactUsPage() {
             <h2 className="font-bold text-[#091F5B]">Get in Touch</h2>
             {emailReady ? (
               <a href={`mailto:${contactEmail}`} className="mt-3 inline-flex items-center gap-2 font-semibold text-[#6121D0] hover:underline"><Mail size={18} /> {contactEmail}</a>
-            ) : <p className="mt-3 text-sm text-[#5C6982]">Our contact email is being configured.</p>}
+            ) : <p className="mt-3 text-sm text-[#5C6982]">Please use the support options available on the platform for assistance.</p>}
           </section>
 
           <section className="mt-9">

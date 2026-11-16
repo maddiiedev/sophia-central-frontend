@@ -39,7 +39,7 @@ export function CommunityPage() {
             Sophis Central community is for all students, lecturers, researchers, graduates and supporters of education.
           </p>
           <p className="mt-3 text-sm leading-7 text-[#5C6982]">
-            Visit our social platforms and stay connected as the community grows.
+            Connect with the Sophis Central community, share ideas, and stay engaged with academic conversations.
           </p>
         </article>
 
@@ -47,10 +47,10 @@ export function CommunityPage() {
           <span className="inline-flex rounded-2xl bg-[#EAF1FF] p-3 text-[#004BEC]"><MessageCircle size={24} /></span>
           <h2 className="mt-5 break-words text-xl font-bold text-[#091F5B] sm:text-2xl">Connect with Sophis Central</h2>
           <p className="mt-3 text-sm leading-7 text-[#5C6982]">
-            Our official social media pages are coming soon. Stay tuned for updates and new ways to connect with the Sophis Central community.
+            Connect with the Sophis Central community through academic conversations, shared ideas, and general enquiries.
           </p>
           <div className="mt-5 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFF] px-4 py-4 text-sm font-semibold text-[#334155]">
-            Official social links will be shared here soon.
+            For general enquiries, contact the Sophis Central team by email.
           </div>
           <a href={`mailto:${generalEmail}?subject=${encodeURIComponent('Sophis Central Community')}`} className="mt-5 inline-flex w-full min-w-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFF] px-4 py-4 text-left transition hover:border-[#B9C8F5] hover:bg-[#F3F6FC]">
             <span className="flex min-w-0 items-center gap-3">
