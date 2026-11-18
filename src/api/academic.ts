@@ -44,6 +44,10 @@ export interface CompleteOnboardingPayload {
   department?: string;
   program?: string;
   studyLevel?: string;
+  academicTitle?: string;
+  teachingAreas?: string[];
+  researchInterests?: string;
+  studentInterests?: string[];
   coursesTaught?: string[];
   teachingAssignments?: TeachingAssignmentPayload[];
   bio?: string;

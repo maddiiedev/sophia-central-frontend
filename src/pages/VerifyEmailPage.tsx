@@ -47,7 +47,7 @@ export function VerifyEmailPage() {
         clearRegistrationDraft();
         setVerificationState('success');
         setVerificationMessage(response.message);
-        navigate('/onboarding/profile', { replace: true });
+        navigate(response.preAccount.role === 'reviewer' ? '/reviewer/onboarding/profile' : response.preAccount.role === 'lecturer' ? '/lecturer/onboarding/profile' : '/student/onboarding/profile', { replace: true });
         return;
       }
       clearRegistrationDraft();
