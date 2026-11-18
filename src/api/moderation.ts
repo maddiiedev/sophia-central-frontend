@@ -11,6 +11,7 @@ type ApiModerationResource = {
   level?: string | null;
   topic?: string | null;
   fileUrl?: string | null;
+  hasFile?: boolean;
   tags?: string[];
   moderationStatus?: 'pending' | 'revision_requested' | 'approved' | 'rejected' | 'flagged' | 'draft';
   isVerified?: boolean;
@@ -46,7 +47,8 @@ function mapModerationResource(resource: ApiModerationResource): ModerationItem 
     institution: resource.institution ?? undefined,
     level: resource.level ?? undefined,
     topic: resource.topic ?? undefined,
-    fileUrl: resource.fileUrl ?? undefined,
+    fileUrl: undefined,
+    hasFile: Boolean(resource.hasFile ?? resource.fileUrl),
     uploadedBy: uploaderName,
   };
 }

@@ -11,6 +11,7 @@ export interface User {
   isGlobalReviewer?: boolean;
   reviewerStatus?: 'not_applied' | 'draft' | 'submitted' | 'under_review' | 'more_information_required' | 'approved' | 'rejected' | 'suspended' | 'revoked';
   academicAccountType?: 'student' | 'lecturer' | 'external_reviewer' | null;
+  reviewerBaseRole?: 'student' | 'lecturer';
   reviewerAcademicLevels?: string[];
   institution?: string;
   faculty?: string;
@@ -56,6 +57,8 @@ export interface Resource {
   views?: number;
   downloads?: number;
   moderationStatus?: 'pending' | 'approved' | 'rejected' | 'flagged' | string;
+  pricingMode?: 'free' | 'fixed' | 'custom';
+  priceAmount?: number;
   isVerified?: boolean;
   uploadedBy?: string;
   uploaderId?: string | null;
@@ -73,6 +76,7 @@ export interface ModerationItem {
   summary?: string;
   status?: string;
   fileUrl?: string;
+  hasFile?: boolean;
   level?: string;
   topic?: string;
   tags?: string[];
