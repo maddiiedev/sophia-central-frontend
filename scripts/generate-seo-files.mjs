@@ -29,6 +29,7 @@ const publicRoutes = [
   { path: '/terms', priority: '0.2', changefreq: 'yearly' },
   { path: '/privacy', priority: '0.3', changefreq: 'yearly' },
   { path: '/financial-policy', priority: '0.2', changefreq: 'yearly' },
+  { path: '/refund-policy', priority: '0.2', changefreq: 'yearly' },
 ];
 const lastModified = new Date().toISOString().slice(0, 10);
 const sitemap = [
