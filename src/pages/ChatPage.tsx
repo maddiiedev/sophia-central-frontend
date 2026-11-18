@@ -297,6 +297,8 @@ export function ChatPage() {
 
   const activeConversationRef = useRef(`${mode}:${recipient}`);
   activeConversationRef.current = `${mode}:${recipient}`;
+  const readReceiptInFlightRef = useRef<Set<string>>(new Set());
+  const readReceiptLastAttemptRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     if (!selectedMessage && !forwardDialogOpen) return;
@@ -391,14 +393,20 @@ export function ChatPage() {
   }, [inbox, mode, recipient, mutedDirect]);
 
   const markConversationRead = useCallback(async (userId: string) => {
+    const conversationKey = `direct:${userId}`;
+    if (activeConversationRef.current !== conversationKey) return;
+
     try {
       await chatApi.markRead(userId);
-      // Wait for the authoritative server inbox after the read cursor is saved.
-      // Do not treat a swallowed refresh failure as a successful read sync.
+      // Ignore late responses after the user has switched conversations.
+      if (activeConversationRef.current !== conversationKey) return;
       await refreshInbox();
-      setInboxRefreshError('');
-      setReadReceiptError('');
+      if (activeConversationRef.current === conversationKey) {
+        setInboxRefreshError('');
+        setReadReceiptError('');
+      }
     } catch (cause) {
+      if (activeConversationRef.current !== conversationKey) return;
       const message = cause instanceof Error
         ? cause.message
         : 'Your read receipt could not be synchronized. Please keep this conversation open while it reconnects.';
@@ -406,6 +414,26 @@ export function ChatPage() {
       setInboxRefreshError(message);
     }
   }, [refreshInbox]);
+
+  // Reassert read state on active-conversation refreshes without overlapping
+  // requests or flooding the API. A failed attempt can retry after 20 seconds.
+  const syncActiveConversationRead = useCallback((userId: string) => {
+    const conversationKey = `direct:${userId}`;
+    if (activeConversationRef.current !== conversationKey) return;
+
+    const now = Date.now();
+    const lastAttempt = readReceiptLastAttemptRef.current.get(conversationKey) ?? 0;
+    if (readReceiptInFlightRef.current.has(conversationKey) || now - lastAttempt < 20_000) {
+      return;
+    }
+
+    readReceiptLastAttemptRef.current.set(conversationKey, now);
+    readReceiptInFlightRef.current.add(conversationKey);
+
+    void markConversationRead(userId).finally(() => {
+      readReceiptInFlightRef.current.delete(conversationKey);
+    });
+  }, [markConversationRead]);
 
   const loadMessages = useCallback(
     async (quiet = false) => {
@@ -449,8 +477,8 @@ export function ChatPage() {
             playSophisTone('receive');
           }
 
-          if (mode === 'direct' && recipient && incoming.length) {
-            void markConversationRead(recipient);
+          if (mode === 'direct' && recipient) {
+            syncActiveConversationRead(recipient);
           }
 
           setMessages(current => {
@@ -484,7 +512,7 @@ export function ChatPage() {
           setNextBefore(result.nextBefore ?? null);
 
           if (mode === 'direct' && recipient) {
-            void markConversationRead(recipient);
+            syncActiveConversationRead(recipient);
           }
         }
 
@@ -499,7 +527,7 @@ export function ChatPage() {
         }
       }
     },
-    [mode, recipient, mutedGroup, mutedDirect, markConversationRead, user?.id],
+    [mode, recipient, mutedGroup, mutedDirect, syncActiveConversationRead, user?.id],
   );
 
   const changeRetention = async (period: ChatRetentionPeriod) => {
