@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resourcesApi } from '../api/resources';
@@ -186,6 +187,7 @@ export function LecturerUploadPage() {
       <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Lecturer workspace · Resource submission</p>
       <h2 className="mt-2 text-2xl font-bold text-[#091F5B]">Submit an academic resource</h2>
       <p className="mt-2 text-sm leading-6 text-[#4B5563]">Add the details of your teaching or research material and attach its file. Your submission enters moderator review before it can appear in the shared library.</p>
+      {success && <div role="status" aria-live="polite" className="mt-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 shadow-sm"><CheckCircle2 size={22} className="mt-0.5 shrink-0 text-emerald-700" /><div><h3 className="font-semibold">Submission successful</h3><p className="mt-1 text-sm leading-6">Your resource has been received and submitted for moderator review. It will appear in the Academic Library after approval.</p></div></div>}
     </div>
     {pendingUpload && <div role="status" className="mb-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
       <p className="font-semibold">Attachment upload needs to be completed</p>
@@ -216,7 +218,6 @@ export function LecturerUploadPage() {
         {!pendingUpload && errors.rightsConfirmed?.message && <p className="md:col-span-2 text-sm text-rose-700">{errors.rightsConfirmed.message}</p>}
       </div>
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {success && <p role="status" className="rounded-xl border border-blue-200 bg-[#F3F6FC] p-3 text-sm text-[#091F5B]">{success}</p>}
       {!isAuthenticated && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Sign in with a lecturer account to submit a resource.</p>}
       <button type="submit" disabled={!isAuthenticated || user?.role !== 'lecturer' || isSubmitting || (Boolean(pendingUpload) && !attachment)} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Uploading and submitting…' : pendingUpload ? 'Retry attachment upload' : 'Submit for moderator review'}</button>
     </form>

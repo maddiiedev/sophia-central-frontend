@@ -3,7 +3,7 @@ import { Bell, CheckCheck, RefreshCw, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { notificationsApi, type AppNotification } from '../api/notifications';
 
-type NotificationFilter = 'all' | 'unread' | 'moderation' | 'support' | 'resources' | 'accounts' | 'platform';
+type NotificationFilter = 'all' | 'unread' | 'moderation' | 'support' | 'resources' | 'accounts' | 'platform' | 'reviews' | 'governance';
 
 const filters: { value: NotificationFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -16,6 +16,8 @@ const filters: { value: NotificationFilter; label: string }[] = [
 ];
 
 function categoryFor(type: string): Exclude<NotificationFilter, 'all' | 'unread'> {
+  if (type === 'resource_review_assigned') return 'reviews';
+  if (type === 'reviewer_application_decision') return 'governance';
   const value = type.toLowerCase();
   if (value.includes('support')) return 'support';
   if (value.includes('resource') || value.includes('review')) return 'resources';
@@ -24,7 +26,15 @@ function categoryFor(type: string): Exclude<NotificationFilter, 'all' | 'unread'
   return 'platform';
 }
 
-export function NotificationsPage() {
+const reviewerNotificationTypes = new Set(['resource_review_assigned', 'reviewer_application_decision']);
+const reviewerFilters: { value: NotificationFilter; label: string }[] = [
+  { value: 'all', label: 'All updates' },
+  { value: 'unread', label: 'Unread' },
+  { value: 'reviews', label: 'Review assignments' },
+  { value: 'governance', label: 'Application updates' },
+];
+
+export function NotificationsPage({ reviewerOnly = false }: { reviewerOnly?: boolean }) {
   const navigate = useNavigate();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -39,18 +49,26 @@ export function NotificationsPage() {
       if (!quiet) setLoading(true);
       setError('');
       const result = await notificationsApi.list(100);
-      setItems(result.notifications ?? []);
-      setUnreadCount(result.unreadCount ?? 0);
+      const notifications = result.notifications ?? [];
+      const visibleNotifications = reviewerOnly
+        ? notifications.filter(item => reviewerNotificationTypes.has(item.type))
+        : notifications;
+      setItems(visibleNotifications);
+      setUnreadCount(reviewerOnly
+        ? visibleNotifications.filter(item => !item.isRead).length
+        : result.unreadCount ?? 0);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load notifications.');
     } finally { if (!quiet) setLoading(false); }
-  }, []);
+  }, [reviewerOnly]);
 
   useEffect(() => {
     void load();
     const interval = window.setInterval(() => { void load(true); }, 30000);
     return () => window.clearInterval(interval);
   }, [load]);
+
+  const activeFilters = reviewerOnly ? reviewerFilters : filters;
 
   const visibleItems = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -65,13 +83,13 @@ export function NotificationsPage() {
   }, [items, filter, query]);
 
   const markRead = async (item: AppNotification) => {
-    if (item.isRead) { if (item.link) navigate(item.link); return; }
+    if (item.isRead) { if (item.link || reviewerOnly) navigate(reviewerDestination(item, reviewerOnly)); return; }
     setBusy(true);
     try {
       await notificationsApi.markRead(item.id);
       setItems(current => current.map(n => n.id === item.id ? { ...n, isRead: true } : n));
       setUnreadCount(current => Math.max(0, current - 1));
-      if (item.link) navigate(item.link);
+      if (item.link || reviewerOnly) navigate(reviewerDestination(item, reviewerOnly));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to mark notification as read.');
     } finally { setBusy(false); }
@@ -80,7 +98,12 @@ export function NotificationsPage() {
   const markAllRead = async () => {
     setBusy(true);
     try {
-      await notificationsApi.markAllRead();
+      if (reviewerOnly) {
+        const unreadReviewerItems = items.filter(item => !item.isRead);
+        await Promise.all(unreadReviewerItems.map(item => notificationsApi.markRead(item.id)));
+      } else {
+        await notificationsApi.markAllRead();
+      }
       setItems(current => current.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (cause) {
@@ -88,13 +111,20 @@ export function NotificationsPage() {
     } finally { setBusy(false); }
   };
 
+  const reviewerDestination = (item: AppNotification, reviewerScope: boolean) => {
+    if (item.type === 'resource_review_assigned') return '/reviewer/dashboard';
+    if (item.type === 'reviewer_application_decision') return '/reviewer-application';
+    return item.link || (reviewerScope ? '/reviewer/dashboard' : '/dashboard');
+  };
+
   return <section className="mx-auto max-w-4xl space-y-6">
     <div className="rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-sm sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F0FF] text-[#6121D0]"><Bell size={22} aria-hidden="true" /></div>
-          <h2 className="mt-5 text-2xl font-semibold text-[#091F5B]">Notifications</h2>
-          <p className="mt-2 text-sm leading-6 text-[#4B5563]">{unreadCount} unread notification{unreadCount === 1 ? '' : 's'}. New updates refresh automatically.</p>
+          <h2 className="mt-5 text-2xl font-semibold text-[#091F5B]">{reviewerOnly ? 'Reviewer notifications' : 'Notifications'}</h2>
+          <p className="mt-2 text-sm leading-6 text-[#4B5563]">{reviewerOnly ? 'Your review assignments and reviewer application updates. New reviewer updates refresh automatically.' : `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}. New updates refresh automatically.`}</p>
+          {reviewerOnly && <p className="mt-2 text-xs text-[#71809A]">{unreadCount} unread reviewer update{unreadCount === 1 ? '' : 's'}</p>}
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]"><RefreshCw size={15} className={loading ? 'animate-spin' : ''}/> Refresh</button>
@@ -107,12 +137,12 @@ export function NotificationsPage() {
         <input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search notifications…" aria-label="Search notifications" className="w-full bg-transparent text-sm text-[#091F5B] outline-none"/>
       </label>
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Notification filters">
-        {filters.map(item => <button key={item.value} type="button" role="tab" aria-selected={filter === item.value} onClick={() => setFilter(item.value)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${filter === item.value ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#4B5563] hover:border-[#6121D0] hover:text-[#6121D0]'}`}>{item.label}{item.value === 'unread' ? ` (${unreadCount})` : ''}</button>)}
+        {activeFilters.map(item => <button key={item.value} type="button" role="tab" aria-selected={filter === item.value} onClick={() => setFilter(item.value)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${filter === item.value ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#4B5563] hover:border-[#6121D0] hover:text-[#6121D0]'}`}>{item.label}{item.value === 'unread' ? ` (${unreadCount})` : ''}</button>)}
       </div>
       <div className="mt-5 space-y-3">
-        {loading ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#4B5563]">Loading notifications…</p> : visibleItems.length === 0 ? <div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-8 text-center"><Bell size={24} className="mx-auto text-[#6121D0]"/><p className="mt-3 font-semibold text-[#091F5B]">{items.length === 0 ? 'You’re all caught up' : 'No matching notifications'}</p><p className="mt-1 text-sm text-[#4B5563]">{items.length === 0 ? 'New support, moderation and account updates will appear here.' : 'Try another filter or search term.'}</p></div> : visibleItems.map(item => <button key={item.id} type="button" onClick={() => void markRead(item)} disabled={busy} className={`block w-full rounded-xl border p-4 text-left transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60 ${item.isRead ? 'border-[#DCE4EF] bg-white' : 'border-[#C4B5FD] bg-[#F8F5FF]'}`}><div className="flex items-start gap-3"><span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.isRead ? 'bg-[#CBD5E1]' : 'bg-[#6121D0]'}`} aria-label={item.isRead ? 'Read' : 'Unread'}/><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-[#091F5B]">{item.title}</span><span className="text-xs text-[#5C6982]">{new Date(item.createdAt).toLocaleString()}</span></span><span className="mt-1 block whitespace-pre-wrap text-sm leading-6 text-[#4B5563]">{item.message}</span><span className="mt-2 block text-[11px] font-semibold uppercase tracking-wide text-[#71809A]">{categoryFor(item.type)}</span>{item.link && <span className="mt-2 block text-xs font-semibold text-[#6121D0]">Open related page →</span>}</span></div></button>)}
+        {loading ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#4B5563]">Loading notifications…</p> : visibleItems.length === 0 ? <div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-8 text-center"><Bell size={24} className="mx-auto text-[#6121D0]"/><p className="mt-3 font-semibold text-[#091F5B]">{items.length === 0 ? (reviewerOnly ? 'No reviewer updates yet' : 'You’re all caught up') : 'No matching notifications'}</p><p className="mt-1 text-sm text-[#4B5563]">{items.length === 0 ? (reviewerOnly ? 'New review assignments and application decisions will appear here.' : 'New support, moderation and account updates will appear here.') : 'Try another filter or search term.'}</p></div> : visibleItems.map(item => <button key={item.id} type="button" onClick={() => void markRead(item)} disabled={busy} className={`block w-full rounded-xl border p-4 text-left transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60 ${item.isRead ? 'border-[#DCE4EF] bg-white' : 'border-[#C4B5FD] bg-[#F8F5FF]'}`}><div className="flex items-start gap-3"><span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.isRead ? 'bg-[#CBD5E1]' : 'bg-[#6121D0]'}`} aria-label={item.isRead ? 'Read' : 'Unread'}/><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-[#091F5B]">{item.title}</span><span className="text-xs text-[#5C6982]">{new Date(item.createdAt).toLocaleString()}</span></span><span className="mt-1 block whitespace-pre-wrap text-sm leading-6 text-[#4B5563]">{item.message}</span><span className="mt-2 block text-[11px] font-semibold uppercase tracking-wide text-[#71809A]">{categoryFor(item.type)}</span>{item.link && <span className="mt-2 block text-xs font-semibold text-[#6121D0]">Open related page →</span>}</span></div></button>)}
       </div>
-      <Link to="/dashboard" className="mt-6 inline-flex rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">Back to dashboard</Link>
+      <Link to={reviewerOnly ? '/reviewer/dashboard' : '/dashboard'} className="mt-6 inline-flex rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">{reviewerOnly ? 'Back to reviewer workspace' : 'Back to dashboard'}</Link>
     </div>
   </section>;
 }

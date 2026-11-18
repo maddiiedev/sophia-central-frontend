@@ -70,7 +70,7 @@ const reviewerNav = [
   { label: 'Academic Library', href: '/library', icon: BookOpen },
   { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'My saved resources', href: '/my-resources', icon: Bookmark },
-  { label: 'Notifications', href: '/notifications', icon: Bell },
+  { label: 'Notifications', href: '/reviewer/notifications', icon: Bell },
 ];
 
 const adminNav = [
@@ -116,19 +116,28 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
     if (!user) { setUnreadCount(0); return; }
     let active = true;
     const refreshUnread = async () => {
-      try { const result = await notificationsApi.list(1); if (active) setUnreadCount(result.unreadCount ?? 0); }
-      catch { /* Keep navigation usable when notifications are temporarily unavailable. */ }
+      try {
+        const result = await notificationsApi.list(100);
+        if (!active) return;
+        const reviewerWorkspace = user.role === 'reviewer' || location.pathname.startsWith('/reviewer/');
+        const reviewerTypes = new Set(['resource_review_assigned', 'reviewer_application_decision']);
+        const count = reviewerWorkspace
+          ? (result.notifications ?? []).filter(item => reviewerTypes.has(item.type) && !item.isRead).length
+          : result.unreadCount ?? 0;
+        setUnreadCount(count);
+      } catch { /* Keep navigation usable when notifications are temporarily unavailable. */ }
     };
     void refreshUnread();
     const interval = window.setInterval(() => { void refreshUnread(); }, 30000);
     return () => { active = false; window.clearInterval(interval); };
-  }, [user?.id]);
+  }, [user?.id, user?.role, location.pathname]);
 
 
   const academicNav = user?.role === 'lecturer' ? lecturerNav : studentNav;
-  const navItems = user?.role === 'reviewer' ? (user.hasReviewerAccess ? [...reviewerNav.filter(item => !(user.isGlobalReviewer && item.href === '/reviewer-account-transition')), ...(user.isGlobalReviewer ? [{ label: 'Reviewer applications', href: '/reviewer?tab=applications', icon: ShieldCheck }, { label: 'Reviewer roster', href: '/reviewer?tab=reviewers', icon: Users }, { label: 'Conflict audit', href: '/reviewer?tab=conflicts', icon: ShieldCheck }] : [])] : ['suspended', 'revoked'].includes(user.reviewerStatus || '') ? [] : [{ label: ['submitted', 'under_review', 'more_information_required'].includes(user.reviewerStatus || '') ? 'View reviewer application' : 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }]) : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : [
+  const navItems = user?.role === 'reviewer' ? (user.hasReviewerAccess ? [...reviewerNav.filter(item => !(user.isGlobalReviewer && item.href === '/reviewer-account-transition')), ...(user.isGlobalReviewer ? [{ label: 'Reviewer management', href: '/reviewer/governance?tab=applications', icon: Users }] : [])] : ['suspended', 'revoked'].includes(user.reviewerStatus || '') ? [] : [{ label: ['submitted', 'under_review', 'more_information_required'].includes(user.reviewerStatus || '') ? 'View reviewer application' : 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }]) : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : [
     ...academicNav,
     ...(user?.hasReviewerAccess ? [{ label: 'Academic Reviewer workspace', href: '/reviewer/dashboard', icon: ShieldCheck }] : []),
+    ...(user?.hasReviewerAccess && location.pathname.startsWith('/reviewer/') ? [{ label: 'Reviewer notifications', href: '/reviewer/notifications', icon: Bell }] : []),
     ...(!user?.hasReviewerAccess && ['not_applied', 'rejected', undefined].includes(user?.reviewerStatus) ? [{ label: 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }] : []),
   ];
   const goBack = () => {
@@ -143,7 +152,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />
           <span className="min-w-0 flex-1">{label}</span>
-          {href === '/notifications' && unreadCount > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+          {(href === '/notifications' || href === '/reviewer/notifications') && unreadCount > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}
           {href === '/messages' && privateDmUnreadCount > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{privateDmUnreadCount > 99 ? '99+' : privateDmUnreadCount}</span>}
         </NavLink>
       ))}
@@ -189,7 +198,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
                 {location.pathname !== '/support' && <button type="button" onClick={goBack} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Go back" title="Go back"><ArrowLeft size={16} /></button>}
                 
                 {(user?.role === 'student' || user?.role === 'lecturer') && user.hasReviewerAccess === true && <button type="button" onClick={() => navigate('/workspace')} className="inline-flex items-center gap-2 rounded-xl border border-[#D7DEEA] bg-white px-2.5 py-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Switch workspace" title="Switch workspace"><LayoutGrid size={16}/><span className="hidden text-xs font-semibold sm:inline">Workspace</span></button>}
-                <button type="button" onClick={() => navigate('/notifications')} className="relative rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] hover:border-[#6121D0]" aria-label={unreadCount ? `Open notifications, ${unreadCount} unread` : 'Open notifications'} title={unreadCount ? `${unreadCount} unread notifications` : 'Open notifications'}><Bell size={16} />{unreadCount > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
+                <button type="button" onClick={() => navigate(user?.role === 'reviewer' || location.pathname.startsWith('/reviewer/') ? '/reviewer/notifications' : '/notifications')} className="relative rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] hover:border-[#6121D0]" aria-label={unreadCount ? `Open notifications, ${unreadCount} unread` : 'Open notifications'} title={unreadCount ? `${unreadCount} unread notifications` : 'Open notifications'}><Bell size={16} />{unreadCount > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
                 <button type="button" onClick={() => navigate('/profile')} className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#DCE4EF] bg-[#2C36D9] text-sm font-bold text-white" aria-label="Open your profile" title="Your profile">
                   {user?.profileImage ? <ProfileImage userId={user.id} reference={user.profileImage} className="h-full w-full object-cover" /> : (user?.firstName?.[0] || user?.name?.[0] || 'U').toUpperCase()}
                 </button>

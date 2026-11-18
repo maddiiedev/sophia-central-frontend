@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resourcesApi } from '../api/resources';
@@ -160,6 +161,7 @@ export function UploadPage() {
   return <div className="mx-auto max-w-4xl rounded-2xl border border-[#DCE4EF] bg-white p-6">
     <h2 className="text-2xl font-bold text-[#091F5B]">Upload a student resource</h2>
     <p className="mt-2 text-sm text-[#5C6982]">Submit your notes, past questions, research and study resources for review. Approved materials become available in the academic library.</p>
+    {success && <div role="status" aria-live="polite" className="mt-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 shadow-sm"><CheckCircle2 size={22} className="mt-0.5 shrink-0 text-emerald-700" /><div><h3 className="font-semibold">Submission successful</h3><p className="mt-1 text-sm leading-6">Your resource has been received and submitted for moderator review. It will appear in the Academic Library after approval.</p></div></div>}
     {pendingUpload && <div role="status" className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
       <p className="font-semibold">Attachment upload needs to be completed</p>
       <p className="mt-1">Contribution record: {pendingUpload.resourceId}</p>
@@ -192,7 +194,6 @@ export function UploadPage() {
       {!pendingUpload && <label className="sm:col-span-2 flex items-start gap-3 rounded-xl bg-amber-50 p-4 text-sm leading-6"><input type="checkbox" className="mt-1" {...register('rightsConfirmed')} /><span>I confirm I created this work or have permission to share it under the selected licence. I understand it will be reviewed before publication.</span></label>}
       {!pendingUpload && errors.rightsConfirmed?.message && <p className="sm:col-span-2 text-sm text-rose-700">{errors.rightsConfirmed.message}</p>}
       {error && <p role="alert" className="sm:col-span-2 text-sm text-rose-700">{error}</p>}
-      {success && <p role="status" className="sm:col-span-2 text-sm text-emerald-800">{success}</p>}
       <button type="submit" disabled={!isAuthenticated || isSubmitting || (Boolean(pendingUpload) && !attachment)} className="sm:col-span-2 rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Submitting…' : pendingUpload ? 'Retry attachment upload' : 'Submit for review'}</button>
     </form>
   </div>;

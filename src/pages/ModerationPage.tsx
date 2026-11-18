@@ -34,6 +34,7 @@ export function ModerationPage() {
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [conflictDeclarations, setConflictDeclarations] = useState<Record<string, string>>({});
+  const [conflictAcknowledged, setConflictAcknowledged] = useState<Record<string, boolean>>({});
   const [conflictReasons, setConflictReasons] = useState<Record<string, string>>({});
   const [tab, setTab] = useState<ModerationTab>(() => {
     const requested = new URLSearchParams(window.location.search).get('tab');
@@ -55,6 +56,7 @@ export function ModerationPage() {
       const queue = await sophiaApi.moderation.list();
       setItems(Array.isArray(queue) ? queue : []);
       setConflictDeclarations(Object.fromEntries((Array.isArray(queue) ? queue : []).map(item => [item.id, item.reviewConflictDeclaration ?? ''])));
+      setConflictAcknowledged({});
       if (canGovernReviewers) {
         try {
           const accounts = await apiRequest<ReviewerOption[]>('/moderation/reviewers');
@@ -135,8 +137,9 @@ export function ModerationPage() {
 
   const review = async (id: string, status: 'approved' | 'rejected' | 'revision_requested') => {
     if (processingId) return;
-    if (conflictDeclarations[id] !== 'no_conflict') {
-      setError('Declare that you have no conflict of interest before submitting this review, or recuse yourself.');
+    const noConflictAlreadyRecorded = conflictDeclarations[id] === 'no_conflict';
+    if (!noConflictAlreadyRecorded && !conflictAcknowledged[id]) {
+      setError('Confirm that you have checked this resource for conflicts of interest before submitting your review, or recuse yourself.');
       return;
     }
     const note = (notes[id] ?? '').trim();
@@ -146,6 +149,13 @@ export function ModerationPage() {
     }
     setProcessingId(id); setError(''); setNotice('');
     try {
+      if (!noConflictAlreadyRecorded) {
+        await apiRequest(`/moderation/resources/${encodeURIComponent(id)}/conflict-declaration`, {
+          method: 'PATCH',
+          body: JSON.stringify({ declaration: 'no_conflict' }),
+        });
+        setConflictDeclarations(current => ({ ...current, [id]: 'no_conflict' }));
+      }
       await moderationApi.review(id, status, undefined, note || undefined);
       setItems((current) => current.filter((item) => item.id !== id));
       setNotes((current) => ({ ...current, [id]: '' }));
@@ -174,6 +184,7 @@ export function ModerationPage() {
         body: JSON.stringify({ declaration, ...(declaration === 'recuse' ? { reason } : {}) }),
       });
       if (declaration === 'recuse') {
+        setConflictAcknowledged(current => ({ ...current, [resourceId]: false }));
         setItems(current => current.filter(item => item.id !== resourceId));
         setNotice('You have recused yourself. The assignment has been released for independent reassignment.');
       } else {
@@ -249,8 +260,7 @@ export function ModerationPage() {
                   <textarea rows={2} value={notes[item.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [item.id]: event.target.value }))} className="mt-1 w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-normal" placeholder="Give specific, actionable academic feedback…" />
                 </label>}
                 {isReviewer && <div className="mt-4 space-y-3 rounded-xl border border-[#E4DDF8] bg-[#F8F6FF] p-3 dark:border-[#40365A] dark:bg-[#211A34]">
-                  {conflictDeclarations[item.id] === 'no_conflict' ? <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">No-conflict declaration recorded for this assignment.</p> : <p className="text-sm font-semibold text-[#091F5B] dark:text-white">Before reviewing, confirm that you have no personal, academic, financial or authorship conflict with this material or its contributors.</p>}
-                  {conflictDeclarations[item.id] !== 'no_conflict' && <button type="button" onClick={() => void declareConflict(item.id, 'no_conflict')} disabled={Boolean(processingId)} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 disabled:opacity-50">I confirm no conflict of interest</button>}
+                  {conflictDeclarations[item.id] === 'no_conflict' ? <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">No-conflict declaration recorded for this assignment.</p> : <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-[#091F5B] dark:text-white"><input type="checkbox" checked={Boolean(conflictAcknowledged[item.id])} onChange={event => setConflictAcknowledged(current => ({ ...current, [item.id]: event.target.checked }))} className="mt-1 h-4 w-4 shrink-0 accent-[#6121D0]" /><span>I have checked this resource and its contributors, and confirm that I have no personal, academic, financial or authorship conflict. This declaration will be recorded when I submit my review.</span></label>}
                   <label className="block text-xs font-semibold text-[#091F5B] dark:text-slate-100">If a conflict exists or emerges, explain it before recusing
                     <textarea rows={2} value={conflictReasons[item.id] ?? ''} onChange={event => setConflictReasons(current => ({ ...current, [item.id]: event.target.value }))} className="mt-1 w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-normal text-[#26364F] dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="Describe the relationship or conflict…" />
                   </label>
@@ -259,9 +269,9 @@ export function ModerationPage() {
 
               </div>
               {isReviewer && <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => void review(item.id, 'approved')} disabled={Boolean(processingId) || conflictDeclarations[item.id] !== 'no_conflict'} className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"><CheckCircle2 size={15} className="mr-1 inline" />{busy ? 'Saving…' : 'Approve'}</button>
-                <button type="button" onClick={() => void review(item.id, 'revision_requested')} disabled={Boolean(processingId) || conflictDeclarations[item.id] !== 'no_conflict'} className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50">{busy ? 'Saving…' : 'Request revision'}</button>
-                <button type="button" onClick={() => void review(item.id, 'rejected')} disabled={Boolean(processingId) || conflictDeclarations[item.id] !== 'no_conflict'} className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-900 hover:bg-rose-100 disabled:opacity-50"><XCircle size={15} className="mr-1 inline" />{busy ? 'Saving…' : 'Reject'}</button>
+                <button type="button" onClick={() => void review(item.id, 'approved')} disabled={Boolean(processingId) || (conflictDeclarations[item.id] !== 'no_conflict' && !conflictAcknowledged[item.id])} className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"><CheckCircle2 size={15} className="mr-1 inline" />{busy ? 'Saving…' : 'Approve'}</button>
+                <button type="button" onClick={() => void review(item.id, 'revision_requested')} disabled={Boolean(processingId) || (conflictDeclarations[item.id] !== 'no_conflict' && !conflictAcknowledged[item.id])} className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50">{busy ? 'Saving…' : 'Request revision'}</button>
+                <button type="button" onClick={() => void review(item.id, 'rejected')} disabled={Boolean(processingId) || (conflictDeclarations[item.id] !== 'no_conflict' && !conflictAcknowledged[item.id])} className="rounded-xl border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-900 hover:bg-rose-100 disabled:opacity-50"><XCircle size={15} className="mr-1 inline" />{busy ? 'Saving…' : 'Reject'}</button>
               </div>}
             </div>
           </article>;
