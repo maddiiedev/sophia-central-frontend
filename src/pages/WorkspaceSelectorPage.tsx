@@ -37,7 +37,7 @@ export function WorkspaceSelectorPage() {
         <span className={`mt-2 block text-sm leading-6 ${description}`}>Continue with your existing academic dashboard, learning tools and account features.</span>
         <span className="mt-5 inline-flex text-sm font-semibold text-[#6121D0] dark:text-[#C4A7FF]">Open workspace <span aria-hidden="true" className="ml-1">→</span></span>
       </button>
-      <button type="button" onClick={() => choose('reviewer', '/moderation')} className={`group min-w-0 rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#6121D0] sm:p-6 ${card}`}>
+      <button type="button" onClick={() => choose('reviewer', '/reviewer/dashboard')} className={`group min-w-0 rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#6121D0] sm:p-6 ${card}`}>
         <span className="inline-flex rounded-xl bg-[#F0EBFF] p-3 text-[#6121D0] dark:bg-[#35264F] dark:text-[#D8C6FF]"><ShieldCheck size={22}/></span>
         <span className="mt-5 block text-lg font-bold">Academic Reviewer workspace</span>
         <span className={`mt-2 block text-sm leading-6 ${description}`}>Open your assigned academic review queue and reviewer tools, subject to current approval and assignment permissions.</span>

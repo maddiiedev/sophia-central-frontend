@@ -26,7 +26,7 @@ export function ProtectedRoute({
     return <Navigate to={redirectTo} replace state={{ from: location }} />;
   }
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to={user.role === 'moderator' ? '/moderator/dashboard' : user.role === 'reviewer' || user.role === 'admin' ? '/moderation' : user.role === 'lecturer' ? '/lecturer/dashboard' : '/student/dashboard'} replace />;
+    return <Navigate to={user.role === 'moderator' ? '/moderation' : user.role === 'reviewer' ? '/reviewer/dashboard' : user.role === 'admin' ? '/admin' : user.role === 'lecturer' ? '/lecturer/dashboard' : '/student/dashboard'} replace />;
   }
 
   if (requiresReviewerAccess && user.role !== 'admin' && user.role !== 'moderator' && user.hasReviewerAccess !== true) {
@@ -36,9 +36,9 @@ export function ProtectedRoute({
   if (
     (user.role === 'student' || user.role === 'lecturer') &&
     user.isProfileComplete === false &&
-    location.pathname !== '/onboarding/profile'
+    location.pathname !== '/student/onboarding/profile' && location.pathname !== '/lecturer/onboarding/profile'
   ) {
-    return <Navigate to="/onboarding/profile" replace state={{ from: location }} />;
+    return <Navigate to={user.role === 'lecturer' ? '/lecturer/onboarding/profile' : '/student/onboarding/profile'} replace state={{ from: location }} />;
   }
 
   return <>{children}</>;

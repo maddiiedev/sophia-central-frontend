@@ -24,10 +24,10 @@ function MetricCard({ label, value, helper, icon: Icon }: MetricCardProps) {
 }
 
 const shortcuts = [
-  { title: 'Reports & moderation', description: 'Review user and content reports assigned to the moderator workspace.', href: '/moderation', icon: ShieldCheck },
+  { title: 'Reports & moderation', description: 'Review user and content reports assigned to the moderator workspace.', href: '/moderation/reports', icon: ShieldCheck },
   { title: 'Platform resource library', description: 'Browse and view platform resources across student, lecturer and open-source contributions.', href: '/library', icon: BookOpen },
   { title: 'Student and lecturer analytics', description: 'Inspect account activity and resource engagement by account type.', href: '/moderation/analytics', icon: ChartNoAxesCombined },
-  { title: 'Support requests', description: 'Review and respond to platform support requests.', href: '/moderation/support', icon: LifeBuoy },
+  { title: 'Support requests', description: 'Review and respond to platform support requests.', href: '/support', icon: LifeBuoy },
   { title: 'Accounts & Wisdom Points', description: 'Access the moderator account oversight tools.', href: '/moderation/management', icon: Users },
   { title: 'Wisdom Points oversight', description: 'Review account Wisdom Points activity and balances.', href: '/moderation/management/wisdom-points', icon: WalletCards },
 ];

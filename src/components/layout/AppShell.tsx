@@ -51,12 +51,12 @@ const lecturerNav = [
 ];
 
 const moderatorNav = [
-  { label: 'Dashboard', href: '/moderator/dashboard', icon: LayoutGrid },
-  { label: 'Reports & moderation', href: '/moderation', icon: ShieldCheck },
+  { label: 'Dashboard', href: '/moderation', icon: LayoutGrid },
+  { label: 'Reports & moderation', href: '/moderation/reports', icon: ShieldCheck },
   { label: 'Academic Library', href: '/library', icon: BookOpen },
   { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'Saved resources', href: '/my-resources', icon: Bookmark },
-  { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
+  { label: 'Support requests', href: '/support', icon: LifeBuoy },
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Analytics', href: '/moderation/analytics', icon: ChartNoAxesCombined },
   { label: 'Accounts & Wisdom Points', href: '/moderation/management', icon: BriefcaseBusiness },
@@ -65,7 +65,7 @@ const moderatorNav = [
 
 
 const reviewerNav = [
-  { label: 'Academic review queue', href: '/moderation', icon: ShieldCheck },
+  { label: 'Academic review queue', href: '/reviewer/dashboard', icon: ShieldCheck },
   { label: 'Become a Student or Lecturer', href: '/reviewer-account-transition', icon: LayoutGrid },
   { label: 'Academic Library', href: '/library', icon: BookOpen },
   { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
@@ -74,14 +74,14 @@ const reviewerNav = [
 ];
 
 const adminNav = [
-  { label: 'Dashboard', href: '/analytics', icon: LayoutGrid },
-  { label: 'Users', href: '/admin/users', icon: Users },
-  { label: 'Resource review', href: '/moderation', icon: ShieldCheck },
+  { label: 'Dashboard', href: '/admin', icon: LayoutGrid },
+  { label: 'Users', href: '/admin', icon: Users },
+  { label: 'Reviewer governance', href: '/admin/reviewers?tab=applications', icon: ShieldCheck },
   { label: 'Academic Library', href: '/library', icon: BookOpen },
   { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Analytics', href: '/analytics', icon: LayoutGrid },
-  { label: 'Support requests', href: '/moderation/support', icon: LifeBuoy },
+  { label: 'Support requests', href: '/support', icon: LifeBuoy },
   { label: 'Notifications', href: '/notifications', icon: Bell },
 ];
 
@@ -126,15 +126,15 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
 
 
   const academicNav = user?.role === 'lecturer' ? lecturerNav : studentNav;
-  const navItems = user?.role === 'reviewer' ? (user.hasReviewerAccess ? [...reviewerNav.filter(item => !(user.isGlobalReviewer && item.href === '/reviewer-account-transition')), ...(user.isGlobalReviewer ? [{ label: 'Reviewer applications', href: '/moderation?tab=applications', icon: ShieldCheck }, { label: 'Reviewer roster', href: '/moderation?tab=reviewers', icon: Users }, { label: 'Conflict audit', href: '/moderation?tab=conflicts', icon: ShieldCheck }] : [])] : ['suspended', 'revoked'].includes(user.reviewerStatus || '') ? [] : [{ label: ['submitted', 'under_review', 'more_information_required'].includes(user.reviewerStatus || '') ? 'View reviewer application' : 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }]) : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : [
+  const navItems = user?.role === 'reviewer' ? (user.hasReviewerAccess ? [...reviewerNav.filter(item => !(user.isGlobalReviewer && item.href === '/reviewer-account-transition')), ...(user.isGlobalReviewer ? [{ label: 'Reviewer applications', href: '/reviewer?tab=applications', icon: ShieldCheck }, { label: 'Reviewer roster', href: '/reviewer?tab=reviewers', icon: Users }, { label: 'Conflict audit', href: '/reviewer?tab=conflicts', icon: ShieldCheck }] : [])] : ['suspended', 'revoked'].includes(user.reviewerStatus || '') ? [] : [{ label: ['submitted', 'under_review', 'more_information_required'].includes(user.reviewerStatus || '') ? 'View reviewer application' : 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }]) : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : [
     ...academicNav,
-    ...(user?.hasReviewerAccess ? [{ label: 'Academic Reviewer workspace', href: '/moderation', icon: ShieldCheck }] : []),
+    ...(user?.hasReviewerAccess ? [{ label: 'Academic Reviewer workspace', href: '/reviewer/dashboard', icon: ShieldCheck }] : []),
     ...(!user?.hasReviewerAccess && ['not_applied', 'rejected', undefined].includes(user?.reviewerStatus) ? [{ label: 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }] : []),
   ];
   const goBack = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (historyIndex > 0) navigate(-1);
-    else navigate(user?.role === 'moderator' ? '/moderator/dashboard' : user?.role === 'lecturer' ? '/lecturer/dashboard' : user?.role === 'reviewer' ? (user.hasReviewerAccess ? '/moderation' : '/reviewer-application') : user?.role === 'admin' ? '/moderation' : '/student/dashboard');
+    else navigate(user?.role === 'moderator' ? '/moderation' : user?.role === 'lecturer' ? '/lecturer' : user?.role === 'reviewer' ? (user.hasReviewerAccess ? '/reviewer' : '/reviewer-application') : user?.role === 'admin' ? '/admin' : '/student');
   };
 
   const nav = (
@@ -151,7 +151,8 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         ...(user?.role === 'lecturer' ? [{ label: 'Analytics', href: '/lecturer/analytics', icon: ChartNoAxesCombined }] : []),
         { label: 'Profile', href: '/profile', icon: UserCircle },
         { label: 'Settings', href: '/settings', icon: Settings },
-        ...(user?.role === 'student' || user?.role === 'lecturer' ? [{ label: 'Contact support', href: '/support', icon: LifeBuoy }] : []),
+        ...(user?.role === 'student' ? [{ label: 'Contact support', href: '/student/support', icon: LifeBuoy }] : []),
+        ...(user?.role === 'lecturer' ? [{ label: 'Contact support', href: '/lecturer/support', icon: LifeBuoy }] : []),
       ].map(({ label, href, icon: Icon }) => (
         <NavLink key={label} to={href} onClick={() => setMobileNavOpen(false)} className={({ isActive }) => `sidebar-nav-link flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${isActive ? 'is-active bg-[#F3F0FF] text-[#6121D0] ring-1 ring-[#6121D0]/20' : 'text-[#1F2937] hover:bg-[#F3F0FF] hover:text-[#6121D0]'}`}>
           <Icon size={17} />
