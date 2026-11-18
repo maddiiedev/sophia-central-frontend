@@ -13,7 +13,7 @@ export function OnboardingPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { register: registerUser } = useAuth();
-  const role: 'student' | 'lecturer' = params.get('role') === 'lecturer' ? 'lecturer' : 'student';
+  const role: 'student' | 'lecturer' | 'reviewer' = params.get('role') === 'lecturer' ? 'lecturer' : params.get('role') === 'reviewer' ? 'reviewer' : 'student';
   const [submitError, setSubmitError] = useState('');
   const [handleAvailability, setHandleAvailability] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<RegisterValues>({
@@ -21,9 +21,9 @@ export function OnboardingPage() {
     defaultValues: {
       firstName: '',
       lastName: '',
-      email: '',
+      email: params.get('email') || '',
       referralCode: role === 'student' ? params.get('ref') || '' : '',
-      handle: '',
+      handle: params.get('handle') || '',
       termsAccepted: false,
     },
   });
@@ -68,7 +68,7 @@ export function OnboardingPage() {
         referralCode: draft.referralCode,
       });
       saveRegistrationDraft(draft);
-      navigate(`/verify-email?email=${encodeURIComponent(draft.email)}`, { replace: true, state: registration });
+      navigate(`/verify-email?email=${encodeURIComponent(draft.email)}&intent=${encodeURIComponent(role)}`, { replace: true, state: registration });
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       setSubmitError(message.toLowerCase().includes('academic handle') || message.toLowerCase().includes('username')
@@ -87,12 +87,14 @@ export function OnboardingPage() {
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#091F5B]/95 via-[#1736A2]/90 to-[#6121D0]/85" />
           <BrandLogo variant="full" tone="dark" className="rounded-lg bg-white/95 px-3 py-2" />
           <div className="relative mt-12 max-w-lg lg:mt-20">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">{role === 'lecturer' ? 'Lecturer account' : 'Student account'}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">{role === 'lecturer' ? 'Lecturer account' : role === 'reviewer' ? 'External Reviewer account' : 'Student account'}</p>
             <h1 className="mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl">A more connected way to learn and share knowledge.</h1>
             <p className="mt-5 max-w-md text-sm leading-7 text-blue-50/95 sm:text-base">
               {role === 'lecturer'
                 ? 'Create your account to connect with your academic community and make useful learning resources available to students.'
-                : 'Create your account to discover learning resources, organise your studies, and connect with your academic community.'}
+                : role === 'reviewer'
+                  ? 'Create an external researcher account to apply for governed academic review access. You do not need to register as a Student or Lecturer.'
+                  : 'Create your account to discover learning resources, organise your studies, and connect with your academic community.'}
             </p>
           </div>
           <div className="relative mt-10 grid gap-3 sm:grid-cols-2">
@@ -102,7 +104,7 @@ export function OnboardingPage() {
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 p-3.5 text-sm text-white backdrop-blur-sm">
               <Users size={19} className="shrink-0 text-[#D9C6FF]" />
-              <span>Learn with your community</span>
+              <span>{role === 'reviewer' ? 'Contribute independent academic expertise' : 'Learn with your community'}</span>
             </div>
           </div>
         </aside>
@@ -112,7 +114,7 @@ export function OnboardingPage() {
             <div className="mb-7">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#6121D0]">Create account</p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#091F5B]">Get started</h2>
-              <p className="mt-2 text-sm leading-6 text-[#64748B]">Enter your details to begin your Sophis Central journey.</p>
+              <p className="mt-2 text-sm leading-6 text-[#64748B]">Enter your details to begin your Sophis Central journey. Your email must be verified before your account is created.</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-4" noValidate>
@@ -178,11 +180,11 @@ export function OnboardingPage() {
               </button>
             </form>
 
-            <p className="mt-5 text-center text-sm text-[#5C6982]">
-              {role === 'student'
-                ? <Link to="/onboarding?role=lecturer" className="font-semibold text-[#004BEC] hover:text-[#6121D0]">Join as a lecturer instead</Link>
-                : <Link to="/onboarding" className="font-semibold text-[#004BEC] hover:text-[#6121D0]">Join as a student instead</Link>}
-            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-[#5C6982]">
+              <Link to="/onboarding?role=student" aria-current={role === 'student' ? 'page' : undefined} className={role === 'student' ? 'font-bold text-[#6121D0]' : 'font-semibold text-[#004BEC] hover:text-[#6121D0]'}>Student</Link>
+              <Link to="/onboarding?role=lecturer" aria-current={role === 'lecturer' ? 'page' : undefined} className={role === 'lecturer' ? 'font-bold text-[#6121D0]' : 'font-semibold text-[#004BEC] hover:text-[#6121D0]'}>Lecturer</Link>
+              <Link to="/onboarding?role=reviewer" aria-current={role === 'reviewer' ? 'page' : undefined} className={role === 'reviewer' ? 'font-bold text-[#6121D0]' : 'font-semibold text-[#004BEC] hover:text-[#6121D0]'}>External Reviewer</Link>
+            </div>
             <p className="mt-3 text-center text-sm text-[#5C6982]">Already have an account? <Link to="/login" className="font-semibold text-[#004BEC] hover:text-[#6121D0]">Sign in</Link></p>
           </div>
         </section>

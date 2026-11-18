@@ -88,6 +88,11 @@ export default function HomePage() {
                   Sign in to your account
                 </Link>
               </div>
+              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-white/90" aria-label="Choose an account type">
+                <Link to="/onboarding?role=student" className="underline decoration-white/40 underline-offset-4 transition hover:text-white">Sign up as Student</Link>
+                <Link to="/onboarding?role=lecturer" className="underline decoration-white/40 underline-offset-4 transition hover:text-white">Sign up as Lecturer</Link>
+                <Link to="/become-reviewer" className="underline decoration-white/40 underline-offset-4 transition hover:text-white">Become a Reviewer</Link>
+              </div>
               <a href="#features" className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-blue-100/80 transition hover:text-white">
                 Discover what you can do <ArrowDown size={15} />
               </a>

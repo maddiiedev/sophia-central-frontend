@@ -9,7 +9,7 @@ type RegisterPayload = {
   email: string;
   firstName: string;
   lastName: string;
-  role?: Extract<UserRole, 'student' | 'lecturer'>;
+  role?: Extract<UserRole, 'student' | 'lecturer' | 'reviewer'>;
   [key: string]: unknown;
 };
 type OnboardingPayload = Parameters<typeof academicApi.completeOnboarding>[0];

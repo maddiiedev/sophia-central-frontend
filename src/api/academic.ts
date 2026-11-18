@@ -38,10 +38,10 @@ export interface CourseOption {
 export interface TeachingAssignmentPayload { courseName: string; courseCode?: string; levels: string[]; }
 
 export interface CompleteOnboardingPayload {
-  institutionId: string;
-  institution: string;
-  faculty: string;
-  department: string;
+  institutionId?: string;
+  institution?: string;
+  faculty?: string;
+  department?: string;
   program?: string;
   studyLevel?: string;
   coursesTaught?: string[];

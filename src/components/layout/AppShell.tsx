@@ -65,7 +65,8 @@ const moderatorNav = [
 
 
 const reviewerNav = [
-  { label: 'Assigned review queue', href: '/moderation', icon: ShieldCheck },
+  { label: 'Academic review queue', href: '/moderation', icon: ShieldCheck },
+  { label: 'Become a Student or Lecturer', href: '/reviewer-account-transition', icon: LayoutGrid },
   { label: 'Academic Library', href: '/library', icon: BookOpen },
   { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'My saved resources', href: '/my-resources', icon: Bookmark },
@@ -124,11 +125,16 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   }, [user?.id]);
 
 
-  const navItems = user?.role === 'lecturer' ? lecturerNav : user?.role === 'reviewer' ? reviewerNav : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : studentNav;
+  const academicNav = user?.role === 'lecturer' ? lecturerNav : studentNav;
+  const navItems = user?.role === 'reviewer' ? (user.hasReviewerAccess ? [...reviewerNav.filter(item => !(user.isGlobalReviewer && item.href === '/reviewer-account-transition')), ...(user.isGlobalReviewer ? [{ label: 'Reviewer applications', href: '/moderation?tab=applications', icon: ShieldCheck }, { label: 'Reviewer roster', href: '/moderation?tab=reviewers', icon: Users }, { label: 'Conflict audit', href: '/moderation?tab=conflicts', icon: ShieldCheck }] : [])] : ['suspended', 'revoked'].includes(user.reviewerStatus || '') ? [] : [{ label: ['submitted', 'under_review', 'more_information_required'].includes(user.reviewerStatus || '') ? 'View reviewer application' : 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }]) : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : [
+    ...academicNav,
+    ...(user?.hasReviewerAccess ? [{ label: 'Academic Reviewer workspace', href: '/moderation', icon: ShieldCheck }] : []),
+    ...(!user?.hasReviewerAccess && ['not_applied', 'rejected', undefined].includes(user?.reviewerStatus) ? [{ label: 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }] : []),
+  ];
   const goBack = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (historyIndex > 0) navigate(-1);
-    else navigate(user?.role === 'moderator' ? '/moderator/dashboard' : user?.role === 'lecturer' ? '/lecturer/dashboard' : user?.role === 'reviewer' || user?.role === 'admin' ? '/moderation' : '/student/dashboard');
+    else navigate(user?.role === 'moderator' ? '/moderator/dashboard' : user?.role === 'lecturer' ? '/lecturer/dashboard' : user?.role === 'reviewer' ? (user.hasReviewerAccess ? '/moderation' : '/reviewer-application') : user?.role === 'admin' ? '/moderation' : '/student/dashboard');
   };
 
   const nav = (
@@ -181,6 +187,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
               <div className="flex shrink-0 items-center gap-2">
                 {location.pathname !== '/support' && <button type="button" onClick={goBack} className="rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Go back" title="Go back"><ArrowLeft size={16} /></button>}
                 
+                {(user?.role === 'student' || user?.role === 'lecturer') && user.hasReviewerAccess === true && <button type="button" onClick={() => navigate('/workspace')} className="inline-flex items-center gap-2 rounded-xl border border-[#D7DEEA] bg-white px-2.5 py-2 text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F3F0FF] hover:text-[#6121D0]" aria-label="Switch workspace" title="Switch workspace"><LayoutGrid size={16}/><span className="hidden text-xs font-semibold sm:inline">Workspace</span></button>}
                 <button type="button" onClick={() => navigate('/notifications')} className="relative rounded-xl border border-[#D7DEEA] bg-white p-2 text-[#091F5B] hover:border-[#6121D0]" aria-label={unreadCount ? `Open notifications, ${unreadCount} unread` : 'Open notifications'} title={unreadCount ? `${unreadCount} unread notifications` : 'Open notifications'}><Bell size={16} />{unreadCount > 0 && <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#6121D0] px-1 text-[10px] font-bold leading-none text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}</button>
                 <button type="button" onClick={() => navigate('/profile')} className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-[#DCE4EF] bg-[#2C36D9] text-sm font-bold text-white" aria-label="Open your profile" title="Your profile">
                   {user?.profileImage ? <ProfileImage userId={user.id} reference={user.profileImage} className="h-full w-full object-cover" /> : (user?.firstName?.[0] || user?.name?.[0] || 'U').toUpperCase()}

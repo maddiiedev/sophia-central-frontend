@@ -5,9 +5,11 @@ import { useAuth } from '../context/AuthContext';
 export function ProtectedRoute({
   children,
   allowedRoles,
+  requiresReviewerAccess = false,
 }: {
   children: ReactNode;
   allowedRoles: Array<'student' | 'lecturer' | 'reviewer' | 'moderator' | 'admin'>;
+  requiresReviewerAccess?: boolean;
 }) {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
@@ -25,6 +27,10 @@ export function ProtectedRoute({
   }
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to={user.role === 'moderator' ? '/moderator/dashboard' : user.role === 'reviewer' || user.role === 'admin' ? '/moderation' : user.role === 'lecturer' ? '/lecturer/dashboard' : '/student/dashboard'} replace />;
+  }
+
+  if (requiresReviewerAccess && user.role !== 'admin' && user.role !== 'moderator' && user.hasReviewerAccess !== true) {
+    return <Navigate to={user.role === 'student' || user.role === 'lecturer' ? (user.role === 'lecturer' ? '/lecturer/dashboard' : '/student/dashboard') : user.role === 'reviewer' ? '/profile' : '/login'} replace />;
   }
 
   if (

@@ -12,5 +12,6 @@ export const resourceUploadSchema = z.object({
   attribution: z.string().min(2, 'Attribution is required').max(300),
   rightsConfirmed: z.boolean().refine(value => value === true, 'You must confirm you have permission to share this material.'),
   tags: z.string().optional().default(''),
+  coAuthorHandles: z.string().max(1000, 'Co-author handles are too long').optional().default(''),
 });
 export type ResourceUploadValues = z.infer<typeof resourceUploadSchema>;

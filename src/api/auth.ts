@@ -6,18 +6,19 @@ type RegisterPayload = {
   email: string;
   firstName: string;
   lastName: string;
-  role?: Extract<UserRole, 'student' | 'lecturer'>;
+  role?: Extract<UserRole, 'student' | 'lecturer' | 'reviewer'>;
   academicHandle: string;
   referralCode?: string;
 };
 
 export const authApi = {
   csrf: () => apiRequest<{ csrfToken: string }>('/auth/csrf'),
-  login: (payload: LoginPayload) => apiRequest<{ user: User } | { preAccountRequired: true; onboardingToken: string; preAccount: { email: string; firstName: string; lastName: string; academicHandle: string; role: Extract<UserRole, 'student' | 'lecturer'>; progress?: Record<string, unknown> } }>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
+  login: (payload: LoginPayload) => apiRequest<{ user: User } | { preAccountRequired: true; onboardingToken: string; preAccount: { email: string; firstName: string; lastName: string; academicHandle: string; role: Extract<UserRole, 'student' | 'lecturer' | 'reviewer'>; progress?: Record<string, unknown> } }>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
   checkAcademicHandleAvailability: (handle: string) => apiRequest<{ available: boolean; message: string }>(`/auth/academic-handle/availability?handle=${encodeURIComponent(handle)}`),
+  checkReviewerRegistrationIntent: (payload: { email: string; academicHandle: string }) => apiRequest<{ requiresSignIn: boolean; signInIdentifier?: string }>('/auth/reviewer-registration-check', { method: 'POST', body: JSON.stringify(payload) }),
   register: (payload: RegisterPayload) => apiRequest<{ emailSent: boolean; message: string }>('/auth/signup', { method: 'POST', body: JSON.stringify(payload) }),
   resendEmailVerification: (payload: RegisterPayload) => apiRequest<{ message: string }>('/auth/email-verification/resend', { method: 'POST', body: JSON.stringify(payload) }),
-  confirmEmailVerification: (token: string, password: string) => apiRequest<{ message: string; onboardingToken?: string; preAccount?: { email: string; firstName: string; lastName: string; academicHandle: string; role: Extract<UserRole, 'student' | 'lecturer'> } }>('/auth/email-verification/confirm', { method: 'POST', body: JSON.stringify({ token, password }) }),
+  confirmEmailVerification: (token: string, password: string) => apiRequest<{ message: string; onboardingToken?: string; preAccount?: { email: string; firstName: string; lastName: string; academicHandle: string; role: Extract<UserRole, 'student' | 'lecturer' | 'reviewer'> } }>('/auth/email-verification/confirm', { method: 'POST', body: JSON.stringify({ token, password }) }),
   savePreAccountProgress: (preAccountToken: string, progress: Record<string, unknown>) => apiRequest<{ saved: true }>('/auth/onboarding/progress', { method: 'POST', body: JSON.stringify({ preAccountToken, progress }) }),
   completePreAccountOnboarding: (preAccountToken: string, profile: import('./academic').CompleteOnboardingPayload) => apiRequest<{ user: User }>('/auth/onboarding/complete', { method: 'POST', body: JSON.stringify({ ...profile, preAccountToken }) }),
   me: () => apiRequest<{ user: User }>('/auth/me'),

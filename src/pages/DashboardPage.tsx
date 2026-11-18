@@ -116,6 +116,11 @@ export function DashboardPage() {
       </div>
     </section>
 
+    <section className="flex flex-col gap-3 rounded-2xl border border-[#E4DDF8] bg-[#F7F4FF] p-4 dark:border-[#40365A] dark:bg-[#211A34] sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6121D0] dark:text-[#C4A7FF]">Academic contribution</p><h3 className="mt-1 text-lg font-bold text-[#091F5B] dark:text-white">{user?.hasReviewerAccess ? 'Your Academic Reviewer access is ready' : ['suspended', 'revoked'].includes(user?.reviewerStatus || '') ? 'Reviewer access is unavailable' : ['submitted', 'under_review', 'more_information_required', 'approved'].includes(user?.reviewerStatus || '') ? 'Your Reviewer application' : 'Become an Academic Reviewer'}</h3><p className="mt-1 text-sm leading-6 text-[#52627B] dark:text-slate-300">{user?.hasReviewerAccess ? 'Use your additional reviewer workspace to review assigned academic materials.' : ['submitted', 'under_review', 'more_information_required'].includes(user?.reviewerStatus || '') ? 'Check your application status and any requested information.' : 'Apply for additional reviewer access while keeping your Student account and academic identity.'}</p></div>
+      {['suspended', 'revoked'].includes(user?.reviewerStatus || '') ? <span className="text-sm font-semibold text-[#64748B] dark:text-slate-400">Reviewer access unavailable</span> : <Link to={user?.hasReviewerAccess ? '/moderation' : '/reviewer-application'} className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white hover:bg-[#5120B0]">{user?.hasReviewerAccess ? 'Open Reviewer workspace' : ['submitted', 'under_review', 'more_information_required', 'approved'].includes(user?.reviewerStatus || '') ? 'View application' : 'Become a Reviewer'}</Link>}
+    </section>
+
     {error && <div role="status" className="rounded-2xl border border-[#E6B800]/30 bg-[#FFF8D9] px-4 py-3 text-sm text-[#6B5200]">{error}<button type="button" onClick={() => setRefreshVersion((value) => value + 1)} className="ml-2 font-semibold underline">Retry</button></div>}
 
     <section aria-label="Student account" className="grid gap-4 sm:grid-cols-2">

@@ -10,6 +10,9 @@ import type { Resource } from '../types';
 import { ReportContentButton } from '../components/ReportContentButton';
 
 type ResourceWithFile = Resource & { fileUrl?: string; file_url?: string; url?: string; contentUrl?: string; content_url?: string; hasFile?: boolean; downloadRestricted?: boolean; accessLevel?: string; canDownload?: boolean };
+type ReviewHistoryItem = { id: string; status: string; note?: string | null; createdAt: string; reviewer?: { firstName?: string; lastName?: string } | null };
+type ResourceAppeal = { id: string; resourceId: string; appealType: 'reconsideration' | 'favoritism_report'; reason: string; status: string; createdAt: string };
+type OverrideHistoryItem = { id: string; originalStatus: string; newStatus: string; reason: string; createdAt: string; adminFirstName?: string; adminLastName?: string; originalReviewerFirstName?: string; originalReviewerLastName?: string };
 
 export function ResourceReaderPage() {
   const { id = '' } = useParams();
@@ -23,6 +26,19 @@ export function ResourceReaderPage() {
   const [fileAction, setFileAction] = useState<'open' | 'download' | null>(null);
   const [viewerUrl, setViewerUrl] = useState('');
   const [restrictionBusy, setRestrictionBusy] = useState(false);
+  const [reviewHistory, setReviewHistory] = useState<ReviewHistoryItem[]>([]);
+  const [resourceAppeals, setResourceAppeals] = useState<ResourceAppeal[]>([]);
+  const [appealType, setAppealType] = useState<'reconsideration' | 'favoritism_report'>('reconsideration');
+  const [appealReason, setAppealReason] = useState('');
+  const [appealSaving, setAppealSaving] = useState(false);
+  const [appealError, setAppealError] = useState('');
+  const [appealNotice, setAppealNotice] = useState('');
+  const [overrideStatus, setOverrideStatus] = useState<'approved' | 'rejected' | 'revision_requested'>('approved');
+  const [overrideReason, setOverrideReason] = useState('');
+  const [overrideSaving, setOverrideSaving] = useState(false);
+  const [overrideHistory, setOverrideHistory] = useState<OverrideHistoryItem[]>([]);
+  const [overrideError, setOverrideError] = useState('');
+  const [overrideNotice, setOverrideNotice] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -36,6 +52,16 @@ export function ResourceReaderPage() {
             const savedResources = await resourcesApi.saved();
             if (active) setSaved(savedResources.some((item) => item.id === id));
             if (['student', 'lecturer'].includes(user.role)) {
+              if ((result as ResourceWithFile).uploaderId === user.id && ['rejected', 'revision_requested'].includes((result as ResourceWithFile).moderationStatus || '')) {
+                const [reviews, appeals] = await Promise.all([
+                  apiRequest<ReviewHistoryItem[]>(`/moderation/resources/${encodeURIComponent(id)}/review-history`),
+                  apiRequest<ResourceAppeal[]>('/moderation/appeals/mine'),
+                ]);
+                if (active) {
+                  setReviewHistory(Array.isArray(reviews) ? reviews : []);
+                  setResourceAppeals(Array.isArray(appeals) ? appeals.filter(appeal => appeal.resourceId === id) : []);
+                }
+              }
               const downloadedResources = await resourcesApi.downloaded();
               const hasDownloaded = downloadedResources.some((item) => item.id === id);
               if (active) {
@@ -52,6 +78,15 @@ export function ResourceReaderPage() {
     if (isAuthenticated && id) void load();
     return () => { active = false; };
   }, [id, isAuthenticated, user]);
+
+  useEffect(() => {
+    if (user?.role !== 'admin' || !id) return;
+    let active = true;
+    apiRequest<OverrideHistoryItem[]>(`/moderation/resources/${encodeURIComponent(id)}/override-history`)
+      .then(items => { if (active) setOverrideHistory(Array.isArray(items) ? items : []); })
+      .catch(() => { if (active) setOverrideHistory([]); });
+    return () => { active = false; };
+  }, [id, user?.id, user?.role]);
 
   if (loading) return <LoadingState message="Opening approved resource..." />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
@@ -114,6 +149,42 @@ export function ResourceReaderPage() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to download and view this resource.'); }
     finally { setFileAction(null); }
   };
+  const submitAppeal = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (appealSaving || appealReason.trim().length < 20) return;
+    setAppealSaving(true); setAppealError(''); setAppealNotice('');
+    try {
+      const result = await apiRequest<ResourceAppeal>(`/moderation/resources/${encodeURIComponent(id)}/appeals`, {
+        method: 'POST',
+        body: JSON.stringify({ appealType, reason: appealReason.trim() }),
+      });
+      setResourceAppeals(current => [result, ...current]);
+      setAppealReason('');
+      setAppealNotice('Your reconsideration request has been sent to the Admin review queue.');
+    } catch (cause) {
+      setAppealError(cause instanceof Error ? cause.message : 'Unable to submit your appeal.');
+    } finally { setAppealSaving(false); }
+  };
+
+  const submitAdminOverride = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (overrideSaving || overrideReason.trim().length < 20) return;
+    setOverrideSaving(true); setOverrideError(''); setOverrideNotice('');
+    try {
+      await apiRequest(`/moderation/resources/${encodeURIComponent(id)}/override`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: overrideStatus, reason: overrideReason.trim() }),
+      });
+      setResource(current => current ? { ...current, moderationStatus: overrideStatus, isVerified: overrideStatus === 'approved' } : current);
+      setOverrideNotice('The Admin override was recorded in the immutable audit history.');
+      setOverrideReason('');
+      const history = await apiRequest<OverrideHistoryItem[]>(`/moderation/resources/${encodeURIComponent(id)}/override-history`);
+      setOverrideHistory(history);
+    } catch (cause) {
+      setOverrideError(cause instanceof Error ? cause.message : 'Unable to record the Admin override.');
+    } finally { setOverrideSaving(false); }
+  };
+
   const updateDownloadRestriction = async () => {
     if (!user || !['moderator', 'admin'].includes(user.role) || restrictionBusy) return;
     setRestrictionBusy(true); setError('');
@@ -136,7 +207,17 @@ export function ResourceReaderPage() {
       <div className="space-y-6 p-6 sm:p-8">
         <section className="flex flex-wrap gap-x-6 gap-y-2 border-b border-[#DCE4EF] pb-4 text-sm"><div><span className="font-semibold text-[#091F5B]">Contributor: </span><span className="text-[#5C6982]">{resource.uploaderId === null ? 'Former contributor' : resource.origin === 'open_source' && !resource.uploadedBy && !resource.author ? 'Anonymous contributor' : resource.uploadedBy || resource.author || 'Contributor not listed'}</span></div></section>
         <section><h3 className="mb-2 flex items-center gap-2 font-semibold text-[#091F5B]"><BookOpen size={17} className="text-[#6121D0]" /> Resource details</h3><p className="whitespace-pre-wrap leading-7 text-[#374151]">{resource.description || 'No description was provided for this resource.'}</p></section>
+        {user && resource.uploaderId === user.id && ['rejected', 'revision_requested'].includes(status) && <section className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+          <div><h3 className="text-lg font-bold text-amber-950">Request reconsideration</h3><p className="mt-1 text-sm leading-6 text-amber-900">You can ask for an independent review of a rejection or revision request. An administrator who was not the original reviewer or uploader must investigate where possible.</p></div>
+          {reviewHistory.length > 0 && <div className="rounded-xl border border-amber-200 bg-white p-3"><p className="text-xs font-bold uppercase tracking-wide text-amber-900">Latest reviewer decision</p>{reviewHistory.slice(-1).map(entry => <div key={entry.id} className="mt-2"><p className="text-sm font-semibold capitalize text-[#091F5B]">{entry.status.replace(/_/g, ' ')}</p>{entry.note && <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#374151]">{entry.note}</p>}<p className="mt-1 text-xs text-[#64748B]">{entry.reviewer ? `${entry.reviewer.firstName || ''} ${entry.reviewer.lastName || ''}`.trim() : 'Academic reviewer'} · {new Date(entry.createdAt).toLocaleString()}</p></div>)}</div>}
+          {resourceAppeals.some(appeal => ['submitted', 'under_review'].includes(appeal.status)) ? <p className="rounded-xl bg-white p-3 text-sm font-semibold text-amber-950">A reconsideration request is already open for this resource.</p> : <form onSubmit={submitAppeal} className="space-y-3"><label className="block text-sm font-semibold text-[#091F5B]">Request type<select value={appealType} onChange={event => setAppealType(event.target.value as 'reconsideration' | 'favoritism_report')} className="mt-1 w-full rounded-xl border border-amber-200 bg-white p-3 text-sm"><option value="reconsideration">Academic reconsideration</option><option value="favoritism_report">Report possible favoritism or conflict of interest</option></select></label><label className="block text-sm font-semibold text-[#091F5B]">Explain your request<textarea value={appealReason} onChange={event => setAppealReason(event.target.value)} rows={4} minLength={20} maxLength={3000} required className="mt-1 w-full rounded-xl border border-amber-200 bg-white p-3 text-sm font-normal text-[#26364F]" placeholder="Explain the specific review outcome you want reconsidered or the conflict/favoritism concern. Provide evidence where possible." /></label>{appealError && <p role="alert" className="text-sm text-rose-700">{appealError}</p>}{appealNotice && <p role="status" className="text-sm font-semibold text-emerald-800">{appealNotice}</p>}<button type="submit" disabled={appealSaving || appealReason.trim().length < 20} className="rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{appealSaving ? 'Submitting request…' : 'Submit reconsideration request'}</button></form>}
+        </section>}
         {resource.tags?.length ? <section><h3 className="mb-2 text-sm font-semibold text-[#091F5B]">Topics</h3><div className="flex flex-wrap gap-2">{resource.tags.map(tag => <span key={tag} className="rounded-full border border-[#DCE4EF] bg-[#F8FAFD] px-3 py-1 text-xs text-[#4B5563]">{tag}</span>)}</div></section> : null}
+        {user?.role === 'admin' && <section className="space-y-4 rounded-2xl border border-[#E4DDF8] bg-[#F8F6FF] p-4 sm:p-5">
+          <div><h3 className="text-lg font-bold text-[#091F5B]">Admin review override</h3><p className="mt-1 text-sm leading-6 text-[#52627B]">Use only when an independent governance decision requires changing a completed reviewer outcome. The original review is preserved and this action is permanently audited. An administrator involved in the original upload or review cannot override it.</p></div>
+          <form onSubmit={submitAdminOverride} className="space-y-3"><label className="block text-sm font-semibold text-[#091F5B]">New moderation outcome<select value={overrideStatus} onChange={event => setOverrideStatus(event.target.value as 'approved' | 'rejected' | 'revision_requested')} className="mt-1 w-full rounded-xl border border-[#DCE4EF] bg-white p-3 text-sm"><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="revision_requested">Revision requested</option></select></label><label className="block text-sm font-semibold text-[#091F5B]">Reason for override<textarea value={overrideReason} onChange={event => setOverrideReason(event.target.value)} rows={3} minLength={20} maxLength={3000} required className="mt-1 w-full rounded-xl border border-[#DCE4EF] bg-white p-3 text-sm font-normal text-[#26364F]" placeholder="Document the evidence and governance reason for this override…" /></label>{overrideError && <p role="alert" className="text-sm text-rose-700">{overrideError}</p>}{overrideNotice && <p role="status" className="text-sm font-semibold text-emerald-800">{overrideNotice}</p>}<button type="submit" disabled={overrideSaving || overrideReason.trim().length < 20} className="rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{overrideSaving ? 'Recording override…' : 'Record Admin override'}</button></form>
+          {overrideHistory.length > 0 && <div className="border-t border-[#D9CFF4] pt-3"><h4 className="text-sm font-bold text-[#091F5B]">Override audit history</h4><div className="mt-2 space-y-2">{overrideHistory.map(entry => <div key={entry.id} className="rounded-xl bg-white p-3"><p className="text-sm font-semibold capitalize text-[#091F5B]">{entry.originalStatus.replace(/_/g, ' ')} → {entry.newStatus.replace(/_/g, ' ')}</p><p className="mt-1 text-xs text-[#64748B]">Admin: {[entry.adminFirstName, entry.adminLastName].filter(Boolean).join(' ') || 'Administrator'} · Original reviewer: {[entry.originalReviewerFirstName, entry.originalReviewerLastName].filter(Boolean).join(' ') || 'Reviewer'} · {new Date(entry.createdAt).toLocaleString()}</p><p className="mt-2 whitespace-pre-wrap text-sm text-[#26364F]">{entry.reason}</p></div>)}</div></div>}
+        </section>}
         {hasFile ? <><div className="flex flex-wrap gap-3 border-t border-[#DCE4EF] pt-5"><button type="button" onClick={() => void accessFile(false)} disabled={Boolean(fileAction)} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-60"><BookOpen size={16} /> {fileAction === 'open' ? 'Opening in reader…' : viewerUrl ? 'Refresh in-app reader' : 'Read in app'}</button>{canDownload && <button type="button" onClick={() => void accessFile(true)} disabled={Boolean(fileAction) || downloaded} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-3 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60"><Download size={16} /> {fileAction === 'download' ? 'Downloading in app…' : downloaded ? 'Downloaded to My resources' : 'Download in app'}</button>}<button type="button" onClick={() => void toggleSaved()} disabled={Boolean(fileAction)} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-4 py-3 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60"><Bookmark size={16} fill={saved ? 'currentColor' : 'none'} /> {saved ? 'Saved · Unsave' : 'Save for later'}</button></div>{privilegedPreviewOnly && <p className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-3 text-sm text-[#4B5563]">Reviewer access: preview is available for assigned academic review. Platform-wide downloads and contributions are not part of the reviewer role.</p>}{downloadRestricted && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Downloads are disabled for this restricted resource. You may read it here if your account has viewing permission.</p>}{viewerUrl && <section className="overflow-hidden rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD]"><div className="flex items-center gap-2 border-b border-[#DCE4EF] px-4 py-3 text-sm font-semibold text-[#091F5B]"><FileText size={16} className="text-[#6121D0]"/> In-app resource reader</div><iframe title={`Reader: ${resource.title}`} src={viewerUrl} className="h-[75vh] min-h-[420px] w-full bg-white" referrerPolicy="no-referrer" /></section>}</> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">This resource has no attached file. You can still review its details above.</p>}
       </div>
     </article>

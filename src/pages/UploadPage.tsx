@@ -61,7 +61,7 @@ export function UploadPage() {
   const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(() => readPendingUpload());
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<ResourceUploadValues>({
     resolver: zodResolver(resourceUploadSchema),
-    defaultValues: { title: '', description: '', course: '', topic: '', institution: '', level: '', type: 'lecture_notes', license: 'CC-BY-4.0', attribution: '', rightsConfirmed: false, tags: '' },
+    defaultValues: { title: '', description: '', course: '', topic: '', institution: '', level: '', type: 'lecture_notes', license: 'CC-BY-4.0', attribution: '', rightsConfirmed: false, tags: '', coAuthorHandles: '' },
   });
 
   const clearPendingUpload = () => {
@@ -73,7 +73,7 @@ export function UploadPage() {
     clearPendingUpload();
     setAttachment(null);
     setSuccess('Your contribution has been submitted for moderator review.');
-    reset({ title: '', description: '', course: '', topic: '', institution: user?.institution || '', level: '', type: 'lecture_notes', license: 'CC-BY-4.0', attribution: '', rightsConfirmed: false, tags: '' });
+    reset({ title: '', description: '', course: '', topic: '', institution: user?.institution || '', level: '', type: 'lecture_notes', license: 'CC-BY-4.0', attribution: '', rightsConfirmed: false, tags: '', coAuthorHandles: '' });
   };
 
   const retryPendingUpload = async () => {
@@ -129,6 +129,7 @@ export function UploadPage() {
         attribution: values.attribution.trim(),
         rightsConfirmed: values.rightsConfirmed,
         tags: (values.tags || '').split(',').map(tag => tag.trim()).filter(Boolean),
+        coAuthorHandles: (values.coAuthorHandles || '').split(',').map(handle => handle.trim().replace(/^@+/, '').toLowerCase()).filter(Boolean),
       });
       const resourceId = typeof result.id === 'string' ? result.id : '';
       if (!resourceId) throw new Error('The server did not return a resource ID.');
@@ -182,6 +183,7 @@ export function UploadPage() {
       <label className="text-sm font-semibold">Licence<select className={field} disabled={Boolean(pendingUpload)} {...register('license')}><option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option><option value="CC0-1.0">CC0 1.0</option><option value="ALL-RIGHTS-RESERVED">All rights reserved</option></select></label>
       <label className="text-sm font-semibold">Attribution<input className={field} disabled={Boolean(pendingUpload)} placeholder="Author / source credit" {...register('attribution')} />{errors.attribution?.message}</label>
       <label className="sm:col-span-2 text-sm font-semibold">Tags<input className={field} disabled={Boolean(pendingUpload)} placeholder="comma-separated" {...register('tags')} /></label>
+      <label className="sm:col-span-2 text-sm font-semibold">Sophis Central co-author handles <span className="font-normal text-[#71809A]">(optional)</span><input className={field} disabled={Boolean(pendingUpload)} placeholder="@handle1, @handle2" {...register('coAuthorHandles')} /><span className="mt-1 block text-xs font-normal text-[#5C6982]">Add co-authors who have Sophis Central accounts. Their stable account IDs help prevent assignment to a reviewer who contributed to this work.</span>{errors.coAuthorHandles?.message}</label>
       <label className="sm:col-span-2 text-sm font-semibold">Attachment (optional)
         <input className={field + ' mt-2'} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain" onChange={event => setAttachment(event.target.files?.[0] ?? null)} />
         <span className="mt-1 block text-xs font-normal text-[#5C6982]">{pendingUpload ? 'Select the exact same file to resume the pending upload.' : 'PDF, Word, PowerPoint or TXT; maximum 50 MB. The file is uploaded to private object storage after the contribution record is created.'}</span>

@@ -36,6 +36,12 @@ Students should only be shown resources that are approved/verified for student a
 
 The expected workflow is **Upload resource → Add resource details → Submit for review → Pending review**. Upload routes are role-restricted in the frontend; the backend must independently authorize every write.
 
+### Academic Reviewer / Global Academic Reviewer
+- Approved reviewers work from the academic moderation workspace and can decide only resources assigned to them.
+- The separately configured Global Academic Reviewer can review the platform-wide pending academic queue and oversee reviewer applications, roster, assignments, and conflict records.
+- Global Academic Reviewer access is an additional backend capability, not a moderator or administrator role; moderator support and platform administration remain separate.
+- Recruitment visibility is controlled by `VITE_REVIEWER_RECRUITMENT_OPEN` and `VITE_REVIEWER_TEST_ACCOUNT_EMAIL`, but the backend's matching environment variables enforce the actual access gate.
+
 ### Moderator / administrator
 - Access moderation and resource-review views according to role.
 - Review submitted resources and approve or reject them.

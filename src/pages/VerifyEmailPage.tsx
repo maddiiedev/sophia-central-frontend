@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/auth';
+import { setCsrfToken } from '../lib/api/client';
 import { PasswordInput } from '../components/PasswordInput';
 import { clearRegistrationDraft, readRegistrationDraft, savePreAccountSession } from '../lib/registration-session';
 
@@ -11,6 +12,7 @@ export function VerifyEmailPage() {
   const location = useLocation();
   const registrationNotice = location.state as { emailSent?: boolean; message?: string } | null;
   const token = params.get('token') || '';
+  const intent = params.get('intent');
   const [email, setEmail] = useState(params.get('email') || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,6 +39,8 @@ export function VerifyEmailPage() {
     setVerificationState('loading');
     setVerificationMessage('Verifying your email and preparing your onboarding session…');
     try {
+      const csrf = await authApi.csrf();
+      setCsrfToken(csrf.csrfToken);
       const response = await authApi.confirmEmailVerification(token, password);
       if (response.onboardingToken && response.preAccount) {
         savePreAccountSession({ ...response.preAccount, onboardingToken: response.onboardingToken });
@@ -69,6 +73,8 @@ export function VerifyEmailPage() {
       if (!draft || draft.email.toLowerCase() !== email.trim().toLowerCase()) {
         throw new Error('For security, this registration can only be resent from the browser where it was started. Return to account creation and enter your details again if you no longer have that session.');
       }
+      const csrf = await authApi.csrf();
+      setCsrfToken(csrf.csrfToken);
       const response = await authApi.resendEmailVerification(draft);
       setResendMessage(response.message);
     } catch (error) {
@@ -107,7 +113,7 @@ export function VerifyEmailPage() {
             </form>
           </>
         )}
-        <p className="mt-7 text-center text-sm text-[#5C6982]"><Link to="/login" className="font-semibold text-[#2C36D9] hover:text-[#6121D0]">Return to sign in</Link></p>
+        <p className="mt-7 text-center text-sm text-[#5C6982]"><Link to={intent ? `/login?intent=${encodeURIComponent(intent)}` : '/login'} className="font-semibold text-[#2C36D9] hover:text-[#6121D0]">Return to sign in</Link></p>
       </section>
     </main>
   );

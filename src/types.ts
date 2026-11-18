@@ -7,6 +7,11 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  hasReviewerAccess?: boolean;
+  isGlobalReviewer?: boolean;
+  reviewerStatus?: 'not_applied' | 'draft' | 'submitted' | 'under_review' | 'more_information_required' | 'approved' | 'rejected' | 'suspended' | 'revoked';
+  academicAccountType?: 'student' | 'lecturer' | 'external_reviewer' | null;
+  reviewerAcademicLevels?: string[];
   institution?: string;
   faculty?: string;
   department?: string;
@@ -74,5 +79,6 @@ export interface ModerationItem {
   createdAt?: string;
   isVerified?: boolean;
   assignedReviewerId?: string | null;
+  reviewConflictDeclaration?: 'no_conflict' | 'recuse' | null;
   [key: string]: unknown;
 }

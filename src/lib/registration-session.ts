@@ -3,7 +3,7 @@ export type RegistrationDraft = {
   firstName: string;
   lastName: string;
   academicHandle: string;
-  role: 'student' | 'lecturer';
+  role: 'student' | 'lecturer' | 'reviewer';
   referralCode?: string;
 };
 
