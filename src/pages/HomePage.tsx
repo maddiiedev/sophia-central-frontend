@@ -82,16 +82,11 @@ export default function HomePage() {
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link to="/onboarding" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6121D0] px-6 py-3.5 font-semibold text-white shadow-lg shadow-[#080F45]/25 transition duration-300 hover:-translate-y-0.5 hover:bg-[#7435E5] hover:shadow-xl">
-                  Explore Sophis Central <ArrowRight size={18} />
+                  Create an account <ArrowRight size={18} />
                 </Link>
                 <Link to="/login" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/40 bg-white/5 px-6 py-3.5 font-semibold text-white transition duration-300 hover:bg-white/15">
                   Sign in to your account
                 </Link>
-              </div>
-              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-semibold text-white/90" aria-label="Choose an account type">
-                <Link to="/onboarding?role=student" className="underline decoration-white/40 underline-offset-4 transition hover:text-white">Sign up as Student</Link>
-                <Link to="/onboarding?role=lecturer" className="underline decoration-white/40 underline-offset-4 transition hover:text-white">Sign up as Lecturer</Link>
-                <Link to="/become-reviewer" className="underline decoration-white/40 underline-offset-4 transition hover:text-white">Become a Reviewer</Link>
               </div>
               <a href="#features" className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-blue-100/80 transition hover:text-white">
                 Discover what you can do <ArrowDown size={15} />
@@ -322,7 +317,7 @@ export default function HomePage() {
           <div className="min-w-0"><h3 className="font-semibold text-white">Company</h3><div className="mt-4 space-y-3 break-words text-sm text-blue-100"><a href="#about" className="block transition hover:text-white">About Us</a><Link to="/careers" className="block transition hover:text-white">Careers</Link></div></div>
           <div className="min-w-0"><h3 className="font-semibold text-white">Support</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><Link to="/contact" className="block transition hover:text-white">Contact Us</Link><a href={'mailto:' + publicContactEmails.support + '?subject=' + encodeURIComponent('Sophis Central Support Enquiry')} className="block transition hover:text-white">Email Support</a></div></div>
           <div className="min-w-0"><h3 className="font-semibold text-white">Policies</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><Link to="/terms" className="block transition hover:text-white">Terms of Use</Link><Link to="/privacy" className="block transition hover:text-white">Privacy Policy</Link><Link to="/financial-policy" className="block transition hover:text-white">Financial Policy</Link><Link to="/cookie-policy" className="block transition hover:text-white">Cookie Policy</Link><Link to="/cookie-settings" className="block transition hover:text-white">Cookie Settings</Link></div></div>
-          <div className="min-w-0"><h3 className="font-semibold text-white">Explore</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#features" className="block transition hover:text-white">Features</a><a href="/community" className="block transition hover:text-white">Academic community</a><Link to="/library" className="block transition hover:text-white">Academic library</Link></div></div>
+          <div className="min-w-0"><h3 className="font-semibold text-white">Explore</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#features" className="block transition hover:text-white">Features</a><a href="/community" className="block transition hover:text-white">Academic community</a><Link to="/library" className="block transition hover:text-white">Academic library</Link><Link to="/become-reviewer" className="block transition hover:text-white">Academic reviewer applications</Link></div></div>
         </div>
         <div className="border-t border-white/15"><div className="relative mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 text-center text-xs text-blue-100 sm:flex-row sm:px-6 lg:px-8"><span className="lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:whitespace-nowrap">© {new Date().getFullYear()} Sophis Central. All rights reserved.</span><a href="#top" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"><ArrowUp size={14} />Back to top</a></div></div>
       </footer>
