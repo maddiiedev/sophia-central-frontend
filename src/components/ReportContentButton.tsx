@@ -90,7 +90,7 @@ export function ReportOptionsMenu({
   if (!options.length) return null;
 
   return <div className={`relative inline-flex ${className}`}>
-    <button type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-expanded={menuOpen} className="inline-flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full border border-[#CBD5E1] bg-white text-[#334155] shadow-sm transition hover:border-[#94A3B8] hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 dark:border-[#475569] dark:bg-[#0F172A] dark:text-[#F1F5F9] dark:hover:border-[#64748B] dark:hover:bg-[#1E293B] dark:hover:text-white dark:focus-visible:ring-offset-[#0B1220]">
+    <button type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-expanded={menuOpen} className="inline-flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full border border-transparent bg-transparent text-inherit shadow-none transition hover:border-transparent hover:bg-black/5 hover:text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:border-transparent dark:hover:bg-white/10 dark:hover:text-inherit">
       <MoreVertical size={16} />
     </button>
     {menuOpen && <div role="group" aria-label={ariaLabel} className="absolute right-0 top-full z-40 mt-1 min-w-48 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[#CBD5E1] bg-white p-1 text-[#111827] shadow-xl dark:border-[#475569] dark:bg-[#0F172A] dark:text-[#F8FAFC]">
