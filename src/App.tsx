@@ -100,7 +100,7 @@ const PUBLIC_PAGE_SEO: Record<string, { title: string; description: string }> = 
   },
   '/cookie-settings': {
     title: 'Cookie Settings | Sophis Central',
-    description: 'Review and update your optional cookie and browser technology preferences on Sophis Central.',
+    description: 'Review the essential cookies and browser storage currently used by Sophis Central. Optional category controls are not currently available.',
   },
   '/financial-policy': {
     title: 'Financial Policy | Sophis Central',

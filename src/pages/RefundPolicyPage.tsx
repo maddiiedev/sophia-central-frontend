@@ -7,7 +7,7 @@ type PolicySection = { title: string; paragraphs?: string[]; bullets?: string[] 
 
 const sections: PolicySection[] = [
   { title: '1. Scope and principles', paragraphs: [
-    'This policy explains how Sophis Central reviews refund requests for paid academic materials, Wisdom Points, platform services, and other paid offerings purchased through payment channels officially provided or approved by Sophis Central.',
+    'This policy explains how Sophis Central reviews refund requests for paid academic materials, Wisdom Points, platform services, and other paid offerings, but only where the relevant purchase or payment feature has been officially enabled and the transaction was made through a payment channel provided or approved by Sophis Central. A planned feature is not currently purchasable and does not create a refund transaction before launch.',
     'Requests are assessed fairly using the transaction record, the service or access promised, the evidence available, the circumstances of the request, and applicable consumer-protection law.'
   ]},
   { title: '2. Circumstances that may qualify', bullets: [
@@ -79,7 +79,7 @@ export function RefundPolicyPage() {
         <article className="rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-sm sm:p-8 lg:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Sophis Central</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#091F5B] sm:text-4xl">Refund Policy</h1>
-          <p className="mt-3 text-sm text-[#5C6982]">Last Updated: 18 November 2026</p>
+          <p className="mt-3 text-sm text-[#5C6982]">Last Updated: 19 November 2026</p>
           <p className="mt-6 text-sm leading-7 text-[#374151]">This policy explains when a payment issue may qualify for a refund or correction, how to submit a request, and what to expect during review and processing.</p>
           <div className="mt-8 space-y-8">
             {sections.map((section) => (
