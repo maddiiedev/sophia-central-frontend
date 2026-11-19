@@ -219,6 +219,8 @@ export function ChatPage() {
   const [readReceiptError, setReadReceiptError] = useState('');
 
   const [editing, setEditing] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
   const [editText, setEditText] = useState('');
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
@@ -823,14 +825,19 @@ export function ChatPage() {
     }
   };
 
-  const remove = async (id: string) => {
-    if (!window.confirm('Delete this message?')) return;
+  const remove = (id: string) => setDeleteTarget(id);
 
+  const confirmRemove = async () => {
+    if (!deleteTarget || deletingMessage) return;
+    setDeletingMessage(true);
     try {
-      await chatApi.remove(id);
+      await chatApi.remove(deleteTarget);
+      setDeleteTarget(null);
       await loadMessages(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Message could not be deleted.');
+    } finally {
+      setDeletingMessage(false);
     }
   };
 
@@ -2068,6 +2075,6 @@ export function ChatPage() {
         </p>
       </div>
       )}
-    </section>
+    {deleteTarget && <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4"><section role="dialog" aria-modal="true" aria-labelledby="delete-chat-message-title" className="w-full max-w-sm rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-2xl dark:border-[#334155] dark:bg-[#111827]"><h3 id="delete-chat-message-title" className="text-lg font-bold text-[#091F5B] dark:text-white">Delete message?</h3><p className="mt-2 text-sm leading-6 text-[#4B5563] dark:text-slate-300">Are you sure you want to delete this message?</p><div className="mt-5 grid grid-cols-2 gap-3"><button type="button" onClick={() => void confirmRemove()} disabled={deletingMessage} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{deletingMessage ? 'Deleting…' : 'Yes, delete'}</button><button type="button" onClick={() => setDeleteTarget(null)} disabled={deletingMessage} className="rounded-xl border border-[#DCE4EF] px-4 py-2.5 text-sm font-semibold text-[#091F5B] disabled:opacity-50 dark:border-[#475569] dark:text-white">Cancel</button></div></section></div>}</section>
   );
 }

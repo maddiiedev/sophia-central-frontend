@@ -1,4 +1,4 @@
-import { apiRequest } from './client';
+import { apiBlob, apiRequest } from './client';
 import type { Resource } from '../types';
 
 type ApiResource = Resource & {
@@ -87,7 +87,7 @@ export const resourcesApi = {
   saved: async (token?: string | null) => (await apiRequest<ApiResource[]>('/resources/saved', { method: 'GET' }, token ?? null)).map(mapResource),
   save: async (id: string, token?: string | null) => apiRequest<{ saved: true; resourceId: string }>(`/resources/${encodeURIComponent(id)}/save`, { method: 'POST' }, token ?? null),
   unsave: async (id: string, token?: string | null) => apiRequest<{ saved: false; resourceId: string }>(`/resources/${encodeURIComponent(id)}/save`, { method: 'DELETE' }, token ?? null),
-  fileUrl: async (id: string, token?: string | null) => apiRequest<{ url: string; filename: string; contentType?: string }>(`/resources/${encodeURIComponent(id)}/file-url`, { method: 'GET' }, token ?? null),
+  readerFile: (id: string) => apiBlob(`/resources/${encodeURIComponent(id)}/reader`),
   byId: async (id: string, token?: string | null) => mapResource(await apiRequest<ApiResource>(`/resources/${encodeURIComponent(id)}`, { method: 'GET' }, token ?? null)),
   create: async (payload: Record<string, unknown>, token?: string | null) => apiRequest<Record<string, unknown>>('/resources', { method: 'POST', body: JSON.stringify(payload) }, token ?? null),
 };

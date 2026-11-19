@@ -57,7 +57,17 @@ export function CookieConsentBanner() {
     };
   }, []);
 
-  if (consent) return null;
+  if (consent) {
+    return (
+      <Link
+        to="/cookie-settings"
+        aria-label="Manage cookie preferences"
+        className="fixed bottom-3 right-3 z-[90] rounded-full border border-[#DCE4EF] bg-white px-4 py-2.5 text-xs font-semibold text-[#6121D0] shadow-lg transition hover:bg-[#F8F7FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6121D0] sm:bottom-5 sm:right-5"
+      >
+        Cookie preferences
+      </Link>
+    );
+  }
 
   return (
     <section

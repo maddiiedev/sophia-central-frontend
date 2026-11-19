@@ -32,6 +32,12 @@ export function CareersPage() {
               <p className="mt-3 text-sm leading-6 text-[#5C6982]">For career enquiries, please contact our team at <a href={`mailto:${publicContactEmails.general}?subject=${encodeURIComponent('Careers Enquiry – Sophis Central')}`} className="font-semibold text-[#6121D0] hover:underline">{publicContactEmails.general}</a>.</p>
             )}
           </div>
+          <div className="mt-6 rounded-2xl border border-[#E4DDF7] bg-[#F8F7FF] p-5 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6121D0]">Academic opportunities</p>
+            <h2 className="mt-2 text-lg font-bold text-[#091F5B]">Become an Academic Reviewer</h2>
+            <p className="mt-2 text-sm leading-6 text-[#4B5563]">Support responsible academic knowledge-sharing by reviewing resources submitted to Sophis Central. Learn about the role and submit an application through our dedicated reviewer application page.</p>
+            <Link to="/become-reviewer" className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#6121D0] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#4C1D95]">Explore Academic Reviewer opportunities</Link>
+          </div>
         </section>
         <p className="mt-6 text-center text-xs text-[#71809A]">Sophis Central — Learn. Research. Grow.</p>
       </div>

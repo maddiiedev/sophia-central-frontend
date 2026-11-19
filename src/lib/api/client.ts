@@ -228,3 +228,33 @@ export async function apiRequest<T>(
 
   return (payload?.data ?? payload ?? undefined) as T;
 }
+
+export async function apiBlob(endpoint: string, timeoutMs = 60_000): Promise<Blob> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(buildUrl(endpoint), {
+      method: 'GET',
+      credentials: 'include',
+      headers: { Accept: 'application/pdf' },
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      let message = `Request failed with status ${response.status}`;
+      try {
+        const payload = await response.json();
+        message = getErrorMessage(payload?.message ?? payload?.error ?? payload, message);
+      } catch { /* retain HTTP fallback */ }
+      throw new Error(message);
+    }
+    return await response.blob();
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('The protected resource took too long to load. Please retry.');
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
