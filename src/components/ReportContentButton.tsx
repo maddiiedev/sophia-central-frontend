@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Flag, MoreVertical, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { reportsApi, type ReportReason, type ReportTargetType } from '../api/reports';
 
 const reasons: Array<{ value: ReportReason; label: string }> = [
@@ -33,8 +34,8 @@ function ReportContentDialog({ targetType, targetId, onClose }: { targetType: Re
     } finally { setBusy(false); }
   };
 
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-4" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-    <section role="dialog" aria-modal="true" aria-labelledby="report-content-title" className="w-full max-w-md rounded-2xl border border-[#DCE4EF] bg-white p-5 shadow-2xl">
+  return <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-slate-950/55 p-3 sm:items-center sm:p-4" onMouseDown={event => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <section role="dialog" aria-modal="true" aria-labelledby="report-content-title" className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div><p className="text-xs font-bold uppercase tracking-[.16em] text-rose-700">Safety & community standards</p><h2 id="report-content-title" className="mt-1 text-xl font-bold text-[#091F5B]">Report {targetType === 'chat_message' ? 'message' : targetType === 'user' ? 'account' : 'resource'}</h2></div>
         <button type="button" onClick={onClose} disabled={busy} className="rounded-lg p-2 text-[#64748B] hover:bg-[#F3F6FC]" aria-label="Close report form"><X size={18}/></button>
@@ -70,7 +71,7 @@ export function ReportContentButton({
     <button type="button" onClick={() => setOpen(true)} className={className || (compact ? 'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50' : 'inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#5C6982] hover:border-rose-300 hover:text-rose-700')} aria-label={label}>
       <Flag size={compact ? 12 : 15} /> {label}
     </button>
-    {open && <ReportContentDialog targetType={targetType} targetId={targetId} onClose={() => setOpen(false)} />}
+    {open && createPortal(<ReportContentDialog targetType={targetType} targetId={targetId} onClose={() => setOpen(false)} />, document.body)}
   </>;
 }
 
@@ -104,9 +105,12 @@ export function ReportOptionsMenu({
       const triggerRect = trigger.getBoundingClientRect();
       const menuRect = menu.getBoundingClientRect();
       const margin = 8;
-      const left = Math.max(margin, Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - margin));
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const menuWidth = Math.min(menuRect.width || 256, viewportWidth - margin * 2);
+      const left = Math.max(margin, Math.min(triggerRect.right - menuWidth, viewportWidth - menuWidth - margin));
       const below = triggerRect.bottom + 6;
-      const top = below + menuRect.height <= window.innerHeight - margin
+      const top = below + menuRect.height <= viewportHeight - margin
         ? below
         : Math.max(margin, triggerRect.top - menuRect.height - 6);
       setMenuPosition({ top, left });
@@ -117,14 +121,19 @@ export function ReportOptionsMenu({
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { setMenuOpen(false); triggerRef.current?.focus(); }
     };
-    updatePosition();
+    const frame = window.requestAnimationFrame(updatePosition);
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
+    window.visualViewport?.addEventListener('resize', updatePosition);
+    window.visualViewport?.addEventListener('scroll', updatePosition);
     document.addEventListener('pointerdown', closeOnOutside);
     document.addEventListener('keydown', closeOnEscape);
     return () => {
+      window.cancelAnimationFrame(frame);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
+      window.visualViewport?.removeEventListener('resize', updatePosition);
+      window.visualViewport?.removeEventListener('scroll', updatePosition);
       document.removeEventListener('pointerdown', closeOnOutside);
       document.removeEventListener('keydown', closeOnEscape);
     };
@@ -136,11 +145,11 @@ export function ReportOptionsMenu({
     <button ref={triggerRef} type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-expanded={menuOpen} aria-haspopup="menu" className="inline-flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full border border-transparent bg-transparent text-inherit shadow-none transition hover:border-transparent hover:bg-black/5 hover:text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:border-transparent dark:hover:bg-white/10 dark:hover:text-inherit">
       <MoreVertical size={16} />
     </button>
-    {menuOpen && <div ref={menuRef} role="menu" aria-label={ariaLabel} style={{ position: 'fixed', top: menuPosition?.top ?? 8, left: menuPosition?.left ?? 8, visibility: menuPosition ? 'visible' : 'hidden' }} className="z-[90] max-h-[calc(100dvh-1rem)] w-64 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-1 text-[#334155] shadow-xl dark:border-[#374151] dark:bg-[#111827] dark:text-[#E5E7EB]">
+    {menuOpen && createPortal(<div ref={menuRef} role="menu" aria-label={ariaLabel} style={{ position: 'fixed', top: menuPosition?.top ?? 8, left: menuPosition?.left ?? 8, visibility: menuPosition ? 'visible' : 'hidden', width: 'min(16rem, calc(100vw - 16px))', maxHeight: 'calc(100dvh - 16px)' }} className="z-[9999] overflow-y-auto overscroll-contain rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-1 text-[#334155] shadow-xl dark:border-[#374151] dark:bg-[#111827] dark:text-[#E5E7EB]">
       {options.map(option => <button key={`${option.targetType}:${option.targetId}`} type="button" role="menuitem" onClick={() => { setSelectedOption(option); setMenuOpen(false); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-3 text-left text-sm font-semibold text-inherit transition-colors hover:bg-[#E2E8F0] hover:text-[#0F172A] dark:hover:bg-[#1F2937] dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-600 dark:focus-visible:ring-violet-400">
         <Flag size={14} className="shrink-0" /><span className="min-w-0 break-words">{option.label}</span>
       </button>)}
-    </div>}
-    {selectedOption && <ReportContentDialog targetType={selectedOption.targetType} targetId={selectedOption.targetId} onClose={() => setSelectedOption(null)} />}
+    </div>, document.body)}
+    {selectedOption && createPortal(<ReportContentDialog targetType={selectedOption.targetType} targetId={selectedOption.targetId} onClose={() => setSelectedOption(null)} />, document.body)}
   </div>;
 }
