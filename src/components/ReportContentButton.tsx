@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Flag, MoreVertical, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { reportsApi, type ReportReason, type ReportTargetType } from '../api/reports';
@@ -91,15 +91,54 @@ export function ReportOptionsMenu({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<ReportMenuOption | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) { setMenuPosition(null); return; }
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      const menu = menuRef.current;
+      if (!trigger || !menu) return;
+      const triggerRect = trigger.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const margin = 8;
+      const left = Math.max(margin, Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - margin));
+      const below = triggerRect.bottom + 6;
+      const top = below + menuRect.height <= window.innerHeight - margin
+        ? below
+        : Math.max(margin, triggerRect.top - menuRect.height - 6);
+      setMenuPosition({ top, left });
+    };
+    const closeOnOutside = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node) && !triggerRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setMenuOpen(false); triggerRef.current?.focus(); }
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    document.addEventListener('pointerdown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+      document.removeEventListener('pointerdown', closeOnOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [menuOpen, options.length]);
+
   if (!options.length) return null;
 
   return <div className={`relative inline-flex ${className}`}>
-    <button type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-expanded={menuOpen} className="inline-flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full border border-transparent bg-transparent text-inherit shadow-none transition hover:border-transparent hover:bg-black/5 hover:text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:border-transparent dark:hover:bg-white/10 dark:hover:text-inherit">
+    <button ref={triggerRef} type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-expanded={menuOpen} aria-haspopup="menu" className="inline-flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full border border-transparent bg-transparent text-inherit shadow-none transition hover:border-transparent hover:bg-black/5 hover:text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent dark:hover:border-transparent dark:hover:bg-white/10 dark:hover:text-inherit">
       <MoreVertical size={16} />
     </button>
-    {menuOpen && <div role="menu" aria-label={ariaLabel} className="absolute right-0 top-full z-40 mt-1 min-w-48 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-1 text-[#334155] shadow-xl dark:border-[#374151] dark:bg-[#111827] dark:text-[#E5E7EB]">
+    {menuOpen && <div ref={menuRef} role="menu" aria-label={ariaLabel} style={{ position: 'fixed', top: menuPosition?.top ?? 8, left: menuPosition?.left ?? 8, visibility: menuPosition ? 'visible' : 'hidden' }} className="z-[90] max-h-[calc(100dvh-1rem)] w-64 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-1 text-[#334155] shadow-xl dark:border-[#374151] dark:bg-[#111827] dark:text-[#E5E7EB]">
       {options.map(option => <button key={`${option.targetType}:${option.targetId}`} type="button" role="menuitem" onClick={() => { setSelectedOption(option); setMenuOpen(false); }} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-3 text-left text-sm font-semibold text-inherit transition-colors hover:bg-[#E2E8F0] hover:text-[#0F172A] dark:hover:bg-[#1F2937] dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-600 dark:focus-visible:ring-violet-400">
-        <Flag size={14} />{option.label}
+        <Flag size={14} className="shrink-0" /><span className="min-w-0 break-words">{option.label}</span>
       </button>)}
     </div>}
     {selectedOption && <ReportContentDialog targetType={selectedOption.targetType} targetId={selectedOption.targetId} onClose={() => setSelectedOption(null)} />}

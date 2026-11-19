@@ -177,7 +177,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   return (
     <div className="app-shell min-h-screen bg-white text-[#1F2937]">
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 flex-col border-r border-[#E5E7EB] bg-white p-5 lg:flex">
+        <aside className="sticky top-0 hidden h-screen max-h-screen w-72 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-[#E5E7EB] bg-white p-5 lg:flex">
           <div className="mb-8"><BrandLogo variant="full" linked={false} tone="dark" /></div>
           {nav}
           <div className="mt-auto rounded-2xl border border-[#E5E7EB] bg-[#F3F6FC] p-4">
@@ -218,7 +218,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
               />
               <div
                 id="mobile-main-navigation"
-                className="fixed inset-x-3 bottom-3 top-[calc(env(safe-area-inset-top)+76px)] z-50 overflow-y-auto overscroll-contain rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xl lg:hidden"
+                className="fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),0.75rem)] top-[calc(env(safe-area-inset-top)+76px)] z-50 overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-2xl lg:hidden"
               >
                 <div className="mb-3 flex items-center justify-between border-b border-[#E5E7EB] pb-3">
                   <span className="text-sm font-bold text-[#091F5B]">Navigation</span>
@@ -228,7 +228,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
               </div>
             </>
           )}
-          <div className="page-shell bg-[#F3F6FC] p-4 sm:p-6 lg:p-7"><div className="route-content mx-auto w-full max-w-[1600px]">{children}</div></div>
+          <div className="page-shell min-w-0 w-full bg-[#F3F6FC] p-3 sm:p-6 lg:p-7"><div className="route-content mx-auto w-full min-w-0 max-w-[1600px]">{children}</div></div>
         </main>
       </div>
     </div>
