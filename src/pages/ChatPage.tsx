@@ -1398,7 +1398,7 @@ export function ChatPage() {
       )}
 
       {mode === 'direct' && recipient && (
-        <div data-chat-conversation-header className="flex items-center gap-3 border-b border-violet-200 bg-violet-100 px-4 py-3 dark:border-[#334155] dark:bg-[#172033]">
+        <div data-chat-conversation-header className="flex flex-wrap items-center gap-2 border-b border-violet-200 bg-violet-100 px-3 py-3 dark:border-[#334155] dark:bg-[#172033] sm:gap-3 sm:px-4">
           <button
             type="button"
             onClick={() => {
@@ -1408,11 +1408,11 @@ export function ChatPage() {
               setShowContactDropdown(false);
               setError('');
             }}
-            className="rounded-lg px-3 py-2 text-sm font-semibold text-violet-800 transition hover:bg-[#F3F0FF] dark:text-[#D8CCFF] dark:hover:bg-[#26314A]"
+            className="min-h-11 shrink-0 rounded-lg px-2 py-2 text-xs font-semibold text-violet-800 transition hover:bg-[#F3F0FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 dark:text-[#D8CCFF] dark:hover:bg-[#26314A] dark:focus-visible:ring-violet-400 sm:px-3 sm:text-sm"
           >
             ← Recent conversations
           </button>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p data-chat-conversation-username className="inline-block max-w-full truncate rounded-md bg-violet-100 px-2 py-0.5 text-sm font-semibold text-violet-950 dark:bg-[#302347] dark:text-[#F3E8FF]">
               {selectedContact?.isDeleted
                 ? 'Deleted user'
@@ -1425,21 +1425,24 @@ export function ChatPage() {
             </p>
           </div>
           {!recipientDeleted && recipient && (
-            <label className="ml-auto flex shrink-0 items-center gap-2 text-[11px] font-semibold text-violet-900 dark:text-[#E2E8F0]">
-              <span className="hidden sm:inline">Disappearing messages</span>
-              <select
-                aria-label="Disappearing messages duration"
-                value={retentionPeriod}
-                disabled={savingRetention}
-                onChange={event => void changeRetention(event.target.value as ChatRetentionPeriod)}
-                className="max-w-[128px] rounded-lg border border-violet-300 bg-white px-2 py-2 text-xs font-semibold text-violet-900 outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60 dark:border-[#475569] dark:bg-[#1E293B] dark:text-white"
-              >
-                <option value="90_days">90 days</option>
-                <option value="7_days">7 days</option>
-                <option value="24_hours">24 hours</option>
-                <option value="off">Off</option>
-              </select>
-            </label>
+            <div className="ml-auto flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+              <label className="flex min-h-11 shrink-0 items-center gap-2 text-[11px] font-semibold text-violet-900 dark:text-[#E2E8F0]">
+                <span className="hidden sm:inline">Disappearing messages</span>
+                <select
+                  aria-label="Disappearing messages duration"
+                  value={retentionPeriod}
+                  disabled={savingRetention}
+                  onChange={event => void changeRetention(event.target.value as ChatRetentionPeriod)}
+                  className="max-w-[128px] rounded-lg border border-violet-300 bg-white px-2 py-2 text-xs font-semibold text-violet-900 outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-60 dark:border-[#475569] dark:bg-[#1E293B] dark:text-white"
+                >
+                  <option value="90_days">90 days</option>
+                  <option value="7_days">7 days</option>
+                  <option value="24_hours">24 hours</option>
+                  <option value="off">Off</option>
+                </select>
+              </label>
+              {selectedContact && <ReportOptionsMenu className="shrink-0" options={[{ targetType: 'user', targetId: selectedContact.id, label: 'Report account' }]} ariaLabel="Conversation report options" />}
+            </div>
           )}
         </div>
       )}

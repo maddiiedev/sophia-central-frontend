@@ -7,7 +7,13 @@ export type SupportTicketTracking = Pick<SupportRequest, 'id' | 'ticketNumber' |
 export type SupportRequest = {
   id: string;
   ticketNumber?: string;
-  userId: string;
+  userId: string | null;
+  senderName?: string | null;
+  senderEmail?: string | null;
+  senderInstitution?: string | null;
+  senderFaculty?: string | null;
+  senderDepartment?: string | null;
+  senderAccountType?: string | null;
   subject: string;
   category: string;
   description: string;
@@ -26,6 +32,10 @@ export type SupportRequest = {
 
 export const supportApi = {
   emailStatus: () => apiRequest<SupportEmailStatus>('/support-requests/email-status'),
+  publicCreate: (payload: { name: string; email: string; institution?: string; faculty?: string; department?: string; category: string; subject: string; description: string; links: string[] }) =>
+    apiRequest<{ success: boolean; message: string }>('/support-requests/public', { method: 'POST', body: JSON.stringify(payload) }),
+  verifyPublicEmail: (token: string) =>
+    apiRequest<{ success: boolean; ticketNumber: string; message: string }>(`/support-requests/public/verify?token=${encodeURIComponent(token)}`),
   create: (payload: { subject: string; category: string; description: string; links: string[]; attachments: string[] }) =>
     apiRequest<SupportRequest>('/support-requests', { method: 'POST', body: JSON.stringify(payload) }),
   mine: () => apiRequest<SupportTicketTracking[]>('/support-requests/mine'),

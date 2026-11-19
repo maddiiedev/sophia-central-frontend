@@ -90,12 +90,12 @@ export function ReportOptionsMenu({
   if (!options.length) return null;
 
   return <div className={`relative inline-flex ${className}`}>
-    <button type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-haspopup="menu" aria-expanded={menuOpen} className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-300/80 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-600 dark:bg-slate-900/90 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">
+    <button type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-expanded={menuOpen} className="inline-flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full border border-[#CBD5E1] bg-white text-[#334155] shadow-sm transition hover:border-[#94A3B8] hover:bg-[#F1F5F9] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600 focus-visible:ring-offset-2 dark:border-[#475569] dark:bg-[#0F172A] dark:text-[#F1F5F9] dark:hover:border-[#64748B] dark:hover:bg-[#1E293B] dark:hover:text-white dark:focus-visible:ring-offset-[#0B1220]">
       <MoreHorizontal size={16} />
     </button>
-    {menuOpen && <div role="menu" className="absolute right-0 top-full z-40 mt-1 min-w-40 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900">
-      {options.map(option => <div role="menuitem" key={`${option.targetType}:${option.targetId}`} onClick={() => setMenuOpen(false)} className="rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
-        <ReportContentButton targetType={option.targetType} targetId={option.targetId} label={option.label} compact className="flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-rose-300" />
+    {menuOpen && <div role="group" aria-label={ariaLabel} className="absolute right-0 top-full z-40 mt-1 min-w-48 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[#CBD5E1] bg-white p-1 text-[#111827] shadow-xl dark:border-[#475569] dark:bg-[#0F172A] dark:text-[#F8FAFC]">
+      {options.map(option => <div key={`${option.targetType}:${option.targetId}`} onClick={() => setMenuOpen(false)} className="rounded-lg">
+        <ReportContentButton targetType={option.targetType} targetId={option.targetId} label={option.label} compact className="flex min-h-11 w-full items-center rounded-lg px-3 py-3 text-left text-sm font-semibold text-[#1F2937] hover:bg-[#F1F5F9] hover:text-[#9F1239] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-600 dark:text-[#F1F5F9] dark:hover:bg-[#1E293B] dark:hover:text-[#FDA4AF] dark:focus-visible:ring-violet-400" />
       </div>)}
     </div>}
   </div>;

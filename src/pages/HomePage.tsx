@@ -18,7 +18,6 @@ import {
 import { Link } from 'react-router-dom';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { featureHighlights } from '../lib/mock-data';
-import { publicContactEmails } from '../config/publicContact';
 
 const featureIcons = [Search, ShieldCheck, BrainCircuit, Sparkles];
 const resourceTypes = [
@@ -315,7 +314,7 @@ export default function HomePage() {
             <p className="mt-5 max-w-sm text-sm leading-6 text-blue-100">Sophis Central is an academic platform connecting students and lecturers with learning resources, research materials, and tools for knowledge-sharing.</p>
           </div>
           <div className="min-w-0"><h3 className="font-semibold text-white">Company</h3><div className="mt-4 space-y-3 break-words text-sm text-blue-100"><a href="#about" className="block transition hover:text-white">About Us</a><Link to="/careers" className="block transition hover:text-white">Careers</Link></div></div>
-          <div className="min-w-0"><h3 className="font-semibold text-white">Support</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><Link to="/contact" className="block transition hover:text-white">Contact Us</Link><a href={'mailto:' + publicContactEmails.support + '?subject=' + encodeURIComponent('Sophis Central Support Enquiry')} className="block transition hover:text-white">Email Support</a></div></div>
+          <div className="min-w-0"><h3 className="font-semibold text-white">Support</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><Link to="/contact" className="block transition hover:text-white">Contact Support</Link></div></div>
           <div className="min-w-0"><h3 className="font-semibold text-white">Policies</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><Link to="/terms" className="block transition hover:text-white">Terms of Use</Link><Link to="/privacy" className="block transition hover:text-white">Privacy Policy</Link><Link to="/financial-policy" className="block transition hover:text-white">Financial Policy</Link><Link to="/refund-policy" className="block transition hover:text-white">Refund Policy</Link><Link to="/cookie-policy" className="block transition hover:text-white">Cookie Policy</Link><Link to="/cookie-settings" className="block transition hover:text-white">Cookie Settings</Link></div></div>
           <div className="min-w-0"><h3 className="font-semibold text-white">Explore</h3><div className="mt-4 space-y-3 text-sm text-blue-100"><a href="#features" className="block transition hover:text-white">Features</a><a href="/community" className="block transition hover:text-white">Academic community</a><Link to="/library" className="block transition hover:text-white">Academic library</Link><Link to="/become-reviewer" className="block transition hover:text-white">Academic reviewer applications</Link></div></div>
         </div>
