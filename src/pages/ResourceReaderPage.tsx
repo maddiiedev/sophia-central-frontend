@@ -8,12 +8,27 @@ import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
 import type { Resource } from '../types';
 import { ReportOptionsMenu } from '../components/ReportContentButton';
-import { PdfJsReader } from '../components/PdfJsReader';
+import { UniversalResourceReader } from '../components/UniversalResourceReader';
 
 type ResourceWithFile = Resource & { uploaderId?: string | null; fileUrl?: string; file_url?: string; url?: string; contentUrl?: string; content_url?: string; hasFile?: boolean; downloadRestricted?: boolean; accessLevel?: string; canDownload?: boolean };
 type ReviewHistoryItem = { id: string; status: string; note?: string | null; createdAt: string; reviewer?: { firstName?: string; lastName?: string } | null };
 type ResourceAppeal = { id: string; resourceId: string; appealType: 'reconsideration' | 'favoritism_report'; reason: string; status: string; createdAt: string };
 type OverrideHistoryItem = { id: string; originalStatus: string; newStatus: string; reason: string; createdAt: string; adminFirstName?: string; adminLastName?: string; originalReviewerFirstName?: string; originalReviewerLastName?: string };
+const READER_MIME_EXTENSIONS: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/msword': 'doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.ms-powerpoint': 'ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+  'text/plain': 'txt',
+};
+function makeReaderFileName(title: string, mimeType: string): string {
+  const extension = READER_MIME_EXTENSIONS[mimeType.split(';')[0].trim().toLowerCase()];
+  if (!extension) throw new Error('This resource format is not supported by the secure in-app reader.');
+  const safeTitle = Array.from(title).filter(character => character.charCodeAt(0) >= 32 && character.charCodeAt(0) !== 127).join('').replace(/[:*?"<>|]/g, '-').split('/').join('-').split('\\\\').join('-').trim() || 'resource';
+  return `${safeTitle}.${extension}`;
+}
+
 
 export function ResourceReaderPage() {
   const { id = '' } = useParams();
@@ -27,6 +42,8 @@ export function ResourceReaderPage() {
   const [downloadPromptOpen, setDownloadPromptOpen] = useState(false);
   const [fileAction, setFileAction] = useState<'open' | 'download' | null>(null);
   const [viewerUrl, setViewerUrl] = useState('');
+  const [viewerFileName, setViewerFileName] = useState('resource.pdf');
+  const [viewerMimeType, setViewerMimeType] = useState('application/pdf');
   const [readerPage, setReaderPage] = useState(1);
   const [readerPageCount, setReaderPageCount] = useState(0);
   const [pageInput, setPageInput] = useState('1');
@@ -132,6 +149,23 @@ export function ResourceReaderPage() {
     && ownResource;
   const downloadRestricted = resourceDownloadRestricted && !ownResource;
   const canDownload = (!privilegedPreviewOnly || lecturerUploader) && !downloadRestricted;
+  const prepareReader = (file: Blob) => {
+    const mimeType = (file.type || '').split(';')[0].trim().toLowerCase();
+    const fileName = makeReaderFileName(resource.title, mimeType);
+    const nextUrl = URL.createObjectURL(file);
+    setViewerMimeType(mimeType);
+    setViewerFileName(fileName);
+    setViewerUrl(nextUrl);
+    setReaderPage(1);
+    setReaderPageCount(0);
+    setPageInput('1');
+    setHeadingSearch('');
+    setAppliedHeadingSearch('');
+    setZoomPercent(100);
+    setDocumentWidthPercent(100);
+    setSearchMessage('');
+    setPageError('');
+  };
   const accessFile = async (download: boolean) => {
     if (!hasFile || fileAction || (download && !canDownload)) return;
     if (download && !canDownload) return;
@@ -151,18 +185,7 @@ export function ResourceReaderPage() {
         setDownloaded(true);
       }
       const file = await resourcesApi.readerFile(id);
-      if (!file.type.toLowerCase().includes('pdf')) {
-        throw new Error('Secure in-app reading currently supports PDF files. This document was not sent to an external viewer.');
-      }
-      setViewerUrl(URL.createObjectURL(file));
-      setReaderPage(1);
-      setPageInput('1');
-      setHeadingSearch('');
-      setAppliedHeadingSearch('');
-      setZoomPercent(100);
-      setDocumentWidthPercent(100);
-      setSearchMessage('');
-      setPageError('');
+      prepareReader(file);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'Unable to access this resource file.';
       if (message.toLowerCase().includes('save this resource to my resources')) {
@@ -189,11 +212,7 @@ export function ResourceReaderPage() {
       await resourcesApi.downloadInApp(id);
       setDownloaded(true);
       const file = await resourcesApi.readerFile(id);
-      if (!file.type.toLowerCase().includes('pdf')) {
-        throw new Error('Secure in-app reading currently supports PDF files. This document was not sent to an external viewer.');
-      }
-      setViewerUrl(URL.createObjectURL(file));
-      setReaderPage(1); setPageInput('1'); setHeadingSearch(''); setAppliedHeadingSearch(''); setZoomPercent(100); setDocumentWidthPercent(100); setSearchMessage(''); setPageError('');
+      prepareReader(file);
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to download and view this resource.'); }
     finally { setFileAction(null); }
   };
@@ -281,15 +300,15 @@ export function ResourceReaderPage() {
             {searchMessage&&<p role="status" className="w-full text-xs text-[#64748B]">{searchMessage}</p>}
           </div>
           <div className="grid min-h-0 min-w-0 grid-cols-1 lg:min-h-[520px] lg:grid-cols-[210px_minmax(0,1fr)]">
-            <aside aria-label="PDF page navigation" className="min-w-0 border-b border-[#DCE4EF] bg-[#F8FAFD] p-3 lg:border-b-0 lg:border-r"><h3 className="text-xs font-bold uppercase tracking-[.12em]">Page navigation</h3>
+            <aside aria-label="Document page and slide navigation" className="min-w-0 border-b border-[#DCE4EF] bg-[#F8FAFD] p-3 lg:border-b-0 lg:border-r"><h3 className="text-xs font-bold uppercase tracking-[.12em]">Page / slide navigation</h3>
               <form onSubmit={event=>{event.preventDefault();const target=Number(pageInput);if(!Number.isInteger(target)||target<1||target>readerPageCount){setPageError(`Enter a page from 1 to ${readerPageCount||'the document page count'}.`);return;}setPageError('');setReaderPage(target);}} className="mt-4 space-y-2">
-                <label htmlFor="pdf-page-number" className="block text-xs font-semibold">Go to page</label><input id="pdf-page-number" type="number" min="1" max={readerPageCount||1} step="1" inputMode="numeric" value={pageInput} onChange={event=>{setPageInput(event.target.value);setPageError('');}} className="w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#6121D0]"/>
+                <label htmlFor="pdf-page-number" className="block text-xs font-semibold">Go to page / slide</label><input id="pdf-page-number" type="number" min="1" max={readerPageCount||1} step="1" inputMode="numeric" value={pageInput} onChange={event=>{setPageInput(event.target.value);setPageError('');}} className="w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#6121D0]"/>
                 {pageError&&<p role="alert" className="text-xs text-rose-700">{pageError}</p>}<button type="submit" className="w-full rounded-xl bg-[#6121D0] px-3 py-2.5 text-sm font-semibold text-white">Open page</button>
               </form>
               <div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={()=>{const n=Math.max(1,readerPage-1);setReaderPage(n);setPageInput(String(n));setPageError('');}} disabled={readerPage<=1} className="inline-flex items-center justify-center gap-1 rounded-xl border bg-white px-2 py-2 text-xs font-semibold disabled:opacity-40"><ChevronLeft size={14}/>Previous</button><button type="button" onClick={()=>{const n=Math.min(readerPageCount,readerPage+1);setReaderPage(n);setPageInput(String(n));setPageError('');}} disabled={!readerPageCount||readerPage>=readerPageCount} className="inline-flex items-center justify-center gap-1 rounded-xl border bg-white px-2 py-2 text-xs font-semibold disabled:opacity-40">Next<ChevronRight size={14}/></button></div>
               <p className="mt-3 text-xs">Page <strong>{readerPage}</strong> of {readerPageCount||'…'}</p>
             </aside>
-            <div className="min-w-0"><PdfJsReader url={viewerUrl} page={readerPage} zoom={zoomPercent} widthPercent={documentWidthPercent} searchTerm={appliedHeadingSearch} onPageCount={count=>setReaderPageCount(count)} onPageChange={value=>{setReaderPage(value);setPageInput(String(value));}} onSearchStatus={setSearchMessage} watermark={`SOPHIS CENTRAL · PRIVATE VIEW · ${user?.academicHandle||user?.email||'AUTHORIZED USER'}`}/></div>
+            <div className="min-w-0"><UniversalResourceReader url={viewerUrl} fileName={viewerFileName} mimeType={viewerMimeType} page={readerPage} zoom={zoomPercent} widthPercent={documentWidthPercent} searchTerm={appliedHeadingSearch} onPageCount={count=>setReaderPageCount(count)} onPageChange={value=>{setReaderPage(value);setPageInput(String(value));}} onSearchStatus={setSearchMessage} watermark={`SOPHIS CENTRAL · PRIVATE VIEW · ${user?.academicHandle||user?.email||'AUTHORIZED USER'}`}/></div>
           </div>
           <p className="border-t border-[#DCE4EF] px-4 py-2 text-xs leading-5 text-[#64748B]">Use the reader controls to navigate and search within this resource. Your access permissions apply throughout the reader.</p>
         </section>}</> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">This resource has no attached file. You can still review its details above.</p>}

@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
+    "build": "npm run copy:zrimo-assets && tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "prebuild": "node scripts/generate-seo-files.mjs"
+    "prebuild": "node scripts/generate-seo-files.mjs",
+    "copy:zrimo-assets": "node node_modules/@zrimo/viewer/bin/copy-assets.mjs public/vendor/zrimo",
+    "predev": "npm run copy:zrimo-assets"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -19,7 +21,8 @@
     "react-hook-form": "^7.16.0",
     "react-router-dom": "^6.28.0",
     "zod": "^3.23.8",
-    "pdfjs-dist": "6.5.438"
+    "pdfjs-dist": "6.5.438",
+    "@zrimo/viewer": "0.1.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
