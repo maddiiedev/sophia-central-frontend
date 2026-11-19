@@ -63,25 +63,35 @@ function getErrorMessage(
 
 async function refreshCsrfToken(): Promise<string> {
   if (!csrfRefresh) {
-    csrfRefresh = fetch(buildUrl('/auth/csrf'), {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-      },
-    })
-      .then(async response => {
+    csrfRefresh = (async () => {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 8_000);
+
+      try {
+        const response = await fetch(buildUrl('/auth/csrf'), {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        });
+
         if (!response.ok) {
+          const retryAfter = response.headers.get('Retry-After');
+          const retryHint = response.status === 429 && retryAfter
+            ? ` Please wait about ${Math.max(1, Math.ceil(Number(retryAfter)))} seconds before trying again.`
+            : '';
+
           throw new Error(
-            'Unable to initialize secure request validation. Please refresh and try again.',
+            response.status === 429
+              ? `Secure session initialization is temporarily rate-limited.${retryHint}`
+              : 'Unable to initialize secure request validation. Please refresh and try again.',
           );
         }
 
         const payload = await response.json();
-
-        const token =
-          payload?.csrfToken ??
-          payload?.data?.csrfToken;
+        const token = payload?.csrfToken ?? payload?.data?.csrfToken;
 
         if (typeof token !== 'string' || !token) {
           throw new Error(
@@ -90,12 +100,18 @@ async function refreshCsrfToken(): Promise<string> {
         }
 
         csrfToken = token;
-
         return token;
-      })
-      .finally(() => {
-        csrfRefresh = null;
-      });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          throw new Error('Secure session initialization timed out. Please retry in a moment.');
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    })().finally(() => {
+      csrfRefresh = null;
+    });
   }
 
   return csrfRefresh;

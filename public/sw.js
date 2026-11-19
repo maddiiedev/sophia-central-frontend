@@ -77,17 +77,34 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/') || url.pathname.includes('/auth/')) return;
 
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok && response.type === 'basic') {
-            const copy = response.clone();
-            void caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
-          }
-          return response;
-        })
-        .catch(async () => (await caches.match('/index.html')) || (await caches.match('/')))
-    );
+    event.respondWith((async () => {
+      const cachedShell = await caches.match('/index.html') || await caches.match('/');
+      let timeoutId;
+
+      // Prefer the deployed HTML when the network is healthy, but don't leave
+      // a reload blocked indefinitely by a sleeping or unstable origin.
+      const networkRequest = fetch(request).then((response) => {
+        if (response.ok && response.type === 'basic') {
+          const copy = response.clone();
+          void caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+        }
+        return response;
+      });
+
+      try {
+        return await Promise.race([
+          networkRequest,
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Navigation network timeout')), 2500);
+          })
+        ]);
+      } catch {
+        if (cachedShell) return cachedShell;
+        return await networkRequest;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    })());
     return;
   }
 

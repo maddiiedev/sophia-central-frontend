@@ -21,12 +21,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  let refreshingForControllerChange = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (refreshingForControllerChange) return;
-    refreshingForControllerChange = true;
-    window.location.reload();
-  });
+  // A newly activated worker takes control without forcing a second full-page
+  // reload. The current document remains usable; the updated shell is used on
+  // the next navigation or user-initiated refresh.
 
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(registration => {
