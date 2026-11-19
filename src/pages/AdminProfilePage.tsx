@@ -30,11 +30,12 @@ export function AdminProfilePage() {
   };
 
   const isModerator = user.role === 'moderator';
-  const roleTitle = isModerator ? 'Moderator' : 'Administrative';
-  const fullName = user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || (isModerator ? 'Moderator' : 'Administrator');
+  const isSupport = user.role === 'support';
+  const roleTitle = isModerator ? 'Moderator' : isSupport ? 'Support' : 'Administrative';
+  const fullName = user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || (isModerator ? 'Moderator' : isSupport ? 'Support team member' : 'Administrator');
 
   return <div className="mx-auto max-w-4xl space-y-6">
-    <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">{isModerator ? 'Moderator workspace' : 'Platform administration'}</p><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">{isModerator ? 'Moderator profile' : 'Administrative profile'}</h2><p className="mt-2 text-sm leading-6 text-[#4B5563]">{isModerator ? 'Manage your moderator identity and profile picture. Your role supports user safety, reports, Wisdom Points oversight and user support.' : 'Manage your administrative identity and review the access associated with this Sophis Central account.'}</p></div>
+    <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">{isModerator ? 'Moderator workspace' : isSupport ? 'Support workspace' : 'Platform administration'}</p><h2 className="mt-2 text-3xl font-bold text-[#091F5B]">{isModerator ? 'Moderator profile' : 'Administrative profile'}</h2><p className="mt-2 text-sm leading-6 text-[#4B5563]">{isModerator ? 'Manage your moderator identity and profile picture. Your role supports user safety, reports, Wisdom Points oversight and user support.' : 'Manage your administrative identity and review the access associated with this Sophis Central account.'}</p></div>
     <section className="glass-panel p-5 sm:p-7">
       <div className="flex flex-col gap-5 rounded-2xl border border-[#DCE4EF] bg-[#F8FAFD] p-5 sm:flex-row sm:items-center">
         <div className="relative h-24 w-24 shrink-0">

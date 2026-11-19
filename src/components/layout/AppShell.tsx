@@ -37,7 +37,7 @@ const studentNav = [
   { label: 'Wallet', href: '/wallet', icon: WalletCards },
   { label: 'Group Chat', href: '/chat/group', icon: MessageCircle },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
-  { label: 'My reports', href: '/reports', icon: Flag },
+  { label: 'My activity', href: '/my-activity', icon: Flag },
 ];
 
 const lecturerNav = [
@@ -47,7 +47,7 @@ const lecturerNav = [
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Upload Resource', href: '/lecturer/upload', icon: Upload },
   { label: 'Private DM', href: '/messages', icon: MessageCircle },
-  { label: 'My reports', href: '/reports', icon: Flag },
+  { label: 'My activity', href: '/my-activity', icon: Flag },
 ];
 
 const moderatorNav = [
@@ -56,13 +56,17 @@ const moderatorNav = [
   { label: 'Academic Library', href: '/library', icon: BookOpen },
   { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'Saved resources', href: '/my-resources', icon: Bookmark },
-  { label: 'Support requests', href: '/support', icon: LifeBuoy },
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Analytics', href: '/moderation/analytics', icon: ChartNoAxesCombined },
   { label: 'Accounts & Wisdom Points', href: '/moderation/management', icon: BriefcaseBusiness },
   { label: 'Wisdom Points Oversight', href: '/moderation/management/wisdom-points', icon: WalletCards },
 ];
 
+
+const supportNav = [
+  { label: 'Support requests', href: '/support', icon: LifeBuoy },
+  { label: 'Notifications', href: '/notifications', icon: Bell },
+];
 
 const reviewerNav = [
   { label: 'Academic review queue', href: '/reviewer/dashboard', icon: ShieldCheck },
@@ -81,7 +85,6 @@ const adminNav = [
   { label: 'Open Source Library', href: '/open-source-library', icon: BookOpen },
   { label: 'My resources', href: '/my-resources', icon: Bookmark },
   { label: 'Analytics', href: '/analytics', icon: LayoutGrid },
-  { label: 'Support requests', href: '/support', icon: LifeBuoy },
   { label: 'Notifications', href: '/notifications', icon: Bell },
 ];
 
@@ -121,8 +124,8 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
         if (!active) return;
         const reviewerWorkspace = user.role === 'reviewer' || location.pathname.startsWith('/reviewer/');
         const reviewerTypes = new Set(['resource_review_assigned', 'reviewer_application_decision']);
-        const count = reviewerWorkspace
-          ? (result.notifications ?? []).filter(item => reviewerTypes.has(item.type) && !item.isRead).length
+        const count = reviewerWorkspace || user.role === 'student'
+          ? (result.notifications ?? []).filter(item => !item.isRead && (reviewerWorkspace ? reviewerTypes.has(item.type) : !reviewerTypes.has(item.type))).length
           : result.unreadCount ?? 0;
         setUnreadCount(count);
       } catch { /* Keep navigation usable when notifications are temporarily unavailable. */ }
@@ -134,7 +137,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
 
 
   const academicNav = user?.role === 'lecturer' ? lecturerNav : studentNav;
-  const navItems = user?.role === 'reviewer' ? (user.hasReviewerAccess ? [...reviewerNav.filter(item => !(user.isGlobalReviewer && item.href === '/reviewer-account-transition')), ...(user.isGlobalReviewer ? [{ label: 'Reviewer management', href: '/reviewer/governance?tab=applications', icon: Users }] : [])] : ['suspended', 'revoked'].includes(user.reviewerStatus || '') ? [] : [{ label: ['submitted', 'under_review', 'more_information_required'].includes(user.reviewerStatus || '') ? 'View reviewer application' : 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }]) : user?.role === 'moderator' ? moderatorNav : user?.role === 'admin' ? adminNav : [
+  const navItems = user?.role === 'reviewer' ? (user.hasReviewerAccess ? [...reviewerNav.filter(item => !(user.isGlobalReviewer && item.href === '/reviewer-account-transition')), ...(user.isGlobalReviewer ? [{ label: 'Reviewer management', href: '/reviewer/governance?tab=applications', icon: Users }] : [])] : ['suspended', 'revoked'].includes(user.reviewerStatus || '') ? [] : [{ label: ['submitted', 'under_review', 'more_information_required'].includes(user.reviewerStatus || '') ? 'View reviewer application' : 'Become an Academic Reviewer', href: '/reviewer-application', icon: ShieldCheck }]) : user?.role === 'moderator' ? moderatorNav : user?.role === 'support' ? supportNav : user?.role === 'admin' ? adminNav : [
     ...academicNav,
     ...(user?.hasReviewerAccess ? [{ label: 'Academic Reviewer workspace', href: '/reviewer/dashboard', icon: ShieldCheck }] : []),
     ...(user?.hasReviewerAccess && location.pathname.startsWith('/reviewer/') ? [{ label: 'Reviewer notifications', href: '/reviewer/notifications', icon: Bell }] : []),
@@ -143,7 +146,7 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
   const goBack = () => {
     const historyIndex = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (historyIndex > 0) navigate(-1);
-    else navigate(user?.role === 'moderator' ? '/moderation' : user?.role === 'lecturer' ? '/lecturer' : user?.role === 'reviewer' ? (user.hasReviewerAccess ? '/reviewer' : '/reviewer-application') : user?.role === 'admin' ? '/admin' : '/student');
+    else navigate(user?.role === 'moderator' ? '/moderation' : user?.role === 'lecturer' ? '/lecturer' : user?.role === 'reviewer' ? (user.hasReviewerAccess ? '/reviewer' : '/reviewer-application') : user?.role === 'support' ? '/support' : user?.role === 'admin' ? '/admin' : '/student');
   };
 
   const nav = (

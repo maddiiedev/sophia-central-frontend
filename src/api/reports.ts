@@ -5,6 +5,7 @@ export type ReportReason = 'spam' | 'harassment' | 'impersonation' | 'inappropri
 export type ContentReportStatus = 'pending' | 'reviewing' | 'actioned' | 'dismissed';
 export type ContentReport = {
   id: string;
+  ticketNumber?: string;
   reporterId?: string | null;
   reporter?: { id?: string; firstName?: string; lastName?: string; email?: string; academicHandle?: string } | null;
   targetType: ReportTargetType;
@@ -28,6 +29,8 @@ export const reportsApi = {
   mine: () => apiRequest<ContentReport[]>('/reports/mine'),
   moderationQueue: (status?: ContentReportStatus | 'all') =>
     apiRequest<ContentReport[]>(`/moderation/reports${status && status !== 'all' ? `?status=${encodeURIComponent(status)}` : ''}`),
+  escalate: (id: string, targetRole: 'support' | 'admin', reason: string) =>
+    apiRequest<{ success: boolean; ticketNumber: string; notified: number }>(`/moderation/reports/${encodeURIComponent(id)}/escalate`, { method: 'PATCH', body: JSON.stringify({ targetRole, reason }) }),
   update: (id: string, status: ContentReportStatus, moderatorNote?: string) =>
     apiRequest<ContentReport>(`/moderation/reports/${encodeURIComponent(id)}`, {
       method: 'PATCH', body: JSON.stringify({ status, ...(moderatorNote ? { moderatorNote } : {}) }),

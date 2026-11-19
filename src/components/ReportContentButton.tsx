@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Flag, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { reportsApi, type ReportReason, type ReportTargetType } from '../api/reports';
 
 const reasons: Array<{ value: ReportReason; label: string }> = [
@@ -27,12 +28,14 @@ export function ReportContentButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState('');
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true); setError('');
     try {
-      await reportsApi.create({ targetType, targetId, reason, ...(details.trim() ? { details: details.trim() } : {}) });
+      const report = await reportsApi.create({ targetType, targetId, reason, ...(details.trim() ? { details: details.trim() } : {}) });
+      setTicketNumber(report.ticketNumber || report.id);
       setSuccess(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Your report could not be submitted. Please try again.');
@@ -49,7 +52,7 @@ export function ReportContentButton({
           <div><p className="text-xs font-bold uppercase tracking-[.16em] text-rose-700">Safety & community standards</p><h2 id="report-content-title" className="mt-1 text-xl font-bold text-[#091F5B]">Report {targetType === 'chat_message' ? 'message' : targetType}</h2></div>
           <button type="button" onClick={() => setOpen(false)} disabled={busy} className="rounded-lg p-2 text-[#64748B] hover:bg-[#F3F6FC]" aria-label="Close report form"><X size={18}/></button>
         </div>
-        {success ? <div className="mt-5 space-y-4"><p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">Your report has been submitted to the Sophis Central moderation team. You can follow its status in My reports.</p><button type="button" onClick={() => setOpen(false)} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white">Done</button></div> :
+        {success ? <div className="mt-5 space-y-4"><p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">Your report has been submitted to the Sophis Central moderation team. Reference: {ticketNumber}. You can follow its status in My Activity.</p><div className="flex flex-col gap-2"><Link to="/my-activity" onClick={() => setOpen(false)} className="w-full rounded-xl bg-[#6121D0] px-4 py-3 text-center text-sm font-semibold text-white">View My Activity</Link><button type="button" onClick={() => setOpen(false)} className="w-full rounded-xl border border-[#DCE4EF] px-4 py-3 text-sm font-semibold text-[#475569]">Done</button></div></div> :
           <form onSubmit={submit} className="mt-5 space-y-4">
             <label className="block text-sm font-semibold text-[#091F5B]">Why are you reporting this?
               <select value={reason} onChange={event => setReason(event.target.value as ReportReason)} className="mt-2 w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-3 text-sm font-normal text-[#1F2937] outline-none focus:border-[#6121D0]">{reasons.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select>

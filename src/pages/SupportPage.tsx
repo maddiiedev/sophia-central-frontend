@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { AlertCircle, CheckCircle2, FileImage, Link2, LifeBuoy, Loader2, Paperclip, Send, ExternalLink, RefreshCw } from 'lucide-react';
-import { supportApi, type SupportRequest } from '../api/support';
+import { AlertCircle, CheckCircle2, FileImage, Link2, LifeBuoy, Loader2, Paperclip, Send, RefreshCw } from 'lucide-react';
+import { supportApi, type SupportTicketTracking } from '../api/support';
 import { supportAttachmentApi } from '../api/upload';
 import { useAuth } from '../context/AuthContext';
 
@@ -20,7 +20,7 @@ export function SupportPage() {
   const [description, setDescription] = useState('');
   const [linkText, setLinkText] = useState('');
   const [attachments, setAttachments] = useState<string[]>([]);
-  const [requests, setRequests] = useState<SupportRequest[]>([]);
+  const [requests, setRequests] = useState<SupportTicketTracking[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -74,7 +74,7 @@ export function SupportPage() {
     setSending(true);
     try {
       const result = await supportApi.create({ subject: subject.trim(), category, description: description.trim(), links, attachments });
-      setConfirmation(result.confirmationMessage || 'Your message has been sent to Support. The Sophis Central Support team will review your request and update you through notifications.');
+      setConfirmation(`${result.ticketNumber ? `Ticket ${result.ticketNumber}: ` : ''}${result.confirmationMessage || 'Your message has been sent to Support. The Sophis Central Support team will review your request and update you through notifications.'}`);
       setSubject(''); setCategory('technical'); setDescription(''); setLinkText(''); setAttachments([]);
       await loadRequests();
     } catch (cause) {
@@ -102,8 +102,8 @@ export function SupportPage() {
         <div className="flex justify-end"><button type="submit" disabled={sending || uploading} className="inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-5 py-3 font-semibold text-white transition hover:bg-[#2C36D9] disabled:opacity-50">{sending ? <Loader2 size={17} className="animate-spin"/> : <Send size={17}/>} {sending ? 'Sending request…' : 'Send to support'}</button></div>
       </form>
     </section>
-    <section className="glass-panel p-5 sm:p-7"><div className="flex items-center justify-between gap-3"><div><h3 className="text-lg font-bold text-[#091F5B]">Your support requests</h3><p className="mt-1 text-sm text-[#5C6982]">Track the status of requests you have sent.</p></div><button type="button" onClick={() => void loadRequests()} disabled={loading} aria-label="Refresh support requests" className="rounded-xl border border-[#DCE4EF] p-2 text-[#091F5B] hover:border-[#6121D0]"><RefreshCw size={16} className={loading ? 'animate-spin' : ''}/></button></div>
-      <div className="mt-4 space-y-3">{loading ? <p className="rounded-xl bg-[#F8FAFD] p-4 text-sm text-[#5C6982]">Loading requests…</p> : requests.length === 0 ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#5C6982]">You have not sent a support request yet.</p> : requests.map(request => <article key={request.id} className="rounded-xl border border-[#DCE4EF] bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="font-semibold text-[#091F5B]">{request.subject}</h4><p className="mt-1 text-xs capitalize text-[#71809A]">{request.category.replace('_',' ')} · {new Date(request.createdAt).toLocaleString()}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status === 'concluded' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>{request.status === 'concluded' ? 'Concluded' : 'Pending review'}</span></div>{request.status === 'concluded' && request.resolutionMessage && <p className="mt-3 rounded-lg bg-[#F3F6FC] p-3 text-sm leading-6 text-[#374151]">{request.resolutionMessage}</p>}</article>)}</div>
+    <section className="glass-panel p-5 sm:p-7"><div className="flex items-center justify-between gap-3"><div><h3 className="text-lg font-bold text-[#091F5B]">Your support requests</h3><p className="mt-1 text-sm text-[#5C6982]">Track ticket progress here. Full Support responses are delivered to My Activity.</p></div><button type="button" onClick={() => void loadRequests()} disabled={loading} aria-label="Refresh support requests" className="rounded-xl border border-[#DCE4EF] p-2 text-[#091F5B] hover:border-[#6121D0]"><RefreshCw size={16} className={loading ? 'animate-spin' : ''}/></button></div>
+      <div className="mt-4 space-y-3">{loading ? <p className="rounded-xl bg-[#F8FAFD] p-4 text-sm text-[#5C6982]">Loading requests…</p> : requests.length === 0 ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#5C6982]">You have not sent a support request yet.</p> : requests.map(request => <article key={request.id} className="rounded-xl border border-[#DCE4EF] bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><h4 className="font-semibold text-[#091F5B]">{request.subject}</h4><p className="mt-1 text-xs capitalize text-[#71809A]">{request.category.replace('_',' ')} · {new Date(request.createdAt).toLocaleString()}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status === 'response_sent' || request.status === 'concluded' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>{request.status === 'response_sent' || request.status === 'concluded' ? 'Response sent' : request.status === 'reviewed' ? 'Reviewed' : request.status === 'under_review' ? 'Under review' : 'Submitted'}</span></div><p className="mt-2 text-xs font-medium text-[#71809A]">Reference: {request.ticketNumber || request.id}</p><ol aria-label="Ticket progress" className="mt-3 flex flex-wrap gap-2">{['Submitted','Under Support review',(request.status === 'reviewed' || request.status === 'response_sent' || request.status === 'concluded') ? 'Reviewed' : request.escalatedToRole ? `Under ${request.escalatedToRole === 'moderator' ? 'Moderator' : 'Admin'} review` : 'Reviewed','Response sent'].map((stage,index)=>{const currentIndex=request.status==='response_sent'||request.status==='concluded'?3:request.status==='reviewed'?2:request.escalatedToRole?2:request.status==='under_review'?1:0;return <li key={stage} className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold ${index<=currentIndex?'bg-[#F0EBFF] text-[#6121D0]':'bg-[#F8FAFD] text-[#94A3B8]'}`}>{index+1}. {stage}</li>;})}</ol></article>)}</div>
     </section>
   </div>;
 }

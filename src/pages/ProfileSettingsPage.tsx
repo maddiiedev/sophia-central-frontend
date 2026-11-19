@@ -66,7 +66,7 @@ export function ProfileSettingsPage() {
   }, [user]);
 
   if (!user) return null;
-  if (user.role === 'moderator' || user.role === 'admin') return <AdminProfilePage />;
+  if (user.role === 'moderator' || user.role === 'admin' || user.role === 'support') return <AdminProfilePage />;
   const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const copyUniqueId = async () => {
     if (!user.uniqueId) return;

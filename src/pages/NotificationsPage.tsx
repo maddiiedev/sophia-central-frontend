@@ -3,16 +3,16 @@ import { Bell, CheckCheck, RefreshCw, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { notificationsApi, type AppNotification } from '../api/notifications';
 
-type NotificationFilter = 'all' | 'unread' | 'moderation' | 'support' | 'resources' | 'accounts' | 'platform' | 'reviews' | 'governance';
+type NotificationFilter = 'all' | 'unread' | 'reports' | 'support' | 'resources' | 'wallet' | 'accounts' | 'reviews' | 'governance';
 
 const filters: { value: NotificationFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'unread', label: 'Unread' },
-  { value: 'moderation', label: 'Moderation' },
+  { value: 'reports', label: 'Reports' },
   { value: 'support', label: 'Support' },
   { value: 'resources', label: 'Resources' },
   { value: 'accounts', label: 'Accounts' },
-  { value: 'platform', label: 'Platform' },
+  { value: 'wallet', label: 'Wallet' },
 ];
 
 function categoryFor(type: string): Exclude<NotificationFilter, 'all' | 'unread'> {
@@ -21,9 +21,10 @@ function categoryFor(type: string): Exclude<NotificationFilter, 'all' | 'unread'
   const value = type.toLowerCase();
   if (value.includes('support')) return 'support';
   if (value.includes('resource') || value.includes('review')) return 'resources';
-  if (value.includes('report') || value.includes('moderation')) return 'moderation';
+  if (value.includes('report') || value.includes('moderation')) return 'reports';
+  if (value.includes('wallet') || value.includes('point') || value.includes('payment') || value.includes('purchase')) return 'wallet';
   if (value.includes('account') || value.includes('security') || value.includes('suspend')) return 'accounts';
-  return 'platform';
+  return 'accounts';
 }
 
 const reviewerNotificationTypes = new Set(['resource_review_assigned', 'reviewer_application_decision']);
@@ -34,7 +35,7 @@ const reviewerFilters: { value: NotificationFilter; label: string }[] = [
   { value: 'governance', label: 'Application updates' },
 ];
 
-export function NotificationsPage({ reviewerOnly = false }: { reviewerOnly?: boolean }) {
+export function NotificationsPage({ reviewerOnly = false, studentOnly = false }: { reviewerOnly?: boolean; studentOnly?: boolean }) {
   const navigate = useNavigate();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -52,15 +53,15 @@ export function NotificationsPage({ reviewerOnly = false }: { reviewerOnly?: boo
       const notifications = result.notifications ?? [];
       const visibleNotifications = reviewerOnly
         ? notifications.filter(item => reviewerNotificationTypes.has(item.type))
-        : notifications;
+         : studentOnly ? notifications.filter(item => !reviewerNotificationTypes.has(item.type)) : notifications;
       setItems(visibleNotifications);
-      setUnreadCount(reviewerOnly
+      setUnreadCount(reviewerOnly || studentOnly
         ? visibleNotifications.filter(item => !item.isRead).length
         : result.unreadCount ?? 0);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load notifications.');
     } finally { if (!quiet) setLoading(false); }
-  }, [reviewerOnly]);
+  }, [reviewerOnly, studentOnly]);
 
   useEffect(() => {
     void load();
@@ -122,7 +123,7 @@ export function NotificationsPage({ reviewerOnly = false }: { reviewerOnly?: boo
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F0FF] text-[#6121D0]"><Bell size={22} aria-hidden="true" /></div>
-          <h2 className="mt-5 text-2xl font-semibold text-[#091F5B]">{reviewerOnly ? 'Reviewer notifications' : 'Notifications'}</h2>
+          <h2 className="mt-5 text-2xl font-semibold text-[#091F5B]">{reviewerOnly ? 'Reviewer notifications' : studentOnly ? 'Student notifications' : 'Notifications'}</h2>
           <p className="mt-2 text-sm leading-6 text-[#4B5563]">{reviewerOnly ? 'Your review assignments and reviewer application updates. New reviewer updates refresh automatically.' : `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}. New updates refresh automatically.`}</p>
           {reviewerOnly && <p className="mt-2 text-xs text-[#71809A]">{unreadCount} unread reviewer update{unreadCount === 1 ? '' : 's'}</p>}
         </div>
@@ -140,7 +141,7 @@ export function NotificationsPage({ reviewerOnly = false }: { reviewerOnly?: boo
         {activeFilters.map(item => <button key={item.value} type="button" role="tab" aria-selected={filter === item.value} onClick={() => setFilter(item.value)} className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition ${filter === item.value ? 'border-[#6121D0] bg-[#6121D0] text-white' : 'border-[#DCE4EF] bg-white text-[#4B5563] hover:border-[#6121D0] hover:text-[#6121D0]'}`}>{item.label}{item.value === 'unread' ? ` (${unreadCount})` : ''}</button>)}
       </div>
       <div className="mt-5 space-y-3">
-        {loading ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#4B5563]">Loading notifications…</p> : visibleItems.length === 0 ? <div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-8 text-center"><Bell size={24} className="mx-auto text-[#6121D0]"/><p className="mt-3 font-semibold text-[#091F5B]">{items.length === 0 ? (reviewerOnly ? 'No reviewer updates yet' : 'You’re all caught up') : 'No matching notifications'}</p><p className="mt-1 text-sm text-[#4B5563]">{items.length === 0 ? (reviewerOnly ? 'New review assignments and application decisions will appear here.' : 'New support, moderation and account updates will appear here.') : 'Try another filter or search term.'}</p></div> : visibleItems.map(item => <button key={item.id} type="button" onClick={() => void markRead(item)} disabled={busy} className={`block w-full rounded-xl border p-4 text-left transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60 ${item.isRead ? 'border-[#DCE4EF] bg-white' : 'border-[#C4B5FD] bg-[#F8F5FF]'}`}><div className="flex items-start gap-3"><span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.isRead ? 'bg-[#CBD5E1]' : 'bg-[#6121D0]'}`} aria-label={item.isRead ? 'Read' : 'Unread'}/><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-[#091F5B]">{item.title}</span><span className="text-xs text-[#5C6982]">{new Date(item.createdAt).toLocaleString()}</span></span><span className="mt-1 block whitespace-pre-wrap text-sm leading-6 text-[#4B5563]">{item.message}</span><span className="mt-2 block text-[11px] font-semibold uppercase tracking-wide text-[#71809A]">{categoryFor(item.type)}</span>{item.link && <span className="mt-2 block text-xs font-semibold text-[#6121D0]">Open related page →</span>}</span></div></button>)}
+        {loading ? <p className="rounded-xl bg-[#F8FAFD] p-5 text-sm text-[#4B5563]">Loading notifications…</p> : visibleItems.length === 0 ? <div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-8 text-center"><Bell size={24} className="mx-auto text-[#6121D0]"/><p className="mt-3 font-semibold text-[#091F5B]">{items.length === 0 ? (reviewerOnly ? 'No reviewer updates yet' : 'You’re all caught up') : 'No matching notifications'}</p><p className="mt-1 text-sm text-[#4B5563]">{items.length === 0 ? (reviewerOnly ? 'New review assignments and application decisions will appear here.' : 'Your resource, wallet, report, support and account updates will appear here.') : 'Try another filter or search term.'}</p></div> : visibleItems.map(item => <button key={item.id} type="button" onClick={() => void markRead(item)} disabled={busy} className={`block w-full rounded-xl border p-4 text-left transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-60 ${item.isRead ? 'border-[#DCE4EF] bg-white' : 'border-[#C4B5FD] bg-[#F8F5FF]'}`}><div className="flex items-start gap-3"><span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${item.isRead ? 'bg-[#CBD5E1]' : 'bg-[#6121D0]'}`} aria-label={item.isRead ? 'Read' : 'Unread'}/><span className="min-w-0 flex-1"><span className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-[#091F5B]">{item.title}</span><span className="text-xs text-[#5C6982]">{new Date(item.createdAt).toLocaleString()}</span></span><span className="mt-1 block whitespace-pre-wrap text-sm leading-6 text-[#4B5563]">{item.message}</span><span className="mt-2 block text-[11px] font-semibold uppercase tracking-wide text-[#71809A]">{categoryFor(item.type)}</span>{item.link && <span className="mt-2 block text-xs font-semibold text-[#6121D0]">Open related page →</span>}</span></div></button>)}
       </div>
       <Link to={reviewerOnly ? '/reviewer/dashboard' : '/dashboard'} className="mt-6 inline-flex rounded-xl border border-[#DCE4EF] bg-white px-4 py-2.5 text-sm font-semibold text-[#091F5B] transition hover:border-[#6121D0] hover:bg-[#F8F5FF]">{reviewerOnly ? 'Back to reviewer workspace' : 'Back to dashboard'}</Link>
     </div>
