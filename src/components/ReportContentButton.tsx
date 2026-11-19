@@ -95,7 +95,7 @@ export function ReportOptionsMenu({
     </button>
     {menuOpen && <div role="group" aria-label={ariaLabel} className="absolute right-0 top-full z-40 mt-1 min-w-48 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-[#CBD5E1] bg-white p-1 text-[#111827] shadow-xl dark:border-[#475569] dark:bg-[#0F172A] dark:text-[#F8FAFC]">
       {options.map(option => <div key={`${option.targetType}:${option.targetId}`} onClick={() => setMenuOpen(false)} className="rounded-lg">
-        <ReportContentButton targetType={option.targetType} targetId={option.targetId} label={option.label} compact className="flex min-h-11 w-full items-center rounded-lg px-3 py-3 text-left text-sm font-semibold text-[#1F2937] hover:bg-[#F1F5F9] hover:text-[#9F1239] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-600 dark:text-[#F1F5F9] dark:hover:bg-[#1E293B] dark:hover:text-[#FDA4AF] dark:focus-visible:ring-violet-400" />
+        <ReportContentButton targetType={option.targetType} targetId={option.targetId} label={option.label} compact className="flex min-h-11 w-full items-center rounded-lg px-3 py-3 text-left text-sm font-semibold text-[#1F2937] hover:bg-current/5 hover:text-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-600 dark:text-[#F1F5F9] dark:hover:bg-current/10 dark:hover:text-current dark:focus-visible:ring-violet-400" />
       </div>)}
     </div>}
   </div>;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Bookmark, BookOpen, ChevronLeft, ChevronRight, Download, FileText, Search } from 'lucide-react';
+import { ArrowLeft, Bookmark, BookOpen, ChevronLeft, ChevronRight, Download, FileText, Search, ZoomIn, ZoomOut } from 'lucide-react';
 import { resourcesApi } from '../api/resources';
 import { apiRequest } from '../lib/api/client';
 import { useAuth } from '../context/AuthContext';
@@ -30,6 +30,10 @@ export function ResourceReaderPage() {
   const [pageInput, setPageInput] = useState('1');
   const [headingSearch, setHeadingSearch] = useState('');
   const [appliedHeadingSearch, setAppliedHeadingSearch] = useState('');
+  const [zoomPercent, setZoomPercent] = useState(100);
+  const [documentWidthPercent, setDocumentWidthPercent] = useState(100);
+  const [searchMessage, setSearchMessage] = useState('');
+  const [pageError, setPageError] = useState('');
   const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => () => {
@@ -153,6 +157,10 @@ export function ResourceReaderPage() {
       setPageInput('1');
       setHeadingSearch('');
       setAppliedHeadingSearch('');
+      setZoomPercent(100);
+      setDocumentWidthPercent(100);
+      setSearchMessage('');
+      setPageError('');
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'Unable to access this resource file.';
       if (message.toLowerCase().includes('save this resource to my resources')) {
@@ -182,7 +190,8 @@ export function ResourceReaderPage() {
       if (!file.type.toLowerCase().includes('pdf')) {
         throw new Error('Secure in-app reading currently supports PDF files. This document was not sent to an external viewer.');
       }
-      setViewerUrl(URL.createObjectURL(file) + '#toolbar=0&navpanes=0&scrollbar=0');
+      setViewerUrl(URL.createObjectURL(file));
+      setReaderPage(1); setPageInput('1'); setHeadingSearch(''); setAppliedHeadingSearch(''); setZoomPercent(100); setDocumentWidthPercent(100); setSearchMessage(''); setPageError('');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to download and view this resource.'); }
     finally { setFileAction(null); }
   };
@@ -260,37 +269,54 @@ export function ResourceReaderPage() {
             <span className="flex items-center gap-2"><FileText size={16} className="text-[#6121D0]"/> In-app resource reader</span>
             <span className="text-xs font-medium text-[#64748B]">Protected preview</span>
           </div>
-          <form onSubmit={event => { event.preventDefault(); setAppliedHeadingSearch(headingSearch.trim()); }} className="flex flex-col gap-2 border-b border-[#DCE4EF] bg-white p-3 sm:flex-row sm:items-center">
-            <label htmlFor="pdf-heading-search" className="shrink-0 text-xs font-semibold text-[#52627B] sm:sr-only">Find a heading or topic</label>
+          <form onSubmit={event => { event.preventDefault(); const term = headingSearch.trim(); setAppliedHeadingSearch(term); setReaderPage(1); setPageInput('1'); setSearchMessage(term ? `Searching this document for “${term}”. Use your PDF viewer's search results to move between matches.` : 'Document search cleared.'); }} className="flex flex-col gap-2 border-b border-[#DCE4EF] bg-white p-3 sm:flex-row sm:items-center">
+            <label htmlFor="pdf-heading-search" className="shrink-0 text-xs font-semibold text-[#52627B] sm:sr-only">Search document</label>
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <input id="pdf-heading-search" value={headingSearch} onChange={event => setHeadingSearch(event.target.value)} placeholder="Enter a document heading or topic title" className="min-w-0 flex-1 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm text-[#091F5B] outline-none transition placeholder:text-[#94A3B8] focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/15" />
-              <button type="submit" aria-label="Search document headings and topics" title="Search document" className="inline-flex h-10 w-11 shrink-0 items-center justify-center rounded-xl bg-[#6121D0] text-white transition hover:bg-[#4C1D95] focus:outline-none focus:ring-2 focus:ring-[#6121D0] focus:ring-offset-2"><Search size={18}/></button>
+              <input id="pdf-heading-search" value={headingSearch} onChange={event => setHeadingSearch(event.target.value)} placeholder="Search text in this document" className="min-w-0 flex-1 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm text-[#091F5B] outline-none transition placeholder:text-[#94A3B8] focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/15" />
+              <button type="submit" aria-label="Search document" title="Search document" className="inline-flex h-10 w-11 shrink-0 items-center justify-center rounded-xl bg-[#6121D0] text-white transition hover:bg-[#4C1D95] focus:outline-none focus:ring-2 focus:ring-[#6121D0] focus:ring-offset-2"><Search size={18}/></button>
+              {appliedHeadingSearch && <button type="button" onClick={() => { setHeadingSearch(''); setAppliedHeadingSearch(''); setSearchMessage('Document search cleared.'); }} className="rounded-xl border border-[#DCE4EF] px-3 py-2 text-xs font-semibold text-[#52627B] hover:bg-[#F8FAFD]">Clear</button>}
             </div>
-            <p className="text-xs leading-5 text-[#64748B] sm:max-w-[230px]">Enter the heading or title as it appears in the PDF to jump to matching text.</p>
           </form>
+          <div className="flex flex-wrap items-center gap-3 border-b border-[#DCE4EF] bg-[#F8FAFD] px-3 py-2.5">
+            <div className="inline-flex items-center gap-1 rounded-xl border border-[#DCE4EF] bg-white p-1">
+              <button type="button" onClick={() => setZoomPercent(value => Math.max(50, value - 10))} disabled={zoomPercent <= 50} aria-label="Zoom out" title="Zoom out" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#52627B] hover:bg-[#F1F5F9] disabled:opacity-40"><ZoomOut size={17}/></button>
+              <span className="min-w-14 text-center text-xs font-semibold tabular-nums text-[#091F5B]">{zoomPercent}%</span>
+              <button type="button" onClick={() => setZoomPercent(value => Math.min(200, value + 10))} disabled={zoomPercent >= 200} aria-label="Zoom in" title="Zoom in" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#52627B] hover:bg-[#F1F5F9] disabled:opacity-40"><ZoomIn size={17}/></button>
+              <button type="button" onClick={() => setZoomPercent(100)} className="rounded-lg px-2 text-xs font-semibold text-[#52627B] hover:bg-[#F1F5F9]" title="Reset zoom">Reset</button>
+            </div>
+            <div className="hidden min-w-[220px] flex-1 items-center gap-3 lg:flex">
+              <label htmlFor="pdf-document-width" className="whitespace-nowrap text-xs font-semibold text-[#52627B]">Document width</label>
+              <input id="pdf-document-width" type="range" min="60" max="100" step="5" value={documentWidthPercent} onChange={event => setDocumentWidthPercent(Number(event.target.value))} className="min-w-0 flex-1 accent-[#6121D0]" />
+              <span className="w-10 text-right text-xs font-semibold tabular-nums text-[#52627B]">{documentWidthPercent}%</span>
+            </div>
+            {searchMessage && <p role="status" className="w-full text-xs text-[#64748B]">{searchMessage}</p>}
+          </div>
           <div className="grid min-h-[520px] grid-cols-1 lg:grid-cols-[210px_minmax(0,1fr)]">
             <aside aria-label="PDF page navigation" className="border-b border-[#DCE4EF] bg-[#F8FAFD] p-3 lg:border-b-0 lg:border-r">
               <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-[#52627B]">Page navigation</h3>
-              <p className="mt-2 text-xs leading-5 text-[#64748B]">Jump directly to a page instead of scrolling from the beginning.</p>
-              <form onSubmit={event => { event.preventDefault(); const target = Number(pageInput); if (Number.isInteger(target) && target >= 1 && target <= 99999) setReaderPage(target); }} className="mt-4 space-y-2">
+              <form onSubmit={event => { event.preventDefault(); const target = Number(pageInput); if (!Number.isInteger(target) || target < 1 || target > 99999) { setPageError('Enter a page number greater than zero.'); return; } setPageError(''); setReaderPage(target); }} className="mt-4 space-y-2">
                 <label htmlFor="pdf-page-number" className="block text-xs font-semibold text-[#52627B]">Go to page</label>
-                <input id="pdf-page-number" type="number" min="1" max="99999" step="1" inputMode="numeric" value={pageInput} onChange={event => setPageInput(event.target.value)} className="w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm text-[#091F5B] outline-none focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/15" />
+                <input id="pdf-page-number" type="number" min="1" max="99999" step="1" inputMode="numeric" value={pageInput} onChange={event => { setPageInput(event.target.value); setPageError(''); }} className="w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2.5 text-sm text-[#091F5B] outline-none focus:border-[#6121D0] focus:ring-2 focus:ring-[#6121D0]/15" />
+                {pageError && <p role="alert" className="text-xs text-rose-700">{pageError}</p>}
                 <button type="submit" className="w-full rounded-xl bg-[#6121D0] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4C1D95]">Open page</button>
               </form>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { const next = Math.max(1, readerPage - 1); setReaderPage(next); setPageInput(String(next)); }} disabled={readerPage <= 1} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#DCE4EF] bg-white px-2 py-2 text-xs font-semibold text-[#091F5B] disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={14}/> Previous</button>
-                <button type="button" onClick={() => { const next = Math.min(99999, readerPage + 1); setReaderPage(next); setPageInput(String(next)); }} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#DCE4EF] bg-white px-2 py-2 text-xs font-semibold text-[#091F5B]">Next <ChevronRight size={14}/></button>
+                <button type="button" onClick={() => { const next = Math.max(1, readerPage - 1); setReaderPage(next); setPageInput(String(next)); setPageError(''); }} disabled={readerPage <= 1} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#DCE4EF] bg-white px-2 py-2 text-xs font-semibold text-[#091F5B] disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft size={14}/> Previous</button>
+                <button type="button" onClick={() => { const next = readerPage + 1; setReaderPage(next); setPageInput(String(next)); setPageError(''); }} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#DCE4EF] bg-white px-2 py-2 text-xs font-semibold text-[#091F5B]">Next <ChevronRight size={14}/></button>
               </div>
-              <p className="mt-3 text-xs text-[#64748B]">Current page: <span className="font-semibold text-[#091F5B]">{readerPage}</span></p>
+              <p className="mt-3 text-xs text-[#64748B]">Page <span className="font-semibold text-[#091F5B]">{readerPage}</span></p>
             </aside>
-            <div className="relative isolate min-w-0 bg-[#E9EDF5]">
-              <iframe title={`Reader: ${resource.title}`} src={`${viewerUrl}#toolbar=0&navpanes=0&scrollbar=0&page=${readerPage}${appliedHeadingSearch ? `&search=${encodeURIComponent(appliedHeadingSearch)}` : ''}`} className="h-[75vh] min-h-[520px] w-full bg-white" referrerPolicy="no-referrer" onContextMenu={event => event.preventDefault()} />
-              <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 grid grid-cols-2 content-around gap-8 overflow-hidden p-6 opacity-[0.12] sm:grid-cols-3">
-                {Array.from({ length: 6 }, (_, index) => <span key={index} className="rotate-[-28deg] whitespace-nowrap text-center text-xs font-bold uppercase tracking-[0.2em] text-slate-700">SOPHIS CENTRAL · PRIVATE VIEW · {user?.academicHandle || user?.email || 'AUTHORIZED USER'}</span>)}
+            <div className="relative isolate min-w-0 bg-[#E9EDF5] p-2 sm:p-3 lg:p-4">
+              <div className="mx-auto min-w-0 transition-[width] duration-150" style={{ width: `${documentWidthPercent}%` }}>
+                <iframe title={`Reader: ${resource.title}`} src={`${viewerUrl}#toolbar=0&navpanes=0&scrollbar=0&page=${readerPage}&zoom=${zoomPercent}${appliedHeadingSearch ? `&search=${encodeURIComponent(appliedHeadingSearch)}` : ''}`} className="h-[75vh] min-h-[520px] w-full bg-white" referrerPolicy="no-referrer" onContextMenu={event => event.preventDefault()} />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 grid grid-cols-2 content-around gap-8 overflow-hidden p-6 opacity-[0.12] sm:grid-cols-3">
+                  {Array.from({ length: 6 }, (_, index) => <span key={index} className="rotate-[-28deg] whitespace-nowrap text-center text-xs font-bold uppercase tracking-[0.2em] text-slate-700">SOPHIS CENTRAL · PRIVATE VIEW · {user?.academicHandle || user?.email || 'AUTHORIZED USER'}</span>)}
+                </div>
               </div>
             </div>
           </div>
-          <p className="border-t border-[#DCE4EF] px-4 py-2 text-xs leading-5 text-[#64748B]">Resource access is checked by Sophis Central. Standard PDF toolbar actions and the storage download link are not exposed. Heading search locates matching text in the PDF; it does not create or infer a document outline when the PDF has none. Screenshots or external capture cannot be fully prevented on user-controlled devices.</p>
+          <p className="border-t border-[#DCE4EF] px-4 py-2 text-xs leading-5 text-[#64748B]">Use page navigation, search, and zoom to read this resource. Your access permissions apply throughout the reader.</p>
+          
         </section>}</> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">This resource has no attached file. You can still review its details above.</p>}
       </div>
     </article>
