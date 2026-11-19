@@ -103,6 +103,23 @@ function OfficeDocumentReader({ url, fileName, page, zoom, onPageCount, onPageCh
     let viewer: ZrimoViewer | null = null;
     const initialize = async () => {
       try {
+        // Safari/WebKit versions without the Map upsert proposal method need this
+        // compatibility shim before the Office viewer (and its dependencies) load.
+        const mapPrototype = Map.prototype as Map<unknown, unknown> & {
+          getOrInsertComputed?: (key: unknown, callback: () => unknown) => unknown;
+        };
+        if (typeof mapPrototype.getOrInsertComputed !== 'function') {
+          Object.defineProperty(mapPrototype, 'getOrInsertComputed', {
+            configurable: true,
+            writable: true,
+            value: function (this: Map<unknown, unknown>, key: unknown, callback: () => unknown) {
+              if (this.has(key)) return this.get(key);
+              const value = callback();
+              this.set(key, value);
+              return value;
+            },
+          });
+        }
         const { ViewerClient } = await import('@zrimo/viewer');
         if (!active) return;
         client = ViewerClient.create({
