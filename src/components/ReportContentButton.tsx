@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flag, X } from 'lucide-react';
+import { Flag, MoreHorizontal, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { reportsApi, type ReportReason, type ReportTargetType } from '../api/reports';
 
@@ -68,4 +68,35 @@ export function ReportContentButton({
       </section>
     </div>}
   </>;
+}
+
+
+export type ReportMenuOption = {
+  targetType: ReportTargetType;
+  targetId: string;
+  label: string;
+};
+
+export function ReportOptionsMenu({
+  options,
+  className = '',
+  ariaLabel = 'Report options',
+}: {
+  options: ReportMenuOption[];
+  className?: string;
+  ariaLabel?: string;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  if (!options.length) return null;
+
+  return <div className={`relative inline-flex ${className}`}>
+    <button type="button" onClick={() => setMenuOpen(value => !value)} aria-label={ariaLabel} aria-haspopup="menu" aria-expanded={menuOpen} className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-300/80 bg-white/90 text-slate-600 shadow-sm transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-600 dark:bg-slate-900/90 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">
+      <MoreHorizontal size={16} />
+    </button>
+    {menuOpen && <div role="menu" className="absolute right-0 top-full z-40 mt-1 min-w-40 overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+      {options.map(option => <div role="menuitem" key={`${option.targetType}:${option.targetId}`} onClick={() => setMenuOpen(false)} className="rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
+        <ReportContentButton targetType={option.targetType} targetId={option.targetId} label={option.label} compact className="flex w-full items-center rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-700 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-rose-300" />
+      </div>)}
+    </div>}
+  </div>;
 }

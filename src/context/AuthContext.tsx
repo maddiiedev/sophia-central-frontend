@@ -15,32 +15,66 @@ type RegisterPayload = {
 type OnboardingPayload = Parameters<typeof academicApi.completeOnboarding>[0];
 type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<{ requiresOnboarding: boolean }>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const SESSION_USER_CACHE_KEY = 'sophis-central-session-user';
+
+function readCachedUser(): User | null {
+  try {
+    const value = window.sessionStorage.getItem(SESSION_USER_CACHE_KEY);
+    if (!value) return null;
+    const parsed = JSON.parse(value) as User;
+    if (!parsed || typeof parsed.id !== 'string' || !['student', 'lecturer', 'reviewer', 'moderator', 'admin', 'support'].includes(parsed.role)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function cacheUser(user: User | null) {
+  try {
+    if (user) window.sessionStorage.setItem(SESSION_USER_CACHE_KEY, JSON.stringify(user));
+    else window.sessionStorage.removeItem(SESSION_USER_CACHE_KEY);
+  } catch {
+    // Session storage is optional; authentication remains cookie-based.
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => readCachedUser());
   const [isLoading, setIsLoading] = useState(true);
   const initializeCsrf = useCallback(async () => {
     const response = await authApi.csrf();
     setCsrfToken(response.csrfToken);
   }, []);
-  const clearSession = useCallback(() => { setUser(null); setCsrfToken(null); }, []);
+  const clearSession = useCallback(() => { setUser(null); cacheUser(null); setCsrfToken(null); }, []);
   // /auth/me already returns the stable public R2 profile-image URL.
   // Keep session restoration independent from any separate image-URL request.
   const refreshSession = useCallback(async () => {
     const response = await authApi.me();
     setUser(response.user);
+    cacheUser(response.user);
     try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
   }, []);
 
   useEffect(() => {
     let active = true;
     const bootstrap = async () => {
-      // CSRF refresh is non-blocking on page load; session state is the only gate for protected routes.
+      // A same-tab cached profile lets the app shell render immediately while the
+      // cookie-backed session is verified in the background. API authorization
+      // still relies exclusively on the server session cookie.
+      const cachedUser = readCachedUser();
+      if (cachedUser) {
+        setUser(cachedUser);
+        setIsLoading(false);
+      }
       void initializeCsrf().catch(() => setCsrfToken(null));
       try {
         await refreshSession();
-      } catch {
-        clearSession();
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : '';
+        const unauthorized = /status 401|status 403|unauthorized|session expired/i.test(message);
+        if (unauthorized || !cachedUser) clearSession();
+        // Transient network/cold-start errors retain same-tab UI state; API
+        // requests remain cookie-authorized and can retry independently.
       } finally {
         if (active) setIsLoading(false);
       }
@@ -59,9 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!('user' in response)) {
       savePreAccountSession({ ...response.preAccount, onboardingToken: response.onboardingToken });
       setUser(null);
+      cacheUser(null);
       return { requiresOnboarding: true };
     }
     setUser(response.user);
+    cacheUser(response.user);
     try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));
     return { requiresOnboarding: false };
@@ -87,12 +123,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // The onboarding endpoint has successfully completed the profile; keep the
     // client route guard in sync even if the response contains a stale flag.
     setUser({ ...response.user, isProfileComplete: true });
+    cacheUser({ ...response.user, isProfileComplete: true });
   }, []);
   const completePreAccountOnboarding = useCallback(async (token: string, payload: OnboardingPayload) => {
     await initializeCsrf();
     const response = await authApi.completePreAccountOnboarding(token, payload);
     // A successful pre-account conversion means profile onboarding is complete.
     setUser({ ...response.user, isProfileComplete: true });
+    cacheUser({ ...response.user, isProfileComplete: true });
     clearPreAccountSession();
     try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
     void authApi.csrf().then((refreshed) => setCsrfToken(refreshed.csrfToken)).catch(() => setCsrfToken(null));

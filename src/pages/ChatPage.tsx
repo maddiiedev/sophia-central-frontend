@@ -5,7 +5,7 @@ import { chatApi, type ChatContact, type ChatMessage, type ChatRetentionPeriod }
 import { usePrivateDmInbox } from '../context/PrivateDmInboxContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ReportContentButton } from '../components/ReportContentButton';
+import { ReportOptionsMenu } from '../components/ReportContentButton';
 
 type Mode = 'group' | 'direct';
 
@@ -1441,18 +1441,6 @@ export function ChatPage() {
               </select>
             </label>
           )}
-          {!recipientDeleted && selectedContact && <ReportContentButton targetType="user" targetId={selectedContact.id} label="Report account" compact />}
-        </div>
-      )}
-
-      {mode === 'direct' && recipient && !recipientDeleted && (
-        <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 text-xs text-violet-950 dark:border-[#4C3A70] dark:bg-[#211A32] dark:text-[#E9DFFF]">
-          <span aria-hidden="true">⏳</span>
-          <p>
-            {retentionPeriod === 'off'
-              ? 'Automatic clearing is off for new messages. Messages sent under an earlier timer keep their original expiration. Changes apply to future messages only.'
-              : `New messages in this private conversation automatically disappear after ${retentionPeriod === '90_days' ? '90 days' : retentionPeriod === '7_days' ? '7 days' : '24 hours'}. Either participant can change this setting. The timer applies to messages sent after the setting is selected.`}
-          </p>
         </div>
       )}
 
@@ -1580,7 +1568,6 @@ export function ChatPage() {
                 >
                   {new Date(message.createdAt).toLocaleString()}
                 </time>
-                {!message.isOwn && message.senderId && <ReportContentButton targetType="user" targetId={message.senderId} label="Report account" compact />}
 
                 {message.isRead && message.isOwn && mode === 'direct' && (
                   <span className="font-semibold text-violet-800 dark:text-[#D8CCFF]">Seen</span>
@@ -1597,6 +1584,7 @@ export function ChatPage() {
                     edited
                   </span>
                 )}
+                {!message.isOwn && !message.isDeleted && message.senderId && <div className="ml-auto shrink-0"><ReportOptionsMenu options={[{ targetType: 'chat_message', targetId: message.id, label: 'Report message' }, { targetType: 'user', targetId: message.senderId, label: 'Report account' }]} ariaLabel="Message report options" /></div>}
               </div>
 
               {message.quotedMessage && (
@@ -1683,7 +1671,6 @@ export function ChatPage() {
                 </p>
               )}
 
-              {!message.isOwn && !message.isDeleted && message.senderId && <div className="mt-2"><ReportContentButton targetType="chat_message" targetId={message.id} label="Report message" compact /></div>}
 
               {message.isOwn && !message.isDeleted && (
                 <div className="mt-2 flex gap-3 text-xs">
