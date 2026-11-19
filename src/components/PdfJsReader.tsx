@@ -10,6 +10,7 @@ export function PdfJsReader({ url, page, zoom, onPageCount, onPageChange, search
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderTaskRef = useRef<{ cancel: () => void } | null>(null);
+  const renderQueueRef = useRef<Promise<void>>(Promise.resolve());
   const documentRef = useRef<PDFDocumentProxy | null>(null);
   const [loading, setLoading] = useState(true);
   const [pageCount, setPageCount] = useState(0);
@@ -52,29 +53,65 @@ export function PdfJsReader({ url, page, zoom, onPageCount, onPageChange, search
       if (!pdf || !canvas || !pageCount || !containerWidth) return;
       const validPage = Math.min(pageCount, Math.max(1, page));
       if (validPage !== page) onPageChange?.(validPage);
-      try {
-        renderTaskRef.current?.cancel();
-        const pdfPage = await pdf.getPage(validPage);
+
+      // Mobile browsers can emit several ResizeObserver updates while the reader
+      // is settling. PDF.js does not permit two render tasks to use one canvas,
+      // even when the earlier task has just been cancelled. Serialize all work
+      // that touches the canvas and wait for cancellation to settle first.
+      const runRender = async () => {
         if (cancelled) return;
-        const baseViewport = pdfPage.getViewport({ scale: 1 });
-        const fitScale = (containerWidth * (widthPercent / 100)) / baseViewport.width;
-        const viewport = pdfPage.getViewport({ scale: fitScale * (zoom / 100) });
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = Math.floor(viewport.width * dpr); canvas.height = Math.floor(viewport.height * dpr);
-        canvas.style.width = viewport.width + 'px'; canvas.style.height = viewport.height + 'px';
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Canvas rendering is unavailable.');
-        const task = pdfPage.render({ canvas, canvasContext: context, viewport, transform: dpr === 1 ? undefined : [dpr, 0, 0, dpr, 0, 0] });
-        renderTaskRef.current = task;
-        await task.promise;
-        if (renderTaskRef.current === task) renderTaskRef.current = null;
-      } catch (error) {
-        const cancelledRender = error instanceof Error && error.name === 'RenderingCancelledException';
-        if (!cancelled && !cancelledRender) setRenderError(error instanceof Error ? error.message : 'Unable to render this page.');
-      }
+        setRenderError('');
+        try {
+          const pdfPage = await pdf.getPage(validPage);
+          if (cancelled) return;
+          const baseViewport = pdfPage.getViewport({ scale: 1 });
+          const fitScale = (containerWidth * (widthPercent / 100)) / baseViewport.width;
+          const viewport = pdfPage.getViewport({ scale: fitScale * (zoom / 100) });
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const maxCanvasPixels = 16_000_000;
+          const pixelCount = viewport.width * viewport.height * dpr * dpr;
+          const safeDpr = pixelCount > maxCanvasPixels
+            ? Math.max(1, Math.sqrt(maxCanvasPixels / (viewport.width * viewport.height)))
+            : dpr;
+          canvas.width = Math.max(1, Math.floor(viewport.width * safeDpr));
+          canvas.height = Math.max(1, Math.floor(viewport.height * safeDpr));
+          canvas.style.width = viewport.width + 'px';
+          canvas.style.height = viewport.height + 'px';
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('This browser could not create a document display surface. Please reload the reader.');
+          const task = pdfPage.render({
+            canvas,
+            canvasContext: context,
+            viewport,
+            transform: safeDpr === 1 ? undefined : [safeDpr, 0, 0, safeDpr, 0, 0],
+          });
+          renderTaskRef.current = task;
+          try {
+            await task.promise;
+          } finally {
+            if (renderTaskRef.current === task) renderTaskRef.current = null;
+          }
+        } catch (error) {
+          const cancelledRender = error instanceof Error && error.name === 'RenderingCancelledException';
+          if (!cancelled && !cancelledRender) {
+            const message = error instanceof Error ? error.message : 'Unable to render this page.';
+            setRenderError(message.includes('same canvas') || message.includes('multiple render')
+              ? 'The document viewer was interrupted while rendering. Please try reloading the reader.'
+              : message);
+          }
+        }
+      };
+
+      const previous = renderQueueRef.current;
+      const next = previous.catch(() => undefined).then(runRender);
+      renderQueueRef.current = next;
+      await next;
     };
     void render();
-    return () => { cancelled = true; renderTaskRef.current?.cancel(); renderTaskRef.current = null; };
+    return () => {
+      cancelled = true;
+      renderTaskRef.current?.cancel();
+    };
   }, [page, zoom, pageCount, containerWidth, widthPercent]);
 
   useEffect(() => {
