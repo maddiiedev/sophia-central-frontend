@@ -25,6 +25,9 @@ export interface User {
   avatar?: string;
   profileImage?: string;
   isVerified?: boolean;
+  emailVerified?: boolean;
+  isSuspended?: boolean;
+  accountStatus?: 'active' | 'deactivated' | 'pending_deletion';
   createdAt?: string;
   updatedAt?: string;
   firstName?: string;

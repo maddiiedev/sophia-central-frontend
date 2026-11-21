@@ -32,10 +32,6 @@ export type SupportRequest = {
 
 export const supportApi = {
   emailStatus: () => apiRequest<SupportEmailStatus>('/support-requests/email-status'),
-  publicCreate: (payload: { name: string; email: string; institution?: string; faculty?: string; department?: string; category: string; subject: string; description: string; links: string[] }) =>
-    apiRequest<{ success: boolean; message: string }>('/support-requests/public', { method: 'POST', body: JSON.stringify(payload) }),
-  verifyPublicEmail: (token: string) =>
-    apiRequest<{ success: boolean; ticketNumber: string; message: string }>(`/support-requests/public/verify?token=${encodeURIComponent(token)}`),
   create: (payload: { subject: string; category: string; description: string; links: string[]; attachments: string[] }) =>
     apiRequest<SupportRequest>('/support-requests', { method: 'POST', body: JSON.stringify(payload) }),
   mine: () => apiRequest<SupportTicketTracking[]>('/support-requests/mine'),
@@ -49,7 +45,7 @@ export const supportApi = {
     apiRequest<SupportRequest[]>(`/support-requests/queue?status=${status}`),
   updateStatus: (id: string, status: 'under_review' | 'reviewed') =>
     apiRequest<SupportRequest>(`/support-requests/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
-  escalate: (id: string, targetRole: 'moderator' | 'admin', reason: string) =>
+  escalate: (id: string, targetRole: 'admin', reason: string) =>
     apiRequest<{ success: boolean; ticketNumber: string; notified: number }>(`/support-requests/${encodeURIComponent(id)}/escalate`, { method: 'PATCH', body: JSON.stringify({ targetRole, reason }) }),
   conclude: (id: string, resolutionMessage: string) =>
     apiRequest<SupportRequest>(`/support-requests/${encodeURIComponent(id)}/respond`, {
