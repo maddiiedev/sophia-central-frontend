@@ -18,7 +18,7 @@ export const publicContactEmails = {
   general: 'sophiscentral@gmail.com',
 
   // EDIT HERE: currently routes to the supplied contact mailbox; replace with support alias.
-  support: 'sophiscentral@gmail.com',
+  support: 'sophiscentral+support@gmail.com',
 
   // EDIT HERE: currently routes to the supplied contact mailbox with a Careers subject;
   // replace with the dedicated careers alias when it has been configured.
