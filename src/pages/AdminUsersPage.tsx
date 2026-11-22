@@ -122,9 +122,9 @@ export function AdminUsersPage() {
   const setReason = (id: string, value: string) => setReasons(current => ({ ...current, [id]: value }));
 
   return <div className="space-y-6">
-    <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-6 text-slate-950 shadow-sm dark:border-slate-700 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950 dark:text-white">
+    <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-4 text-slate-950 shadow-sm sm:p-8 dark:border-slate-700 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950 dark:text-white">
       <p className="text-xs uppercase tracking-[0.2em] text-violet-700 dark:text-violet-200">Admin workspace · Platform access</p>
-      <h2 className="mt-2 text-2xl font-bold">Platform accounts</h2>
+      <h2 className="mt-2 text-2xl font-bold sm:text-3xl">Platform accounts</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Manage only the designated Support and existing Moderator identities. Ordinary student, lecturer and reviewer accounts cannot be converted into platform accounts here.</p>
     </div>
 
