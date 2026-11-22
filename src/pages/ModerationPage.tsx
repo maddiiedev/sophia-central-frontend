@@ -20,7 +20,8 @@ export function ModerationPage() {
   const isPlatformModerator = user?.role === 'moderator' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
   const isGlobalReviewer = user?.isGlobalReviewer === true;
-  const canGovernReviewers = isAdmin || isGlobalReviewer;
+  const canGovernReviewers = isAdmin;
+  const canManageAssignments = isAdmin || isGlobalReviewer;
   const showReviewerGovernanceAdminTools = canGovernReviewers;
   const isReviewer = user?.role === 'reviewer' || user?.hasReviewerAccess === true;
   const [items, setItems] = useState<ModerationItem[]>([]);
@@ -57,9 +58,9 @@ export function ModerationPage() {
       setItems(Array.isArray(queue) ? queue : []);
       setConflictDeclarations(Object.fromEntries((Array.isArray(queue) ? queue : []).map(item => [item.id, item.reviewConflictDeclaration ?? ''])));
       setConflictAcknowledged({});
-      if (canGovernReviewers) {
+      if (canManageAssignments) {
         try {
-          const accounts = await apiRequest<ReviewerOption[]>('/moderation/reviewers');
+          const accounts = await apiRequest<ReviewerOption[]>(isAdmin ? '/moderation/reviewers' : '/moderation/assignable-reviewers');
           setReviewers(accounts.filter((account) => account.hasReviewerAccess === true && !account.isSuspended));
         } catch {
           setReviewers([]);
@@ -215,7 +216,7 @@ export function ModerationPage() {
     item.reviewer?.email || 'Sophis reviewer';
 
   return <div className="space-y-6">
-    {isGlobalReviewer ? <header className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-4 text-slate-950 shadow-sm sm:p-8 dark:border-slate-700 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950 dark:text-white"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700 dark:text-violet-200">Academic governance</p><h1 className="mt-3 break-words text-2xl font-bold tracking-tight sm:text-3xl">Global Academic Reviewer</h1><h2 className="mt-2 text-base font-semibold text-slate-900 dark:text-white sm:text-lg">All subjects · all academic levels</h2><p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">Review pending Student and Lecturer materials across every field and level, oversee reviewer applications and assignments, and inspect reviewer conflict records. This capability does not include moderator support, user-administration, wallet or platform-settings permissions.</p></header> : <SectionTitle eyebrow={isReviewer ? "Academic quality & trust" : isAdmin ? "Platform governance" : "Moderator workspace"} title={isReviewer ? "Assigned academic reviews" : isAdmin ? "Reviewer assignment" : "User & content reports"} />}
+    {isGlobalReviewer ? <header className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-4 text-slate-950 shadow-sm sm:p-8 dark:border-slate-700 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950 dark:text-white"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700 dark:text-violet-200">Academic governance</p><h1 className="mt-3 break-words text-2xl font-bold tracking-tight sm:text-3xl">Global Academic Reviewer</h1><h2 className="mt-2 text-base font-semibold text-slate-900 dark:text-white sm:text-lg">All subjects · all academic levels</h2><p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">Review pending Student and Lecturer materials across every field and level, manage academic review assignments, and maintain platform-wide academic quality. This capability does not include moderator support, user-administration, wallet or platform-settings permissions.</p></header> : <SectionTitle eyebrow={isReviewer ? "Academic quality & trust" : isAdmin ? "Platform governance" : "Moderator workspace"} title={isReviewer ? "Assigned academic reviews" : isAdmin ? "Reviewer assignment" : "User & content reports"} />}
     {user?.role === 'reviewer' && user.academicAccountType === 'external_reviewer' && user.hasReviewerAccess === true && !isGlobalReviewer && <section className="flex flex-col gap-4 rounded-2xl border border-[#E4DDF8] bg-[#F7F4FF] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 dark:border-[#40365A] dark:bg-[#211A34]"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6121D0] dark:text-[#C4A7FF]">Additional account access</p><h2 className="mt-1 text-lg font-bold text-[#091F5B] dark:text-white">Become a Student or Lecturer</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-[#52627B] dark:text-slate-300">Add either a Student or Lecturer workspace to this same account. Your reviewer access and history will be retained; the choice is one-time.</p></div><Link to="/reviewer-account-transition" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#6121D0] px-4 py-3 text-sm font-semibold text-white hover:bg-[#5120B0]">Choose academic identity</Link></section>}
     {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</div>}
     {notice && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</div>}
@@ -246,7 +247,7 @@ export function ModerationPage() {
                   <div><dt className="inline font-medium text-[#091F5B]">Submitted: </dt><dd className="inline">{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Date unavailable'}</dd></div>
                 </dl>
                 {item.hasFile && <Link to={`/resource/${encodeURIComponent(item.id)}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#6121D0] underline underline-offset-4 hover:text-[#2C36D9]"><FileText size={15} /> Open attached upload in reader <ArrowUpRight size={14} /></Link>}
-                {canGovernReviewers && <div className="mt-4 flex flex-col gap-2 rounded-xl bg-[#F8FAFD] p-3 sm:flex-row sm:items-center">
+                {canManageAssignments && <div className="mt-4 flex flex-col gap-2 rounded-xl bg-[#F8FAFD] p-3 sm:flex-row sm:items-center">
                   <label className="min-w-0 flex-1 text-xs font-semibold text-[#091F5B]">Assign subject-matter reviewer
                     <select value={assignments[item.id] ?? item.assignedReviewerId ?? ''} onChange={(event) => setAssignments((current) => ({ ...current, [item.id]: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-normal">
                       <option value="">Select reviewer</option>
