@@ -13,7 +13,7 @@ type RegisterPayload = {
   [key: string]: unknown;
 };
 type OnboardingPayload = Parameters<typeof academicApi.completeOnboarding>[0];
-type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<{ requiresOnboarding: boolean }>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
+type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<{ requiresOnboarding: boolean; requiresAdminMfa?: boolean; setupRequired?: boolean; challengeToken?: string }>; startAdminMfaEnrollment: (challengeToken: string) => Promise<{ provisioningUri: string; secret: string }>; confirmAdminMfaEnrollment: (challengeToken: string, code: string) => Promise<string[]>; verifyAdminMfa: (challengeToken: string, code: string) => Promise<void>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const SESSION_USER_CACHE_KEY = 'sophis-central-session-user';
 
@@ -90,6 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (identifier: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
     const response = await authApi.login({ identifier, password });
+    if ('adminMfaRequired' in response) {
+      setUser(null);
+      cacheUser(null);
+      return { requiresOnboarding: false, requiresAdminMfa: true, setupRequired: response.setupRequired, challengeToken: response.challengeToken };
+    }
     if (!('user' in response)) {
       savePreAccountSession({ ...response.preAccount, onboardingToken: response.onboardingToken });
       setUser(null);
@@ -103,6 +108,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { requiresOnboarding: false };
   }, [initializeCsrf]);
 
+  const startAdminMfaEnrollment = useCallback(async (challengeToken: string) => {
+    await initializeCsrf();
+    const result = await authApi.adminMfaEnrollmentStart(challengeToken);
+    return { provisioningUri: result.provisioningUri, secret: result.secret };
+  }, [initializeCsrf]);
+  const confirmAdminMfaEnrollment = useCallback(async (challengeToken: string, code: string) => {
+    await initializeCsrf();
+    const result = await authApi.adminMfaEnrollmentConfirm(challengeToken, code);
+    setUser(result.user);
+    cacheUser(result.user);
+    try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
+    return result.recoveryCodes;
+  }, [initializeCsrf]);
+  const verifyAdminMfa = useCallback(async (challengeToken: string, code: string) => {
+    await initializeCsrf();
+    const result = await authApi.adminMfaVerify(challengeToken, code);
+    setUser(result.user);
+    cacheUser(result.user);
+    try { window.localStorage.setItem('sophis-central-has-authenticated', 'true'); } catch { /* Storage is optional. */ }
+  }, [initializeCsrf]);
   const register = useCallback(async (payload: RegisterPayload) => {
     await initializeCsrf();
     const response = await authApi.register({
@@ -138,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try { await authApi.logout(); } finally { clearSession(); }
   }, [clearSession]);
-  const value = useMemo<AuthContextValue>(() => ({ user, isAuthenticated: Boolean(user), isLoading, login, register, completeOnboarding, completePreAccountOnboarding, logout, refreshSession }), [user, isLoading, login, register, completeOnboarding, completePreAccountOnboarding, logout, refreshSession]);
+  const value = useMemo<AuthContextValue>(() => ({ user, isAuthenticated: Boolean(user), isLoading, login, startAdminMfaEnrollment, confirmAdminMfaEnrollment, verifyAdminMfa, register, completeOnboarding, completePreAccountOnboarding, logout, refreshSession }), [user, isLoading, login, startAdminMfaEnrollment, confirmAdminMfaEnrollment, verifyAdminMfa, register, completeOnboarding, completePreAccountOnboarding, logout, refreshSession]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function useAuth() { const context = useContext(AuthContext); if (!context) throw new Error('useAuth must be used inside AuthProvider'); return context; }

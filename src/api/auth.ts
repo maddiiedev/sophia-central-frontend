@@ -13,7 +13,10 @@ type RegisterPayload = {
 
 export const authApi = {
   csrf: () => apiRequest<{ csrfToken: string }>('/auth/csrf'),
-  login: (payload: LoginPayload) => apiRequest<{ user: User } | { preAccountRequired: true; onboardingToken: string; preAccount: { email: string; firstName: string; lastName: string; academicHandle: string; role: Extract<UserRole, 'student' | 'lecturer' | 'reviewer'>; progress?: Record<string, unknown> } }>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
+  login: (payload: LoginPayload) => apiRequest<{ user: User } | { adminMfaRequired: true; setupRequired: boolean; challengeToken: string } | { preAccountRequired: true; onboardingToken: string; preAccount: { email: string; firstName: string; lastName: string; academicHandle: string; role: Extract<UserRole, 'student' | 'lecturer' | 'reviewer'>; progress?: Record<string, unknown> } }>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
+  adminMfaEnrollmentStart: (challengeToken: string) => apiRequest<{ challengeToken: string; provisioningUri: string; secret: string }>('/auth/admin-mfa/enrollment/start', { method: 'POST', body: JSON.stringify({ challengeToken }) }),
+  adminMfaEnrollmentConfirm: (challengeToken: string, code: string) => apiRequest<{ user: User; recoveryCodes: string[] }>('/auth/admin-mfa/enrollment/confirm', { method: 'POST', body: JSON.stringify({ challengeToken, code }) }),
+  adminMfaVerify: (challengeToken: string, code: string) => apiRequest<{ user: User }>('/auth/admin-mfa/verify', { method: 'POST', body: JSON.stringify({ challengeToken, code }) }),
   checkAcademicHandleAvailability: (handle: string) => apiRequest<{ available: boolean; message: string }>(`/auth/academic-handle/availability?handle=${encodeURIComponent(handle)}`),
   checkReviewerRegistrationIntent: (payload: { email: string; academicHandle: string }) => apiRequest<{ requiresSignIn: boolean; signInIdentifier?: string }>('/auth/reviewer-registration-check', { method: 'POST', body: JSON.stringify(payload) }),
   register: (payload: RegisterPayload) => apiRequest<{ emailSent: boolean; message: string }>('/auth/signup', { method: 'POST', body: JSON.stringify(payload) }),

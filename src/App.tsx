@@ -1,5 +1,5 @@
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from './context/AuthContext';
@@ -276,13 +276,82 @@ function ReviewerEntryRedirect() {
   return <Navigate to={destination} replace />;
 }
 
+function AdminMfaChallengePage({ challengeToken, setupRequired, provisioningUri, secret, onBack }: { challengeToken: string; setupRequired: boolean; provisioningUri: string; secret: string; onBack: () => void }) {
+  const { confirmAdminMfaEnrollment, verifyAdminMfa } = useAuth();
+  const navigate = useNavigate();
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError('');
+    setBusy(true);
+    try {
+      if (setupRequired) {
+        const codes = await confirmAdminMfaEnrollment(challengeToken, code.trim());
+        setRecoveryCodes(codes);
+      } else {
+        await verifyAdminMfa(challengeToken, code.trim());
+        navigate('/admin', { replace: true });
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'MFA verification failed. Please retry.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const copyCodes = async () => {
+    try {
+      await navigator.clipboard.writeText(recoveryCodes.join('\n'));
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return <main className="min-h-screen bg-[#F3F6FC] px-4 py-8 sm:px-6 sm:py-12">
+    <section className="mx-auto w-full max-w-xl rounded-3xl border border-[#DCE4EF] bg-white p-6 shadow-[0_24px_70px_rgba(7,30,84,0.10)] sm:p-9">
+      <BrandLogo variant="full" tone="light" className="mb-8" />
+      <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700"><span className="text-xl">🔐</span></div>
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#6121D0]">Administrator security</p>
+      <h1 className="mt-2 text-2xl font-semibold text-[#091F5B]">{recoveryCodes.length ? 'Save your recovery codes' : setupRequired ? 'Set up two-factor authentication' : 'Verify your sign-in'}</h1>
+      <p className="mt-3 text-sm leading-6 text-[#64748B]">{recoveryCodes.length ? 'These codes are shown only once. Store them somewhere secure. Each code can be used once if you lose access to your authenticator.' : setupRequired ? 'Admin accounts must use an authenticator app before access is granted. Add Sophis Central Admin to your app, then enter the current six-digit code.' : 'Enter the six-digit code from your authenticator app. You may also enter one unused recovery code.'}</p>
+      {recoveryCodes.length ? <div className="mt-6">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-violet-200 bg-violet-50 p-4 sm:grid-cols-2">{recoveryCodes.map((value) => <code key={value} className="rounded-lg bg-white px-2 py-2 text-center text-sm font-semibold tracking-wider text-slate-900">{value}</code>)}</div>
+        <button type="button" onClick={() => void copyCodes()} className="mt-4 w-full rounded-xl border border-violet-200 px-4 py-3 text-sm font-semibold text-violet-800">{copied ? 'Copied recovery codes' : 'Copy recovery codes'}</button>
+        <button type="button" onClick={() => navigate('/admin', { replace: true })} className="brand-button mt-3 w-full px-4 py-3 font-semibold">I have saved these codes · Continue</button>
+      </div> : <>
+        {setupRequired && <div className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div><p className="text-sm font-semibold text-slate-900">1. Add authenticator</p><p className="mt-1 text-xs leading-5 text-slate-600">In your authenticator app, choose to add an account manually and use this key.</p></div>
+          <code className="block break-all rounded-xl bg-white p-3 text-center text-lg font-bold tracking-[0.16em] text-violet-900">{secret}</code>
+          <button type="button" onClick={() => { void navigator.clipboard?.writeText(secret).catch(() => undefined); }} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700">Copy setup key</button>
+          <details><summary className="cursor-pointer text-xs font-medium text-slate-600">Provisioning URI (advanced)</summary><code className="mt-2 block break-all text-xs text-slate-500">{provisioningUri}</code></details>
+        </div>}
+        <form onSubmit={submit} className="mt-6 space-y-4">
+          {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+          <label className="block"><span className="mb-2 block text-sm font-medium text-slate-800">{setupRequired ? '2. Confirm authenticator code' : 'Authenticator or recovery code'}</span><input value={code} onChange={(event) => setCode(event.target.value)} inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={64} className="brand-input text-center text-lg tracking-[0.2em]" placeholder="000000" /></label>
+          <button type="submit" disabled={busy || !code.trim()} className="brand-button w-full px-4 py-3 font-semibold disabled:opacity-60">{busy ? 'Verifying…' : setupRequired ? 'Enable MFA and continue' : 'Verify and sign in'}</button>
+        </form>
+      </>}
+      <button type="button" onClick={onBack} className="mt-5 w-full text-sm font-medium text-slate-500 hover:text-slate-800">Return to sign in</button>
+    </section>
+  </main>;
+}
+
 function LoginPage() {
-  const { login, isAuthenticated, user } = useAuth();
+  const { login, startAdminMfaEnrollment, confirmAdminMfaEnrollment, verifyAdminMfa, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accountNotice = searchParams.get('account');
   const registrationIntent = searchParams.get('intent');
   const [submitError, setSubmitError] = useState('');
+  const [mfaChallenge, setMfaChallenge] = useState('');
+  const [mfaSetupRequired, setMfaSetupRequired] = useState(false);
+  const [mfaProvisioningUri, setMfaProvisioningUri] = useState('');
+  const [mfaSecret, setMfaSecret] = useState('');
   const [showDeletionCancellation, setShowDeletionCancellation] = useState(false);
   const [cancelEmail, setCancelEmail] = useState('');
   const [cancelPassword, setCancelPassword] = useState('');
@@ -295,6 +364,16 @@ function LoginPage() {
     setSubmitError('');
     try {
       const result = await login(values.identifier.trim(), values.password);
+      if (result.requiresAdminMfa && result.challengeToken) {
+        setMfaChallenge(result.challengeToken);
+        setMfaSetupRequired(Boolean(result.setupRequired));
+        if (result.setupRequired) {
+          const enrollment = await startAdminMfaEnrollment(result.challengeToken);
+          setMfaProvisioningUri(enrollment.provisioningUri);
+          setMfaSecret(enrollment.secret);
+        }
+        return;
+      }
       if (result.requiresOnboarding) {
         const pendingRole = readPreAccountSession()?.role;
         const onboardingPath = pendingRole === 'lecturer' ? '/lecturer/onboarding/profile' : pendingRole === 'reviewer' ? '/reviewer/onboarding/profile' : '/student/onboarding/profile';
@@ -303,6 +382,10 @@ function LoginPage() {
         navigate(`/login?intent=${encodeURIComponent(registrationIntent)}`, { replace: true });
       }
     } catch (error) {
+      setMfaChallenge('');
+      setMfaSetupRequired(false);
+      setMfaProvisioningUri('');
+      setMfaSecret('');
       setSubmitError(error instanceof Error ? error.message : 'Sign in failed. Check your email or username and password, then try again.');
     }
   };
@@ -319,6 +402,7 @@ function LoginPage() {
       setCancelError(error instanceof Error ? error.message : 'Unable to cancel the deletion request.');
     } finally { setCancellingDeletion(false); }
   };
+  if (mfaChallenge) return <AdminMfaChallengePage challengeToken={mfaChallenge} setupRequired={mfaSetupRequired} provisioningUri={mfaProvisioningUri} secret={mfaSecret} onBack={() => { setMfaChallenge(''); setMfaProvisioningUri(''); setMfaSecret(''); setSubmitError(''); }} />;
   if (isAuthenticated && user) return <Navigate to={destinationForUser(user)} replace />;
   return (
     <main className="min-h-screen bg-[#F3F6FC] px-4 py-6 sm:px-6 sm:py-10">

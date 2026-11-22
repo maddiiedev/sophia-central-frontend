@@ -31,6 +31,7 @@ function eventLabel(event: AdminAuditEvent) {
   if (event.eventType === 'resource_review') return `Academic resource review ${event.action}`;
   if (event.eventType === 'admin_bootstrap') return `Admin bootstrap ${event.action}`;
   if (event.eventType === 'admin_escalation') return `${event.role} escalation received`;
+  if (event.eventType === 'admin_mfa') return `Admin MFA ${event.action.replace(/_/g, ' ')}`;
   return `Reviewer application ${event.action.replace(/_/g, ' ')}`;
 }
 
