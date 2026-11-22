@@ -21,9 +21,9 @@ export function AdminAuditPage() {
 
   const events = query.data ?? [];
   return <div className="space-y-6">
-    <header className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-violet-950 p-6 text-white sm:p-8">
-      <div className="flex items-center gap-3"><span className="rounded-xl bg-white/10 p-3"><Activity size={22}/></span><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-200">Administration · Security</p><h2 className="mt-1 text-2xl font-bold">Audit history</h2></div></div>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Review recorded platform-role approvals, reviewer application decisions, reviewer assignments, academic resource reviews, Admin bootstrap events and Admin MFA enrollment/login activity. Audit-event records are read-only in this workspace.</p>
+    <header className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-6 text-slate-950 shadow-sm sm:p-8 dark:border-slate-700 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950 dark:text-white">
+      <div className="flex items-center gap-3"><span className="rounded-xl bg-violet-100 p-3 text-violet-700 dark:bg-white/10 dark:text-violet-200"><Activity size={22}/></span><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-700 dark:text-violet-200">Administration · Security</p><h2 className="mt-1 text-2xl font-bold">Audit history</h2></div></div>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">Review recorded platform-role approvals, reviewer application decisions, reviewer assignments, academic resource reviews, Admin bootstrap events and Admin MFA enrollment/login activity. Audit-event records are read-only in this workspace.</p>
     </header>
 
     <div className="flex flex-wrap items-center justify-between gap-3">
