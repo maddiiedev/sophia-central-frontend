@@ -7,7 +7,7 @@ type PolicySection = { title: string; paragraphs?: string[]; bullets?: string[] 
 
 const sections: PolicySection[] = [
   { title: '1. Scope and principles', paragraphs: [
-    'This policy explains how Sophis Central reviews refund requests for paid academic materials, Wisdom Points, platform services, and other paid offerings, but only where the relevant purchase or payment feature has been officially enabled and the transaction was made through a payment channel provided or approved by Sophis Central. A planned feature is not currently purchasable and does not create a refund transaction before launch.',
+    'This policy explains how Sophis Central reviews refund requests for paid academic materials, Wisdom Points, platform services, and other paid offerings, but only where the relevant purchase or payment feature has been officially enabled and the transaction was made through a payment channel provided or approved by Sophis Central. A feature that is not enabled for transactions does not create a purchase or refund transaction.',
     'Requests are assessed fairly using the transaction record, the service or access promised, the evidence available, the circumstances of the request, and applicable consumer-protection law.'
   ]},
   { title: '2. Circumstances that may qualify', bullets: [

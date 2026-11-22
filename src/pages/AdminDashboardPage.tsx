@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, ShieldCheck, Users, UserCog, ClipboardList, LifeBuoy, Activity } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Users, UserCog, ClipboardList, Activity } from 'lucide-react';
 import { usersApi, type AdminAuditEvent, type AdminOverview } from '../api/users';
 import { LoadingState } from '../components/states/LoadingState';
 import { ErrorState } from '../components/states/ErrorState';
@@ -51,7 +51,7 @@ export function AdminDashboardPage() {
     ? 'Global Academic Reviewer authority active'
     : globalReviewer
       ? `Reviewer status: ${globalReviewer.reviewerStatus.replace(/_/g, ' ')}`
-      : 'Existing account was not returned; verify its identity before changing access';
+      : 'Account status unavailable';
 
   return <div className="space-y-7">
     <header className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-6 text-slate-950 shadow-sm sm:p-8 dark:border-slate-700 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950 dark:text-white">
@@ -70,7 +70,7 @@ export function AdminDashboardPage() {
     <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
       <article className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
-          <div><p className="text-xs font-semibold uppercase tracking-wider text-violet-700">Existing designated identity</p><h3 className="mt-2 text-xl font-bold text-slate-950">Global Academic Reviewer</h3></div>
+          <div><p className="text-xs font-semibold uppercase tracking-wider text-violet-700">Reviewer governance</p><h3 className="mt-2 text-xl font-bold text-slate-950">Global Academic Reviewer</h3></div>
           <span className="rounded-xl bg-violet-50 p-3 text-violet-700"><ShieldCheck size={21}/></span>
         </div>
         {globalReviewer ? <>
@@ -83,8 +83,8 @@ export function AdminDashboardPage() {
             <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Latest application</p><p className="mt-1 text-sm font-semibold capitalize text-slate-900">{globalReviewer.latestApplication?.status.replace(/_/g, ' ') ?? 'No application record'}</p></div>
           </div>
           {globalReviewer.latestModerationReview && <p className="mt-3 text-xs leading-5 text-slate-600">Latest resource review: <span className="font-semibold">{globalReviewer.latestModerationReview.resourceTitle || 'Resource record'}</span> · {globalReviewer.latestModerationReview.status.replace(/_/g, ' ')} · {formatDate(globalReviewer.latestModerationReview.createdAt)}</p>}
-          <p className="mt-4 text-xs leading-5 text-slate-500">This existing account, application records, reviewer assignments and resource-review history are preserved. Global Reviewer authority is separate from Admin, Moderator and Support permissions.</p>
-        </> : <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">The account using sophiscentral@gmail.com was not found. Do not create a replacement. Verify its existing record before changing reviewer access.</p>}
+          <p className="mt-4 text-xs leading-5 text-slate-500">Global Reviewer access is managed separately from Admin, Moderator and Support permissions.</p>
+        </> : <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">The Global Reviewer account is currently unavailable. Please try again later or contact platform support.</p>}
         <Link to="/admin/reviewers?tab=applications" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-violet-700 hover:text-violet-900">Open reviewer governance <ArrowRight size={15}/></Link>
       </article>
 
@@ -113,8 +113,5 @@ export function AdminDashboardPage() {
       </div> : <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No platform-role or reviewer decision events have been recorded yet.</p>}
     </section>
 
-    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-      <div className="flex items-center gap-3"><LifeBuoy size={19} className="text-violet-700"/><div><h3 className="font-semibold text-slate-900">Privileged account provisioning</h3><p className="mt-1 text-sm leading-6 text-slate-600">Admin is provisioned through a controlled bootstrap. Support and Moderator remain unavailable to their workspaces until identity setup, verification requirements and explicit Admin approval are complete.</p></div></div>
-    </section>
   </div>;
 }
