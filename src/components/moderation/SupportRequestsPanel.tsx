@@ -7,6 +7,7 @@ export function SupportRequestsPanel() {
   const [status, setStatus] = useState<SupportRequestStatus | 'history'>('pending');
   const [items, setItems] = useState<SupportRequest[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [queueStats, setQueueStats] = useState({ pending: 0, underReview: 0, reviewed: 0, responded: 0 });
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [resolution, setResolution] = useState<Record<string, string>>({});
@@ -22,10 +23,11 @@ export function SupportRequestsPanel() {
       const pending = await supportApi.queue('pending');
       const underReview = await supportApi.queue('under_review');
       const reviewed = await supportApi.queue('reviewed');
+      const responseSent = await supportApi.queue('response_sent');
+      const concluded = await supportApi.queue('concluded');
       setPendingCount(pending.length);
+      setQueueStats({ pending: pending.length, underReview: underReview.length, reviewed: reviewed.length, responded: responseSent.length + concluded.length });
       if (status === 'history') {
-        const responseSent = await supportApi.queue('response_sent');
-        const concluded = await supportApi.queue('concluded');
         setItems([...pending, ...underReview, ...reviewed, ...responseSent, ...concluded].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       } else if (status === 'pending') setItems(pending);
       else setItems(await supportApi.queue(status));
@@ -65,6 +67,9 @@ export function SupportRequestsPanel() {
     <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#6121D0]">Sophis Central Support</p><h2 className="mt-1 text-xl font-bold text-[#091F5B]">Support requests</h2><p className="mt-1 text-sm text-[#5C6982]">Review user requests, record resolutions and keep the support conversation history together.</p></div><button type="button" onClick={() => void load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-semibold text-[#091F5B] hover:border-[#6121D0]"><RefreshCw size={15} className={loading ? 'animate-spin' : ''}/> Refresh</button></div>
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">{notice}</p>}
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Support queue overview">
+      {[{label:'Submitted',value:queueStats.pending,description:'Awaiting review',tone:'amber'},{label:'Under review',value:queueStats.underReview,description:'Being handled',tone:'blue'},{label:'Reviewed',value:queueStats.reviewed,description:'Ready for response',tone:'violet'},{label:'Responded',value:queueStats.responded,description:'Response sent',tone:'emerald'}].map(card=><div key={card.label} className="min-w-0 rounded-2xl border border-[#DCE4EF] bg-white p-3 sm:p-4"><p className="text-xs font-medium text-[#5C6982]">{card.label}</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{card.value}</p><p className="mt-1 text-xs text-[#71809A]">{card.description}</p></div>)}
+    </div>
     <div className="flex items-start gap-3 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4">
       {emailStatus?.configured ? <MailCheck size={19} className="mt-0.5 shrink-0 text-emerald-700"/> : <MailX size={19} className="mt-0.5 shrink-0 text-amber-700"/>}
       <div className="min-w-0">
