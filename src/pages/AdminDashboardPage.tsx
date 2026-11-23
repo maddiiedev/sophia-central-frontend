@@ -29,7 +29,7 @@ function eventLabel(event: AdminAuditEvent) {
   if (event.eventType === 'platform_role') return `${event.role} account ${event.action}`;
   if (event.eventType === 'reviewer_assignment') return `Reviewer assignment ${event.action}`;
   if (event.eventType === 'resource_review') return `Academic resource review ${event.action}`;
-  if (event.eventType === 'admin_bootstrap') return `Admin bootstrap ${event.action}`;
+  if (event.eventType === 'admin_bootstrap') return `Initial administrator setup ${event.action}`;
   if (event.eventType === 'admin_escalation') return `${event.role} escalation received`;
   if (event.eventType === 'admin_mfa') return `Admin MFA ${event.action.replace(/_/g, ' ')}`;
   return `Reviewer application ${event.action.replace(/_/g, ' ')}`;
@@ -83,7 +83,7 @@ export function AdminDashboardPage() {
             <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Latest application</p><p className="mt-1 text-sm font-semibold capitalize text-slate-900">{globalReviewer.latestApplication?.status.replace(/_/g, ' ') ?? 'No application record'}</p></div>
           </div>
           {globalReviewer.latestModerationReview && <p className="mt-3 text-xs leading-5 text-slate-600">Latest resource review: <span className="font-semibold">{globalReviewer.latestModerationReview.resourceTitle || 'Resource record'}</span> · {globalReviewer.latestModerationReview.status.replace(/_/g, ' ')} · {formatDate(globalReviewer.latestModerationReview.createdAt)}</p>}
-          <p className="mt-4 text-xs leading-5 text-slate-500">Global Reviewer access is managed separately from Admin, Moderator and Support permissions.</p>
+          <p className="mt-4 text-xs leading-5 text-slate-500">Global Academic Reviewer permissions are limited to academic review oversight.</p>
         </> : <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">The Global Reviewer account is currently unavailable. Please try again later or contact platform support.</p>}
         <Link to="/admin/reviewers?tab=applications" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-violet-700 hover:text-violet-900">Open reviewer governance <ArrowRight size={15}/></Link>
       </article>

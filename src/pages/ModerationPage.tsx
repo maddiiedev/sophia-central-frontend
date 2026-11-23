@@ -53,6 +53,7 @@ export function ModerationPage() {
   const [queueSearch, setQueueSearch] = useState(() => new URLSearchParams(window.location.search).get('resource') ?? new URLSearchParams(window.location.search).get('focus') ?? '');
   const [historySearch, setHistorySearch] = useState('');
   const [historyStatus, setHistoryStatus] = useState('all');
+  const [escalationReasons, setEscalationReasons] = useState<Record<string, string>>({});
   const focusedResourceId = new URLSearchParams(window.location.search).get('focus');
 
   const loadQueue = async () => {
@@ -158,6 +159,26 @@ export function ModerationPage() {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [loading, items]);
 
+  const escalateForRereview = async (resourceId: string) => {
+    const reason = (escalationReasons[resourceId] ?? '').trim();
+    if (reason.length < 10) {
+      setError('Provide a clear reason of at least 10 characters for the re-review.');
+      return;
+    }
+    if (processingId) return;
+    setProcessingId(resourceId); setError(''); setNotice('');
+    try {
+      await moderationApi.escalateReview(resourceId, reason);
+      setEscalationReasons(current => ({ ...current, [resourceId]: '' }));
+      setNotice('The completed review has been escalated. The resource is back in the pending academic review queue.');
+      await Promise.all([loadHistory(), loadQueue()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to escalate this review for re-review.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const review = async (id: string, status: 'approved' | 'rejected' | 'revision_requested') => {
     if (processingId) return;
     const noConflictAlreadyRecorded = conflictDeclarations[id] === 'no_conflict';
@@ -209,7 +230,10 @@ export function ModerationPage() {
       if (declaration === 'recuse') {
         setConflictAcknowledged(current => ({ ...current, [resourceId]: false }));
         setItems(current => current.filter(item => item.id !== resourceId));
-        setNotice('You have recused yourself. The assignment has been released for independent reassignment.');
+        const currentItem = items.find(item => item.id === resourceId);
+        setNotice(isGlobalReviewer && currentItem?.assignedReviewerId && currentItem.assignedReviewerId !== user?.id
+          ? 'Your oversight recusal has been recorded. The assigned reviewer keeps the active assignment.'
+          : 'You have recused yourself. The assignment has been released for independent reassignment.');
       } else {
         setConflictDeclarations(current => ({ ...current, [resourceId]: 'no_conflict' }));
         setNotice('Your no-conflict declaration has been recorded for this assignment.');
@@ -318,7 +342,7 @@ export function ModerationPage() {
                   <textarea rows={2} value={notes[item.id] ?? ''} onChange={(event) => setNotes((current) => ({ ...current, [item.id]: event.target.value }))} className="mt-1 w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-normal" placeholder="Give specific, actionable academic feedback…" />
                 </label>}
                 {isReviewer && <div className="mt-4 space-y-3 rounded-xl border border-[#E4DDF8] bg-[#F8F6FF] p-3 dark:border-[#40365A] dark:bg-[#211A34]">
-                  {conflictDeclarations[item.id] === 'no_conflict' ? <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">No-conflict declaration recorded for this assignment.</p> : <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-[#091F5B] dark:text-white"><input type="checkbox" checked={Boolean(conflictAcknowledged[item.id])} onChange={event => setConflictAcknowledged(current => ({ ...current, [item.id]: event.target.checked }))} className="mt-1 h-4 w-4 shrink-0 accent-[#6121D0]" /><span>I have checked this resource and its contributors, and confirm that I have no personal, academic, financial or authorship conflict. This declaration will be recorded when I submit my review.</span></label>}
+                  {conflictDeclarations[item.id] === 'no_conflict' ? <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">No-conflict declaration recorded for this review.</p> : <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-[#091F5B] dark:text-white"><input type="checkbox" checked={Boolean(conflictAcknowledged[item.id])} onChange={event => setConflictAcknowledged(current => ({ ...current, [item.id]: event.target.checked }))} className="mt-1 h-4 w-4 shrink-0 accent-[#6121D0]" /><span>I have checked this resource and its contributors, and confirm that I have no personal, academic, financial or authorship conflict. This declaration will be recorded when I submit my review.</span></label>}
                   <label className="block text-xs font-semibold text-[#091F5B] dark:text-slate-100">If a conflict exists or emerges, explain it before recusing
                     <textarea rows={2} value={conflictReasons[item.id] ?? ''} onChange={event => setConflictReasons(current => ({ ...current, [item.id]: event.target.value }))} className="mt-1 w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-normal text-[#26364F] dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="Describe the relationship or conflict…" />
                   </label>
@@ -344,7 +368,7 @@ export function ModerationPage() {
         </div>
         {historyLoading ? <p className="p-5 text-sm text-[#5C6982]">Loading review history…</p> : history.length === 0 ? <p className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-5 text-sm text-[#5C6982]">No review decisions have been recorded yet.</p> : visibleHistory.length === 0 ? <p className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-5 text-sm text-[#5C6982]">No review decisions match the selected search and filter.</p> : visibleHistory.map((item) => {
           const status = String(item.status || item.resource?.moderationStatus || 'reviewed').toLowerCase();
-          return <article key={item.id} className="rounded-2xl border border-[#DCE4EF] bg-white p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><h3 className="font-semibold text-[#091F5B]">{item.resource?.title || 'Resource no longer available'}</h3><p className="mt-1 text-sm text-[#4B5563]">{item.resource?.course || 'Course not specified'} · {item.resource?.institution || 'Institution not specified'}</p><p className="mt-2 text-xs text-[#5C6982]">Reviewed by {historyName(item)}</p>{item.note && <p className="mt-2 text-sm text-[#4B5563]">Feedback: {item.note}</p>}</div><div className="flex shrink-0 flex-col items-start gap-1"><span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${status === 'approved' ? 'bg-emerald-50 text-emerald-900' : status === 'rejected' ? 'bg-rose-50 text-rose-900' : status === 'revision_requested' ? 'bg-amber-50 text-amber-900' : 'bg-slate-100 text-slate-800'}`}>{status.replace(/_/g, ' ')}</span><span className="text-xs text-[#5C6982]">{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Date unavailable'}</span></div></div></article>;
+          return <article key={item.id} className="rounded-2xl border border-[#DCE4EF] bg-white p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><h3 className="font-semibold text-[#091F5B]">{item.resource?.title || 'Resource no longer available'}</h3><p className="mt-1 text-sm text-[#4B5563]">{item.resource?.course || 'Course not specified'} · {item.resource?.institution || 'Institution not specified'}</p><p className="mt-2 text-xs text-[#5C6982]">Reviewed by {historyName(item)}</p>{item.note && <p className="mt-2 text-sm text-[#4B5563]">Feedback: {item.note}</p>}</div><div className="flex shrink-0 flex-col items-start gap-1"><span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${status === 'approved' ? 'bg-emerald-50 text-emerald-900' : status === 'rejected' ? 'bg-rose-50 text-rose-900' : status === 'revision_requested' ? 'bg-amber-50 text-amber-900' : 'bg-slate-100 text-slate-800'}`}>{status.replace(/_/g, ' ')}</span><span className="text-xs text-[#5C6982]">{item.createdAt ? new Date(item.createdAt).toLocaleString() : 'Date unavailable'}</span></div></div>{isGlobalReviewer && ['approved', 'rejected', 'revision_requested'].includes(status) && <div className="mt-4 border-t border-[#E8EDF4] pt-3"><label className="block text-xs font-semibold text-[#091F5B]">Reason for requesting a new academic review<textarea rows={2} value={escalationReasons[item.resource?.id ?? item.id] ?? ''} onChange={event => setEscalationReasons(current => ({ ...current, [item.resource?.id ?? item.id]: event.target.value }))} className="mt-1 w-full rounded-xl border border-[#DCE4EF] bg-white px-3 py-2 text-sm font-normal" placeholder="Explain the quality concern, missing evidence, policy issue or reason an independent review is needed…"/></label><button type="button" onClick={() => void escalateForRereview(item.resource?.id ?? item.id)} disabled={Boolean(processingId)} className="mt-2 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-900 disabled:opacity-50">{processingId === (item.resource?.id ?? item.id) ? 'Submitting…' : 'Escalate for re-review'}</button></div>}</article>;
         })}
       </div>
     </OverviewCard> : null}

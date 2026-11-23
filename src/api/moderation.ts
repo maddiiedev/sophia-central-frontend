@@ -86,4 +86,18 @@ export const moderationApi = {
       { method: 'PATCH', body: JSON.stringify({ reviewerId }) },
     );
   },
+  escalateReview: async (resourceId: string, reason: string) => {
+    return apiRequest<{ id: string; resourceId: string; previousStatus: string; reason: string; status: string; createdAt: string }>(
+      `/moderation/resources/${encodeURIComponent(resourceId)}/escalate-review`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    );
+  },
+
+  escalations: async () => {
+    return apiRequest<Array<{ id: string; resourceId: string; resourceTitle: string; previousStatus: string; reason: string; status: string; createdAt: string }>>(
+      '/moderation/escalations',
+      { method: 'GET' },
+    );
+  },
+
 };
