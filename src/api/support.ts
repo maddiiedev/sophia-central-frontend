@@ -8,6 +8,7 @@ export type SupportRequest = {
   id: string;
   ticketNumber?: string;
   userId: string | null;
+  requesterType?: 'registered' | 'guest';
   senderName?: string | null;
   senderEmail?: string | null;
   senderInstitution?: string | null;
@@ -28,6 +29,7 @@ export type SupportRequest = {
   createdAt: string;
   concludedAt?: string | null;
   confirmationMessage?: string;
+  responseEmailSent?: boolean;
 };
 
 export const supportApi = {
