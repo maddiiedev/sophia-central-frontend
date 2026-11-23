@@ -94,7 +94,7 @@ export const moderationApi = {
   },
 
   escalations: async () => {
-    return apiRequest<Array<{ id: string; resourceId: string; resourceTitle: string; previousStatus: string; reason: string; status: string; createdAt: string }>>(
+    return apiRequest<Array<{ id: string; resourceId: string; resourceTitle: string; previousStatus: string; reason: string; status: string; requestedById: string; resolvedById?: string | null; resolutionNote?: string | null; createdAt: string; resolvedAt?: string | null; moderationStatus?: string }>>(
       '/moderation/escalations',
       { method: 'GET' },
     );
