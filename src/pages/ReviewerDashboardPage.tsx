@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ArrowUpRight, BookOpen, CheckCircle2, Clock3, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Activity, ArrowUpRight, BookOpen, CheckCircle2, Clock3, RefreshCw, ShieldCheck, Users, ClipboardList } from 'lucide-react';
 import { SectionTitle } from '../components/layout/AppShell';
 import { moderationApi, type ModerationHistoryItem } from '../api/moderation';
 import type { ModerationItem } from '../types';
@@ -51,6 +51,21 @@ export function ReviewerDashboardPage() {
     const days = Math.max(0, Math.floor((Date.now() - submittedAt) / 86400000));
     return days === 0 ? 'Submitted today' : `Submitted ${days} day${days === 1 ? '' : 's'} ago`;
   };
+  const platformAssigned = pending.filter(item => Boolean(item.assignedReviewerId)).length;
+  const platformUnassigned = pending.length - platformAssigned;
+  const reviewerWorkload = useMemo(() => {
+    const totals = new Map<string, { name: string; count: number }>();
+    for (const item of pending) {
+      if (!item.assignedReviewerId) continue;
+      const reviewer = (item as ModerationItem & { assignedReviewer?: { id?: string; firstName?: string; lastName?: string } }).assignedReviewer;
+      const id = item.assignedReviewerId;
+      const name = [reviewer?.firstName, reviewer?.lastName].filter(Boolean).join(' ') || 'Assigned reviewer';
+      const current = totals.get(id) || { name, count: 0 };
+      current.count += 1;
+      totals.set(id, current);
+    }
+    return [...totals.entries()].map(([id, value]) => ({ id, ...value })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }, [pending]);
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Reviewer';
   const globalReviewer = user?.isGlobalReviewer === true;
 
@@ -62,11 +77,25 @@ export function ReviewerDashboardPage() {
     {globalReviewer && <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-4 shadow-sm sm:p-5 dark:border-slate-700 dark:from-slate-950 dark:via-slate-900 dark:to-violet-950"><div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-violet-700 dark:text-violet-200" size={20}/><div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-700 dark:text-violet-200">Global Academic Reviewer</p><h2 className="mt-1 font-semibold text-slate-950 dark:text-white">Platform-wide academic review scope</h2><p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">Your academic review authority spans subjects and academic levels. Platform moderation, user administration and platform support remain separate permissions.</p></div></div></section>}
     {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}<button type="button" onClick={() => void loadOverview()} className="ml-2 font-semibold underline">Try again</button></div>}
     {loading ? <div className="rounded-2xl border border-[#DCE4EF] bg-white p-8 text-sm text-[#5C6982]">Loading your reviewer overview…</div> : <>
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {globalReviewer ? <>
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard label="Platform pending" value={pending.length} helper="All resources awaiting academic review" icon={Clock3}/>
+          <SummaryCard label="Assigned" value={platformAssigned} helper="Pending resources with a reviewer" icon={Users}/>
+          <SummaryCard label="Unassigned" value={platformUnassigned} helper="Pending resources needing assignment" icon={ClipboardList}/>
+          <SummaryCard label="Decisions recorded" value={history.length} helper="Platform-wide review history" icon={CheckCircle2}/>
+        </section>
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,.9fr)]">
+          <article className="rounded-2xl border border-[#DCE4EF] bg-white p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-bold text-[#091F5B]">Reviewer workload</h2><p className="mt-1 text-sm text-[#5C6982]">Current pending assignments by reviewer.</p></div><Link to="/reviewer/queue" className="text-sm font-semibold text-[#6121D0] hover:underline">Manage assignments <ArrowUpRight size={14} className="inline"/></Link></div>
+            {reviewerWorkload.length ? <div className="mt-4 space-y-3">{reviewerWorkload.slice(0, 8).map(reviewer => <div key={reviewer.id} className="flex items-center justify-between gap-3"><span className="min-w-0 truncate text-sm font-medium text-[#091F5B]">{reviewer.name}</span><span className="shrink-0 rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-800">{reviewer.count} pending</span></div>)}</div> : <p className="mt-4 rounded-xl bg-[#F8FAFD] p-4 text-sm text-[#64748B]">No pending resources are currently assigned.</p>}
+          </article>
+          <article className="rounded-2xl border border-[#DCE4EF] bg-white p-4 sm:p-5"><h2 className="text-lg font-bold text-[#091F5B]">Academic quality snapshot</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-[#F8FAFD] p-3"><p className="text-xs text-[#64748B]">Approved</p><p className="mt-1 text-2xl font-semibold text-[#091F5B]">{approvedCount}</p></div><div className="rounded-xl bg-[#F8FAFD] p-3"><p className="text-xs text-[#64748B]">Approval rate</p><p className="mt-1 text-2xl font-semibold text-[#091F5B]">{approvalRate}</p></div></div><p className="mt-3 text-xs text-[#64748B]">Based on recorded platform-wide decisions returned by the review history service.</p><Link to="/reviewer/queue?tab=history" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#6121D0]">Explore review history <ArrowUpRight size={14}/></Link></article>
+        </section>
+      </> : <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard label="Pending assignments" value={pending.length} helper="Resources awaiting your review" icon={Clock3}/>
         <SummaryCard label="Reviews completed" value={history.length} helper="Decisions recorded in your review history" icon={CheckCircle2}/>
         <SummaryCard label="Approval rate" value={approvalRate} helper={`${approvedCount} approved of ${history.length} recorded decisions`} icon={BookOpen}/>
-      </section>
+      </section>}
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,.8fr)]">
         <article className="min-w-0 rounded-2xl border border-[#DCE4EF] bg-white p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-bold text-[#091F5B]">Next assignments</h2><p className="mt-1 text-sm text-[#5C6982]">Your pending academic materials.</p></div><Link to="/reviewer/queue" className="text-sm font-semibold text-[#6121D0] hover:underline">Assignment tools <ArrowUpRight size={14} className="inline"/></Link></div>
