@@ -15,10 +15,17 @@ export function SupportRequestsPanel() {
   const [notice, setNotice] = useState('');
   const [query, setQuery] = useState('');
   const [emailStatus, setEmailStatus] = useState<SupportEmailStatus | null>(null);
+  const [assignees, setAssignees] = useState<{ id: string; firstName?: string; lastName?: string; email: string }[]>([]);
+  const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState<Record<string, string>>({});
+  const [caseNotes, setCaseNotes] = useState<Record<string, { id: string; authorEmail: string; body: string; createdAt: string }[]>>({});
+  const [caseTimeline, setCaseTimeline] = useState<Record<string, { id: string; actorEmail: string; eventType: string; details: Record<string, unknown>; createdAt: string }[]>>({});
+  const [caseActionId, setCaseActionId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
     void supportApi.emailStatus().then(setEmailStatus).catch(() => setEmailStatus(null));
+    void supportApi.caseAssignees().then(setAssignees).catch(() => setAssignees([]));
     try {
       const pending = await supportApi.queue('pending');
       const underReview = await supportApi.queue('under_review');
@@ -52,6 +59,34 @@ export function SupportRequestsPanel() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to conclude this request.');
     } finally { setProcessingId(null); }
+  };
+
+
+  const toggleCaseDetails = async (id: string) => {
+    if (expandedCaseId === id) { setExpandedCaseId(null); return; }
+    setExpandedCaseId(id);
+    try {
+      const [notes, timeline] = await Promise.all([supportApi.getInternalNotes(id), supportApi.getCaseTimeline(id)]);
+      setCaseNotes(current => ({ ...current, [id]: notes }));
+      setCaseTimeline(current => ({ ...current, [id]: timeline }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load private case history.');
+    }
+  };
+
+  const saveInternalNote = async (item: SupportRequest) => {
+    const body = (noteDraft[item.id] || '').trim();
+    if (!body || caseActionId) return;
+    setCaseActionId(item.id); setError('');
+    try {
+      await supportApi.addInternalNote(item.id, body);
+      const [notes, timeline] = await Promise.all([supportApi.getInternalNotes(item.id), supportApi.getCaseTimeline(item.id)]);
+      setCaseNotes(current => ({ ...current, [item.id]: notes }));
+      setCaseTimeline(current => ({ ...current, [item.id]: timeline }));
+      setNoteDraft(current => ({ ...current, [item.id]: '' }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to save internal note.');
+    } finally { setCaseActionId(null); }
   };
 
   const visibleItems = useMemo(() => {
@@ -90,6 +125,31 @@ export function SupportRequestsPanel() {
       const busy = processingId === item.id;
       return <article key={item.id} className="rounded-2xl border border-[#DCE4EF] bg-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="break-words text-base font-bold text-[#091F5B]">{item.subject}</h3><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.status === 'response_sent' || item.status === 'concluded' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>{item.status === 'response_sent' || item.status === 'concluded' ? 'Response sent' : item.status === 'reviewed' ? 'Reviewed' : item.status === 'under_review' ? 'Under review' : 'Submitted'}</span></div><p className="mt-1 text-xs capitalize text-[#71809A]">{item.category} · Submitted {new Date(item.createdAt).toLocaleString()}</p><p className="mt-1 break-all text-[11px] text-[#71809A]">Ticket: {item.ticketNumber || item.id}</p></div></div>
+        <div className="mt-4 grid gap-3 rounded-xl border border-[#E7E1F5] bg-[#FBFAFF] p-3 sm:grid-cols-2">
+          <label className="block text-xs font-semibold text-[#091F5B]">Priority
+            <select value={item.priority || 'normal'} onChange={async event => { try { await supportApi.setCasePriority(item.id, event.target.value as 'low' | 'normal' | 'high' | 'urgent'); await load(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to update priority.'); } }} className="mt-1 w-full rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm">
+              <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option>
+            </select>
+          </label>
+          <label className="block text-xs font-semibold text-[#091F5B]">Assigned Support agent
+            <select value={item.assignedSupportId || ''} onChange={async event => { try { await supportApi.assignCase(item.id, event.target.value || null); await load(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to assign case.'); } }} className="mt-1 w-full rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm">
+              <option value="">Unassigned</option>{assignees.map(agent => <option key={agent.id} value={agent.id}>{[agent.firstName, agent.lastName].filter(Boolean).join(' ') || agent.email}</option>)}
+            </select>
+          </label>
+          <div className="text-xs text-[#5C6982] sm:col-span-2">
+            <span className="font-semibold text-[#091F5B]">SLA target: </span>{item.slaDueAt ? new Date(item.slaDueAt).toLocaleString() : 'Not set'}
+            {item.overdue && <span className="ml-2 rounded-full bg-rose-100 px-2 py-1 font-semibold text-rose-800">Overdue</span>}
+          </div>
+          <button type="button" onClick={() => void toggleCaseDetails(item.id)} className="justify-self-start rounded-lg border border-[#D8C9F4] px-3 py-2 text-xs font-semibold text-[#6121D0] sm:col-span-2">{expandedCaseId === item.id ? 'Hide internal notes & case history' : 'Internal notes & case history'}</button>
+          {expandedCaseId === item.id && <div className="space-y-3 sm:col-span-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3"><p className="text-xs font-bold text-amber-900">Private internal notes — visible only to authorized Support staff</p>
+              <textarea rows={2} maxLength={4000} value={noteDraft[item.id] || ''} onChange={event => setNoteDraft(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Add an internal handover or investigation note…" className="mt-2 w-full rounded-lg border border-amber-200 bg-white p-2 text-sm"/>
+              <button type="button" disabled={!noteDraft[item.id]?.trim() || caseActionId === item.id} onClick={() => void saveInternalNote(item)} className="mt-2 rounded-lg bg-[#6121D0] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{caseActionId === item.id ? 'Saving…' : 'Add private note'}</button>
+              <div className="mt-3 space-y-2">{(caseNotes[item.id] || []).map(note => <div key={note.id} className="rounded-lg bg-white p-2"><p className="whitespace-pre-wrap text-sm text-[#091F5B]">{note.body}</p><p className="mt-1 text-[11px] text-[#71809A]">{note.authorEmail} · {new Date(note.createdAt).toLocaleString()}</p></div>)}{(caseNotes[item.id] || []).length === 0 && <p className="text-xs text-amber-800">No internal notes yet.</p>}</div>
+            </div>
+            <div className="rounded-lg border border-[#DCE4EF] p-3"><p className="text-xs font-bold text-[#091F5B]">Case activity timeline</p><ol className="mt-2 space-y-2">{(caseTimeline[item.id] || []).map(event => <li key={event.id} className="border-l-2 border-[#D8C9F4] pl-3"><p className="text-xs font-semibold text-[#091F5B]">{event.eventType.replace(/_/g, ' ')}</p><p className="text-[11px] text-[#71809A]">{event.actorEmail} · {new Date(event.createdAt).toLocaleString()}</p></li>)}</ol></div>
+          </div>}
+        </div>
         <div className="mt-4 rounded-xl bg-[#F8FAFD] p-3"><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#2C36D9] text-sm font-bold text-white">{owner?.profileImage ? <ProfileImage userId={owner.id || item.userId || ''} reference={owner.profileImage} className="h-full w-full object-cover"/> : requesterName.slice(0,1).toUpperCase()}</div><div className="min-w-0"><p className="font-semibold text-[#091F5B]">{requesterName} <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{item.requesterType === "guest" || !owner ? "Guest" : "Registered account"}</span></p><p className="break-all text-xs text-[#5C6982]">{requesterEmail} · <span className="capitalize">{requesterRole}</span></p></div></div><dl className="mt-3 grid gap-2 text-xs text-[#5C6982] sm:grid-cols-3"><div><dt className="inline font-semibold text-[#091F5B]">Institution: </dt><dd className="inline">{owner?.institution || item.senderInstitution || 'Not provided'}</dd></div><div><dt className="inline font-semibold text-[#091F5B]">Faculty: </dt><dd className="inline">{owner?.faculty || item.senderFaculty || 'Not provided'}</dd></div><div><dt className="inline font-semibold text-[#091F5B]">Department: </dt><dd className="inline">{owner?.department || item.senderDepartment || 'Not provided'}</dd></div>{(owner?.id || item.userId) && <div><dt className="inline font-semibold text-[#091F5B]">Account ID: </dt><dd className="inline break-all">{owner?.id || item.userId}</dd></div>}</dl></div>
         <div className="mt-4"><h4 className="text-sm font-semibold text-[#091F5B]">Problem description</h4><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#4B5563]">{item.description}</p></div>
         {item.links?.length > 0 && <div className="mt-4"><h4 className="text-xs font-semibold uppercase tracking-wide text-[#5C6982]">Related links</h4><ul className="mt-2 space-y-1">{item.links.map(link => <li key={link}><a href={link} target="_blank" rel="noreferrer" className="inline-flex max-w-full items-center gap-1 break-all text-sm font-semibold text-[#6121D0] underline underline-offset-2">{link}<ExternalLink size={13} className="shrink-0"/></a></li>)}</ul></div>}
