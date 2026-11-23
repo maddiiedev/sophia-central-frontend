@@ -5,6 +5,24 @@ export type SupportPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type SupportCaseAssignee = { id: string; firstName?: string; lastName?: string; email: string };
 export type SupportCaseEvent = { id: string; actorId: string | null; actorEmail: string; eventType: string; details: Record<string, unknown>; createdAt: string };
 export type SupportInternalNote = { id: string; authorId: string | null; authorEmail: string; body: string; createdAt: string };
+
+export type SupportAnalytics = {
+  windowDays: 7 | 30 | 90;
+  generatedAt: string;
+  summary: {
+    ticketsCreated: number;
+    openBacklog: number;
+    overdueBacklog: number;
+    averageBacklogAgeHours: number;
+    averageResponseMinutes: number;
+    averageResolutionMinutes: number;
+    escalatedTickets: number;
+    escalationRate: number;
+  };
+  categoryTrends: { category: string; count: number }[];
+  agentWorkload: { id: string; firstName?: string; lastName?: string; email: string; activeCases: number; completedInPeriod: number }[];
+};
+
 export type SupportEmailStatus = { configured: boolean; provider: 'resend'; inboundReplySync: boolean };
 export type SupportTicketTracking = Pick<SupportRequest, 'id' | 'ticketNumber' | 'subject' | 'category' | 'status' | 'escalatedToRole' | 'createdAt'>;
 
@@ -53,6 +71,7 @@ export const supportApi = {
   },
   queue: (status: SupportRequestStatus) =>
     apiRequest<SupportRequest[]>(`/support-requests/queue?status=${status}`),
+  analytics: (days: 7 | 30 | 90 = 30) => apiRequest<SupportAnalytics>(`/support-requests/cases/analytics?days=${days}`),
   caseAssignees: () => apiRequest<SupportCaseAssignee[]>('/support-requests/cases/assignees'),
   assignCase: (id: string, assigneeId: string | null) => apiRequest<unknown>(`/support-requests/cases/${encodeURIComponent(id)}/assignment`, { method: 'POST', body: JSON.stringify({ assigneeId }) }),
   setCasePriority: (id: string, priority: SupportPriority) => apiRequest<unknown>(`/support-requests/cases/${encodeURIComponent(id)}/priority`, { method: 'POST', body: JSON.stringify({ priority }) }),

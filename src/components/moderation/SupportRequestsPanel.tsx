@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clock3, ExternalLink, FileImage, RefreshCw, Send, ShieldCheck, Search, MailCheck, MailX } from 'lucide-react';
-import { supportApi, type SupportRequest, type SupportRequestStatus, type SupportEmailStatus } from '../../api/support';
+import { supportApi, type SupportRequest, type SupportRequestStatus, type SupportEmailStatus, type SupportAnalytics } from '../../api/support';
 import { ProfileImage } from '../ProfileImage';
 
 export function SupportRequestsPanel() {
@@ -21,6 +21,9 @@ export function SupportRequestsPanel() {
   const [caseNotes, setCaseNotes] = useState<Record<string, { id: string; authorEmail: string; body: string; createdAt: string }[]>>({});
   const [caseTimeline, setCaseTimeline] = useState<Record<string, { id: string; actorEmail: string; eventType: string; details: Record<string, unknown>; createdAt: string }[]>>({});
   const [caseActionId, setCaseActionId] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<SupportAnalytics | null>(null);
+  const [analyticsDays, setAnalyticsDays] = useState<7 | 30 | 90>(30);
+  const [analyticsError, setAnalyticsError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -44,6 +47,14 @@ export function SupportRequestsPanel() {
   }, [status]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    let active = true;
+    setAnalyticsError('');
+    supportApi.analytics(analyticsDays).then(value => { if (active) setAnalytics(value); })
+      .catch(cause => { if (active) setAnalyticsError(cause instanceof Error ? cause.message : 'Analytics are temporarily unavailable.'); });
+    return () => { active = false; };
+  }, [analyticsDays]);
 
   const conclude = async (item: SupportRequest) => {
     const message = (resolution[item.id] || '').trim();
@@ -105,6 +116,40 @@ export function SupportRequestsPanel() {
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Support queue overview">
       {[{label:'Submitted',value:queueStats.pending,description:'Awaiting review',tone:'amber'},{label:'Under review',value:queueStats.underReview,description:'Being handled',tone:'blue'},{label:'Reviewed',value:queueStats.reviewed,description:'Ready for response',tone:'violet'},{label:'Responded',value:queueStats.responded,description:'Response sent',tone:'emerald'}].map(card=><div key={card.label} className="min-w-0 rounded-2xl border border-[#DCE4EF] bg-white p-3 sm:p-4"><p className="text-xs font-medium text-[#5C6982]">{card.label}</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{card.value}</p><p className="mt-1 text-xs text-[#71809A]">{card.description}</p></div>)}
     </div>
+
+    <section className="space-y-4 rounded-2xl border border-[#DCE4EF] bg-white p-4 sm:p-5" aria-labelledby="support-analytics-heading">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div><h3 id="support-analytics-heading" className="text-base font-bold text-[#091F5B]">Support operations</h3><p className="mt-1 text-xs text-[#71809A]">Reporting for the selected period; backlog figures reflect the current queue.</p></div>
+        <label className="flex items-center gap-2 text-xs font-semibold text-[#091F5B]">Reporting period
+          <select value={analyticsDays} onChange={event => setAnalyticsDays(Number(event.target.value) as 7 | 30 | 90)} className="rounded-lg border border-[#DCE4EF] bg-white px-3 py-2 text-sm"><option value={7}>Last 7 days</option><option value={30}>Last 30 days</option><option value={90}>Last 90 days</option></select>
+        </label>
+      </div>
+      {analyticsError && <p role="status" className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800">{analyticsError}</p>}
+      {analytics && <>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          {[
+            ['Tickets created', analytics.summary.ticketsCreated],
+            ['Open backlog', analytics.summary.openBacklog],
+            ['Overdue backlog', analytics.summary.overdueBacklog],
+            ['Avg. backlog age', `${analytics.summary.averageBacklogAgeHours.toFixed(1)}h`],
+            ['Avg. response time', `${Math.round(analytics.summary.averageResponseMinutes)}m`],
+            ['Avg. resolution time', `${Math.round(analytics.summary.averageResolutionMinutes)}m`],
+            ['Escalated tickets', analytics.summary.escalatedTickets],
+            ['Escalation rate', `${analytics.summary.escalationRate}%`],
+          ].map(([label, value]) => <div key={String(label)} className="min-w-0 rounded-xl bg-[#F8FAFD] p-3"><p className="text-[11px] font-medium text-[#71809A]">{label}</p><p className="mt-1 break-words text-xl font-bold text-[#091F5B]">{value}</p></div>)}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-[#E7E1F5] p-3"><h4 className="text-sm font-semibold text-[#091F5B]">Ticket categories</h4>
+            {analytics.categoryTrends.length ? <ul className="mt-3 space-y-2">{analytics.categoryTrends.map(row => <li key={row.category} className="flex items-center justify-between gap-3 text-xs"><span className="min-w-0 break-words text-[#5C6982]">{row.category}</span><span className="shrink-0 rounded-full bg-[#F1ECFA] px-2.5 py-1 font-semibold text-[#6121D0]">{row.count}</span></li>)}</ul> : <p className="mt-3 text-xs text-[#71809A]">No tickets in this reporting period.</p>}
+          </div>
+          <div className="rounded-xl border border-[#E7E1F5] p-3"><h4 className="text-sm font-semibold text-[#091F5B]">Support agent workload</h4>
+            {analytics.agentWorkload.length ? <ul className="mt-3 space-y-3">{analytics.agentWorkload.map(agent => <li key={agent.id} className="flex flex-col gap-1 border-b border-[#EEF1F6] pb-2 last:border-0"><span className="break-all text-xs font-semibold text-[#091F5B]">{[agent.firstName, agent.lastName].filter(Boolean).join(' ') || agent.email}</span><span className="text-[11px] text-[#71809A]">{agent.activeCases} active · {agent.completedInPeriod} completed in period</span></li>)}</ul> : <p className="mt-3 text-xs text-[#71809A]">No currently eligible Support agents.</p>}
+          </div>
+        </div>
+        <p className="text-right text-[10px] text-[#9AA4B5]">Updated {new Date(analytics.generatedAt).toLocaleString()}</p>
+      </>}
+    </section>
+
     <div className="flex items-start gap-3 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4">
       {emailStatus?.configured ? <MailCheck size={19} className="mt-0.5 shrink-0 text-emerald-700"/> : <MailX size={19} className="mt-0.5 shrink-0 text-amber-700"/>}
       <div className="min-w-0">
