@@ -40,8 +40,17 @@ export function ReviewerDashboardPage() {
 
   useEffect(() => { void loadOverview(); }, [user?.id]);
 
-  const pending = useMemo(() => queue.filter(item => (item.status || 'pending').toLowerCase() === 'pending'), [queue]);
+  const pending = useMemo(() => queue.filter(item => (item.status || 'pending').toLowerCase() === 'pending').sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()), [queue]);
   const recent = useMemo(() => [...history].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 5), [history]);
+  const approvedCount = useMemo(() => history.filter(item => String(item.status || item.resource?.moderationStatus || '').toLowerCase() === 'approved').length, [history]);
+  const approvalRate = history.length ? `${Math.round((approvedCount / history.length) * 100)}%` : '—';
+  const submittedAge = (createdAt?: string) => {
+    if (!createdAt) return 'Submission date unavailable';
+    const submittedAt = new Date(createdAt).getTime();
+    if (!Number.isFinite(submittedAt)) return 'Submission date unavailable';
+    const days = Math.max(0, Math.floor((Date.now() - submittedAt) / 86400000));
+    return days === 0 ? 'Submitted today' : `Submitted ${days} day${days === 1 ? '' : 's'} ago`;
+  };
   const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Reviewer';
   const globalReviewer = user?.isGlobalReviewer === true;
 
@@ -56,12 +65,12 @@ export function ReviewerDashboardPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard label="Pending assignments" value={pending.length} helper="Resources awaiting your review" icon={Clock3}/>
         <SummaryCard label="Reviews completed" value={history.length} helper="Decisions recorded in your review history" icon={CheckCircle2}/>
-        <SummaryCard label="Queue resources" value={queue.length} helper="Items currently visible in your review queue" icon={BookOpen}/>
+        <SummaryCard label="Approval rate" value={approvalRate} helper={`${approvedCount} approved of ${history.length} recorded decisions`} icon={BookOpen}/>
       </section>
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,.8fr)]">
         <article className="min-w-0 rounded-2xl border border-[#DCE4EF] bg-white p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-bold text-[#091F5B]">Next assignments</h2><p className="mt-1 text-sm text-[#5C6982]">Your pending academic materials.</p></div><Link to="/reviewer/queue" className="text-sm font-semibold text-[#6121D0] hover:underline">Assignment tools <ArrowUpRight size={14} className="inline"/></Link></div>
-          {pending.length ? <div className="mt-4 divide-y divide-[#E8EDF4]">{pending.slice(0, 5).map(item => <div key={item.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="break-words font-semibold text-[#091F5B]">{item.title}</p><p className="mt-1 text-xs text-[#64748B]">{[item.course, item.institution, item.level].filter(Boolean).join(' · ') || 'Academic resource'}</p></div><Link to="/reviewer/queue" className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#6121D0]">Open queue <ArrowUpRight size={14}/></Link></div>)}</div> : <div className="mt-4 rounded-xl border border-dashed border-[#DCE4EF] p-6 text-center"><BookOpen size={24} className="mx-auto text-[#8B70D5]"/><p className="mt-2 text-sm font-semibold text-[#091F5B]">No pending assignments</p><p className="mt-1 text-xs text-[#64748B]">New assignments will appear here when they are ready for review.</p></div>}
+          {pending.length ? <div className="mt-4 divide-y divide-[#E8EDF4]">{pending.slice(0, 5).map(item => <div key={item.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="break-words font-semibold text-[#091F5B]">{item.title}</p><p className="mt-1 text-xs text-[#64748B]">{[item.course, item.institution, item.level].filter(Boolean).join(' · ') || 'Academic resource'}</p><p className="mt-1 text-xs font-medium text-amber-700">{submittedAge(item.createdAt)}</p></div><Link to="/reviewer/queue" className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#6121D0]">Open queue <ArrowUpRight size={14}/></Link></div>)}</div> : <div className="mt-4 rounded-xl border border-dashed border-[#DCE4EF] p-6 text-center"><BookOpen size={24} className="mx-auto text-[#8B70D5]"/><p className="mt-2 text-sm font-semibold text-[#091F5B]">No pending assignments</p><p className="mt-1 text-xs text-[#64748B]">New assignments will appear here when they are ready for review.</p></div>}
           <Link to="/reviewer/queue" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#6121D0] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#5120B0]">Open review workspace <ArrowUpRight size={15}/></Link>
         </article>
         <article className="rounded-2xl border border-[#DCE4EF] bg-white p-4 sm:p-5"><div className="flex items-center gap-2"><Activity size={18} className="text-[#6121D0]"/><h2 className="text-lg font-bold text-[#091F5B]">Recent decisions</h2></div><p className="mt-1 text-sm text-[#5C6982]">Your latest completed reviews.</p>{recent.length ? <div className="mt-4 space-y-3">{recent.map(item => <div key={item.id} className="border-l-2 border-[#D9CCF5] pl-3"><p className="text-sm font-semibold capitalize text-[#091F5B]">{item.status.replace(/_/g, ' ')}</p><p className="mt-0.5 text-xs text-[#64748B]">{item.resource?.title || 'Academic resource'} · {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Date unavailable'}</p></div>)}</div> : <p className="mt-4 rounded-xl bg-[#F8FAFD] p-4 text-sm text-[#64748B]">Your completed decisions will appear here.</p>}<Link to="/reviewer/queue?tab=history" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#6121D0]">View review history <ArrowUpRight size={14}/></Link></article>
