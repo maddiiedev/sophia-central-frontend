@@ -113,7 +113,7 @@ export function NotificationsPage({ reviewerOnly = false, studentOnly = false }:
   };
 
   const reviewerDestination = (item: AppNotification, reviewerScope: boolean) => {
-    if (item.type === 'resource_review_assigned') return '/reviewer/dashboard';
+    if (item.type === 'resource_review_assigned') { const resourceId = item.link?.match(/[?&]resource=([^&]+)/)?.[1] || item.link?.match(/(?:resource|resources)\/([^/?]+)/)?.[1]; return resourceId ? `/reviewer/queue?resource=${encodeURIComponent(resourceId)}` : '/reviewer/queue'; }
     if (item.type === 'reviewer_application_decision') return '/reviewer-application';
     return item.link || (reviewerScope ? '/reviewer/dashboard' : '/dashboard');
   };
