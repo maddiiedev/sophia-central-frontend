@@ -1,6 +1,7 @@
 import { apiRequest } from '../lib/api/client';
 
 export type SupportRequestStatus = 'pending' | 'under_review' | 'reviewed' | 'response_sent' | 'concluded';
+export type SupportResolutionCategory = 'resolved' | 'information_provided' | 'duplicate' | 'unable_to_reproduce' | 'user_action_required' | 'other';
 export type SupportPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type SupportCaseAssignee = { id: string; firstName?: string; lastName?: string; email: string };
 export type SupportCaseEvent = { id: string; actorId: string | null; actorEmail: string; eventType: string; details: Record<string, unknown>; createdAt: string };
@@ -15,7 +16,9 @@ export type SupportAnalytics = {
     overdueBacklog: number;
     averageBacklogAgeHours: number;
     averageResponseMinutes: number;
+    responseCount: number;
     averageResolutionMinutes: number;
+    resolutionCount: number;
     escalatedTickets: number;
     escalationRate: number;
   };
@@ -56,6 +59,9 @@ export type SupportRequest = {
   assignedSupportId?: string | null;
   slaDueAt?: string | null;
   overdue?: boolean;
+  resolvedAt?: string | null;
+  resolutionCategory?: SupportResolutionCategory | null;
+  closureReason?: string | null;
 };
 
 export const supportApi = {
@@ -74,6 +80,7 @@ export const supportApi = {
   analytics: (days: 7 | 30 | 90 = 30) => apiRequest<SupportAnalytics>(`/support-requests/cases/analytics?days=${days}`),
   caseAssignees: () => apiRequest<SupportCaseAssignee[]>('/support-requests/cases/assignees'),
   assignCase: (id: string, assigneeId: string | null) => apiRequest<unknown>(`/support-requests/cases/${encodeURIComponent(id)}/assignment`, { method: 'POST', body: JSON.stringify({ assigneeId }) }),
+  resolveCase: (id: string, resolutionCategory: SupportResolutionCategory, closureReason?: string) => apiRequest<SupportRequest>(`/support-requests/cases/${encodeURIComponent(id)}/resolve`, { method: 'POST', body: JSON.stringify({ resolutionCategory, closureReason }) }),
   setCasePriority: (id: string, priority: SupportPriority) => apiRequest<unknown>(`/support-requests/cases/${encodeURIComponent(id)}/priority`, { method: 'POST', body: JSON.stringify({ priority }) }),
   addInternalNote: (id: string, body: string) => apiRequest<{ note: SupportInternalNote }>(`/support-requests/cases/${encodeURIComponent(id)}/notes`, { method: 'POST', body: JSON.stringify({ body }) }),
   getInternalNotes: (id: string) => apiRequest<SupportInternalNote[]>(`/support-requests/cases/${encodeURIComponent(id)}/notes`),
