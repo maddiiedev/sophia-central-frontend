@@ -82,7 +82,7 @@ export function AITutorPage() {
       const response = await sophiaApi.ai.ask({
         question: trimmedQuestion,
         ...(sessionId ? { sessionId } : {}),
-        ...(selectedResourceId ? { resourceId: selectedResourceId } : {}),
+        resourceId: selectedResourceId || null,
       });
       if (response.sessionId) {
         setSessionId(response.sessionId);
@@ -144,6 +144,7 @@ export function AITutorPage() {
     setEditingMessageId(null);
     setEditDraft('');
     setSessionId(undefined);
+    setSelectedResourceId('');
     if (activeSessionStorageKey) {
       try { window.localStorage.removeItem(activeSessionStorageKey); } catch { /* Starting a new chat must still work. */ }
     }

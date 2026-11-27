@@ -13,13 +13,13 @@ type AiChatResponse = {
   balance?: number;
   messages?: Array<{ id: string; role: 'user' | 'assistant' | 'system'; content: string; createdAt?: string }>;
   title?: string;
-  resourceId?: string;
+  resourceId?: string | null;
 };
 
 export const aiService = {
   async ask(payload: {
     question: string;
-    resourceId?: string;
+    resourceId?: string | null;
     sessionId?: string;
   }) {
     // AI requests must always reach the authenticated backend. Never substitute a canned mock answer.
