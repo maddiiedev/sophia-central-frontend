@@ -169,7 +169,7 @@ export function AITutorPage() {
               ))}
             </ul>
           </div>
-          <p className="text-xs leading-5 text-[#71809A]">Sophis AI provides study assistance at 2 Wisdom Points per question. If a response cannot be generated, no points are deducted.</p>
+          <p className="text-xs leading-5 text-[#71809A]">A question without a selected academic resource costs 1 Wisdom Point. A question using a selected academic resource costs 2 Wisdom Points. Resource summaries cost 5 Wisdom Points. Failed generations are not charged.</p>
         </div>
       </OverviewCard></div>
 
@@ -213,7 +213,7 @@ export function AITutorPage() {
                     <button type="button" onClick={() => void saveEditedQuestion(message.id!)} disabled={!editDraft.trim() || isLoading} className="text-xs font-bold text-white underline underline-offset-2 disabled:opacity-40">Save and regenerate</button>
                     <button type="button" onClick={() => { setEditingMessageId(null); setEditDraft(''); }} className="text-xs font-medium text-white/80 underline underline-offset-2">Cancel</button>
                   </div>
-                  <p className="text-[11px] leading-4 text-white/75">Regenerating an answer uses 2 Wisdom Points. Messages after this question will be replaced.</p>
+                  <p className="text-[11px] leading-4 text-white/75">{selectedResourceId ? 'Regenerating an answer with the selected resource uses 2 Wisdom Points.' : 'Regenerating an answer without a resource uses 1 Wisdom Point.'} Messages after this question will be replaced.</p>
                 </div>
               ) : message.role === 'assistant' ? (
                 <div className="ai-tutor-assistant-content"><MarkdownContent content={message.content} /></div>

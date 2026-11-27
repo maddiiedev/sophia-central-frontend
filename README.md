@@ -65,6 +65,10 @@ The expected workflow is **Upload resource → Add resource details → Submit f
 | AI tutor | AI learning support UI, subject to configured backend/provider availability |
 | Wallet | Student wallet area, subject to configured backend support |
 
+### Wisdom Points
+
+Wisdom Points are available to Student accounts only. Students receive a one-time 10 WP starter allocation, can earn 15 WP for an eligible successful referral and 10 WP for an approved academic resource contribution. Sophis AI charges 1 WP for a question without a selected resource, 2 WP for a question using an approved academic resource, and 5 WP for a resource summary. Failed AI generations are not charged. Lecturer accounts do not receive Wisdom Points allocations.
+
 The UI can only expose capabilities supported by the active backend and runtime configuration. A route or screen is not proof that a third-party integration, payment flow, or production provider is configured.
 
 ## Technology stack

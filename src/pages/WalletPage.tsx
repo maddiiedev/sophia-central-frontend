@@ -23,7 +23,7 @@ export function WalletPage() {
   const [error, setError] = useState('');
 
   const loadWallet = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id || user.role !== 'student') { setLoading(false); return; }
     setLoading(true); setError('');
     try {
       const [balanceResult, referralResult, statsResult, transactionResult] = await Promise.all([
@@ -40,7 +40,7 @@ export function WalletPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load wallet details. Please try again.');
     } finally { setLoading(false); }
-  }, [user?.id]);
+  }, [user?.id, user?.role]);
 
   useEffect(() => { void loadWallet(); }, [loadWallet]);
 
@@ -78,6 +78,8 @@ export function WalletPage() {
     }
   };
 
+  if (user && user.role !== 'student') return <div className="space-y-4"><SectionTitle eyebrow="Account rewards" title="Wisdom Points"/><div className="rounded-2xl border border-[#DCE4EF] bg-white p-5"><p className="text-sm leading-6 text-[#4B5563]">Wisdom Points are available to Student accounts. Lecturer accounts do not receive Wisdom Points allocations.</p></div></div>;
+
   return <div className="space-y-6">
     <SectionTitle eyebrow="Rewards" title="Wisdom Points wallet" />
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
@@ -99,6 +101,23 @@ export function WalletPage() {
       </OverviewCard>
     </div>
 
+    {user?.role === 'student' && <OverviewCard title="How Wisdom Points work" action="Student rewards">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="min-w-0 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#5C6982]">Starter bonus</p><p className="mt-1 text-2xl font-bold text-[#6121D0]">+10 WP</p><p className="mt-1 text-sm text-[#4B5563]">Credited once when your Student wallet is first activated.</p></div>
+        <div className="min-w-0 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#5C6982]">Successful referral</p><p className="mt-1 text-2xl font-bold text-[#6121D0]">+15 WP</p><p className="mt-1 text-sm text-[#4B5563]">After the referred Student verifies their email and completes eligible academic onboarding.</p></div>
+        <div className="min-w-0 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs font-semibold uppercase tracking-wide text-[#5C6982]">Approved resource upload</p><p className="mt-1 text-2xl font-bold text-[#6121D0]">+10 WP</p><p className="mt-1 text-sm text-[#4B5563]">For an eligible resource you contribute that is approved.</p></div>
+      </div>
+      <div className="mt-4 rounded-xl border border-[#DCE4EF] p-4">
+        <h3 className="font-semibold text-[#091F5B]">Sophis AI usage</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div><p className="text-xl font-bold text-[#6121D0]">1 WP</p><p className="text-sm text-[#4B5563]">Question without a selected resource</p></div>
+          <div><p className="text-xl font-bold text-[#6121D0]">2 WP</p><p className="text-sm text-[#4B5563]">Question using a selected academic resource</p></div>
+          <div><p className="text-xl font-bold text-[#6121D0]">5 WP</p><p className="text-sm text-[#4B5563]">Academic resource summary</p></div>
+        </div>
+        <p className="mt-3 text-xs leading-5 text-[#71809A]">Points are deducted only when Sophis AI successfully completes your request. Failed generations are not charged.</p>
+      </div>
+    </OverviewCard>}
+
     {user?.role === 'student' && <OverviewCard title="Referral program" action="Invite other students">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6121D0]">Your personal referral code</p><div className="mt-2 flex flex-wrap items-center gap-2"><span className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] px-4 py-3 font-mono text-xl font-bold tracking-wider text-[#091F5B]">{loading ? 'Loading…' : code || 'Not available'}</span><button type="button" onClick={() => void copyCode()} disabled={!code} aria-label="Copy referral code" className="rounded-xl border border-[#DCE4EF] bg-white p-3 text-[#6121D0] transition hover:border-[#6121D0] hover:bg-[#F8F5FF] disabled:opacity-50"><Copy size={17}/></button></div><p className="mt-2 text-sm text-[#4B5563]">{stats ? `${stats.successfulReferrals} eligible referrals · ${stats.totalBonusEarned} points earned` : 'Invite genuine students to join Sophis Central.'}</p></div>
@@ -108,7 +127,7 @@ export function WalletPage() {
         </div>
       </div>
       <div className="mt-4 rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4 text-sm leading-6 text-[#4B5563]">
-        Invite genuine students at any recognised institution. There is no fixed referral limit. A referral reward is credited once the referred student verifies their email and completes academic onboarding. Suspicious or suspended accounts may be held for review before any points are issued.
+        Invite genuine students to join Sophis Central. You earn 15 WP when a referred student verifies their email and completes eligible academic onboarding. Suspicious or suspended accounts may be held for review.
       </div>
       {stats && <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-[#DCE4EF] bg-[#F8FAFD] p-4"><p className="text-xs text-[#5C6982]">Students referred</p><p className="mt-1 text-2xl font-bold text-[#091F5B]">{stats.totalReferrals ?? stats.successfulReferrals + (stats.pendingReferrals ?? 0) + (stats.referralsUnderReview ?? 0) + (stats.rejectedReferrals ?? 0)}</p></div>
@@ -121,7 +140,7 @@ export function WalletPage() {
         {stats.referrals.slice(0, 8).map((referral, index) => <div key={`${referral.code}-${referral.createdAt}-${index}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#DCE4EF] bg-white p-3">
           <div><p className="text-sm font-semibold text-[#091F5B]">Student referral</p><p className="mt-1 text-xs text-[#5C6982]">{new Date(referral.createdAt).toLocaleDateString()}</p></div>
           <div className="text-right"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${referral.status === 'awarded' ? 'bg-emerald-50 text-emerald-800' : referral.status === 'under_review' ? 'bg-amber-50 text-amber-800' : referral.status === 'rejected' ? 'bg-rose-50 text-rose-800' : 'bg-slate-100 text-slate-700'}`}>{referral.status === 'awarded' ? 'Reward credited' : referral.status === 'under_review' ? 'Under review' : referral.status === 'rejected' ? 'Not eligible' : 'Awaiting eligibility'}</span>
-            {referral.status === 'awarded' && <p className="mt-1 text-xs text-[#5C6982]">+{referral.rewardAmount ?? 20} points</p>}
+            {referral.status === 'awarded' && <p className="mt-1 text-xs text-[#5C6982]">+{referral.rewardAmount ?? 15} WP</p>}
           </div>
         </div>)}
       </div> : null}
