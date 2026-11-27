@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-route
 import { academicApi, type CourseOption, type InstitutionOption, type InstitutionType } from '../api/academic';
 import { authApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
-import { clearPreAccountSession, readPreAccountSession, type PreAccountSession } from '../lib/registration-session';
+import { clearPreAccountSession, readPreAccountSession, savePreAccountSession, type PreAccountSession } from '../lib/registration-session';
 
 const getAcademicLevels = (type: InstitutionType) => {
   if (type === 'polytechnic' || type === 'monotechnic') return ['ND I', 'ND II', 'HND I', 'HND II'];
@@ -72,13 +72,20 @@ export function ProfileOnboardingPage() {
   };
   useEffect(() => {
     if (!preAccount?.onboardingToken || onboardingCompleted) return;
+    const progress = {
+      step, institutionId, institutionType, institutionManual, institutionSearch,
+      facultyId, facultySearch, facultyManual, department, departmentSearch,
+      departmentManual, program, studyLevel, teachingAssignments,
+      courseTitleInput, courseCodeInput, courseLevelInput, academicTitle, teachingAreas: teachingAreasInput, researchInterests, studentInterests: studentInterestsInput, externalAffiliation, externalBio,
+    };
+
+    // Keep the same-tab recovery snapshot in sync immediately. Previously only
+    // the API was updated, leaving sessionStorage with an empty/stale progress
+    // object; remounting the page then initialized the wizard at Step 1.
+    savePreAccountSession({ ...preAccount, progress });
+
+    // Persist the encrypted server-side recovery copy without blocking typing.
     const timeout = window.setTimeout(() => {
-      const progress = {
-        step, institutionId, institutionType, institutionManual, institutionSearch,
-        facultyId, facultySearch, facultyManual, department, departmentSearch,
-        departmentManual, program, studyLevel, teachingAssignments,
-        courseTitleInput, courseCodeInput, courseLevelInput, academicTitle, teachingAreas: teachingAreasInput, researchInterests, studentInterests: studentInterestsInput, externalAffiliation, externalBio,
-      };
       void authApi.savePreAccountProgress(preAccount.onboardingToken, progress).catch(() => undefined);
     }, 500);
     return () => window.clearTimeout(timeout);
