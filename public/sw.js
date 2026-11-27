@@ -1,22 +1,6 @@
 const CACHE_PREFIX = 'sophis-central-';
-const CACHE_NAME = 'sophis-central-shell-v10';
-const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/sophis-central-icon.svg',
-  '/sophis-central-pwa-icon.svg',
-  '/apple-touch-icon.png',
-  '/sophis-central-favicon.png',
-  '/sophis-central-favicon-32.png',
-  '/sophis-central-favicon-48.png',
-  '/sophis-central-favicon.ico',
-  '/sophis-central-192.png',
-  '/sophis-central-512.png',
-  '/sophis-central-maskable-512.png',
-  '/sophia-central-mark.png',
-  '/sophia-central-logo.png'
-];
+const CACHE_NAME = 'sophis-central-shell-v11';
+const APP_SHELL = ['/index.html', '/manifest.webmanifest'];
 
 const PUBLIC_ASSET_PATHS = new Set([
   '/manifest.webmanifest',
@@ -36,6 +20,7 @@ const PUBLIC_ASSET_PATHS = new Set([
 
 function isPublicStaticAsset(request, url) {
   if (request.destination === 'script' || request.destination === 'style' || request.destination === 'font') {
+    // Vite emits content-hashed production assets, so cache-first is safe.
     return url.pathname.startsWith('/assets/');
   }
 
@@ -49,11 +34,17 @@ function isPublicStaticAsset(request, url) {
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    // Keep the shell install resilient if an optional manifest is unavailable.
+    await Promise.allSettled(APP_SHELL.map(async (path) => {
+      const response = await fetch(path, { cache: 'reload' });
+      if (response.ok && response.type === 'basic') {
+        await cache.put(path, response);
+      }
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
@@ -72,37 +63,26 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Never cache cross-origin, non-GET, API, or authentication requests.
+  // Never intercept cross-origin, non-GET, API, or authentication requests.
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/') || url.pathname.includes('/auth/')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
-      const cachedShell = await caches.match('/index.html') || await caches.match('/');
-      let timeoutId;
-
-      // Prefer the deployed HTML when the network is healthy, but don't leave
-      // a reload blocked indefinitely by a sleeping or unstable origin.
-      const networkRequest = fetch(request).then((response) => {
+      try {
+        // Always ask the deployment for the current app shell first. Do not
+        // replace a slow but reachable deployment with a stale cached document.
+        const response = await fetch(request, { cache: 'no-store' });
         if (response.ok && response.type === 'basic') {
           const copy = response.clone();
           void caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
         }
         return response;
-      });
-
-      try {
-        return await Promise.race([
-          networkRequest,
-          new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('Navigation network timeout')), 2500);
-          })
-        ]);
       } catch {
+        // The cached shell is an offline fallback only, never the normal refresh path.
+        const cachedShell = await caches.match('/index.html');
         if (cachedShell) return cachedShell;
-        return await networkRequest;
-      } finally {
-        clearTimeout(timeoutId);
+        return Response.error();
       }
     })());
     return;
@@ -110,36 +90,37 @@ self.addEventListener('fetch', (event) => {
 
   if (!isPublicStaticAsset(request, url)) return;
 
-  event.respondWith(
-    (async () => {
-      const isBrandAsset = PUBLIC_ASSET_PATHS.has(url.pathname);
-      const cached = await caches.match(request);
+  event.respondWith((async () => {
+    const isBrandAsset = PUBLIC_ASSET_PATHS.has(url.pathname);
+    const cached = await caches.match(request);
 
-      // Prefer current deployed brand assets so installed devices can refresh icons.
-      if (isBrandAsset) {
-        try {
-          const response = await fetch(request, { cache: 'no-cache' });
-          if (response.ok && response.type === 'basic') {
-            const copy = response.clone();
-            void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        } catch {
-          return cached || Response.error();
-        }
-      }
-
-      if (cached) return cached;
+    // Brand assets are checked against the deployment so updated icons/logos
+    // are not trapped behind an old cache entry.
+    if (isBrandAsset) {
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, { cache: 'no-cache' });
         if (response.ok && response.type === 'basic') {
           const copy = response.clone();
           void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
         return response;
       } catch {
-        return Response.error();
+        return cached || Response.error();
       }
-    })()
-  );
-})
+    }
+
+    // Content-hashed build assets are immutable; a new deployment references
+    // new filenames and therefore cannot accidentally reuse old code.
+    if (cached) return cached;
+    try {
+      const response = await fetch(request);
+      if (response.ok && response.type === 'basic') {
+        const copy = response.clone();
+        void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    } catch {
+      return Response.error();
+    }
+  })());
+});

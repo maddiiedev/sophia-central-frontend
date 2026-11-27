@@ -18,6 +18,7 @@ export function PrivateDmInboxProvider({ children }: { children: ReactNode }) {
   const [eventVersion, setEventVersion] = useState(0);
   const currentUserIdRef = useRef<string | null>(user?.id ?? null);
   const requestSequenceRef = useRef(0);
+  const inFlightRef = useRef<{ ownerId: string; promise: Promise<ChatInboxItem[]> } | null>(null);
   currentUserIdRef.current = user?.id ?? null;
 
   const refreshInbox = useCallback(async () => {
@@ -27,16 +28,28 @@ export function PrivateDmInboxProvider({ children }: { children: ReactNode }) {
     }
 
     const ownerId = user.id;
-    const sequence = ++requestSequenceRef.current;
-    const result = await chatApi.inbox();
-    const items = Array.isArray(result) ? result : [];
-
-    // A delayed response from a previous account or an older request must never
-    // overwrite the active account's inbox state.
-    if (currentUserIdRef.current === ownerId && sequence === requestSequenceRef.current) {
-      setState({ ownerId, items });
+    if (inFlightRef.current?.ownerId === ownerId) {
+      return inFlightRef.current.promise;
     }
-    return items;
+
+    const sequence = ++requestSequenceRef.current;
+    const request = chatApi.inbox()
+      .then((result) => {
+        const items = Array.isArray(result) ? result : [];
+
+        // A delayed response from a previous account or an older request must never
+        // overwrite the active account's inbox state.
+        if (currentUserIdRef.current === ownerId && sequence === requestSequenceRef.current) {
+          setState({ ownerId, items });
+        }
+        return items;
+      })
+      .finally(() => {
+        if (inFlightRef.current?.promise === request) inFlightRef.current = null;
+      });
+
+    inFlightRef.current = { ownerId, promise: request };
+    return request;
   }, [user?.id, canUsePrivateDm]);
 
   useEffect(() => {
@@ -47,8 +60,14 @@ export function PrivateDmInboxProvider({ children }: { children: ReactNode }) {
     if (!ownerId || !canUsePrivateDm) return;
 
     let active = true;
+    let lastEventRefreshAt = 0;
     const refresh = () => {
       if (!active || document.visibilityState === 'hidden') return;
+      const now = Date.now();
+      // focus, pageshow and visibilitychange can fire together on browser restore.
+      // Coalesce those lifecycle events instead of issuing duplicate inbox requests.
+      if (now - lastEventRefreshAt < 750) return;
+      lastEventRefreshAt = now;
       setEventVersion(version => version + 1);
       void refreshInbox().catch(() => {
         // The last successful inbox remains visible; foreground recovery and polling retry.
