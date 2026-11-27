@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { BrandLogo } from '../components/brand/BrandLogo';
 import { authApi } from '../api/auth';
 import { setCsrfToken } from '../lib/api/client';
+import { useAuth } from '../context/AuthContext';
 
 export function BecomeReviewerPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [academicHandle, setAcademicHandle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -14,6 +16,7 @@ export function BecomeReviewerPage() {
   const [comingSoon, setComingSoon] = useState(false);
   const recruitmentOpen = import.meta.env.VITE_REVIEWER_RECRUITMENT_OPEN === 'true';
   const testAccountEmail = (import.meta.env.VITE_REVIEWER_TEST_ACCOUNT_EMAIL || '').trim().toLowerCase();
+  if (user?.role === 'student') return <Navigate to="/student/dashboard" replace />;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -66,7 +69,7 @@ export function BecomeReviewerPage() {
             {busy ? 'Checking details…' : 'Continue'} {!busy && <ArrowRight size={17} />}
           </button>
         </form>
-        <p className="mt-5 text-center text-xs leading-5 text-[#64748B]">If these details are linked to an existing account, sign in and apply from your Student or Lecturer dashboard. If they are not, you can continue with an External Reviewer registration.</p>
+        <p className="mt-5 text-center text-xs leading-5 text-[#64748B]">Lecturer accounts may apply when recruitment is open. Student accounts are not eligible for Academic Reviewer access. Eligible external researchers may continue with an External Reviewer registration.</p>
         <p className="mt-5 text-center text-sm text-[#52627B]">Already know your account details? <Link to="/login?intent=reviewer" className="font-semibold text-[#6121D0] underline underline-offset-4">Sign in</Link></p>
       </section>
     </main>

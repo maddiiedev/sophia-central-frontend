@@ -8,7 +8,7 @@ export function WorkspaceSelectorPage() {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const dark = theme === 'dark';
-  if (!user || !['student', 'lecturer'].includes(user.role) || user.hasReviewerAccess !== true) {
+  if (!user || user.role !== 'lecturer' || user.hasReviewerAccess !== true) {
     return <Navigate to={user?.role === 'lecturer' ? '/lecturer/dashboard' : '/student/dashboard'} replace />;
   }
 
