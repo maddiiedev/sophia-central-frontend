@@ -25,6 +25,7 @@ export type OpenSourceResearchResult = {
   openAccess: boolean;
   licence: string | null;
   redistributionAllowedByLicence: boolean;
+  index?: 'OpenAlex' | 'Crossref' | 'Europe PMC';
 };
 export type OpenSourceResearchImportResult = {
   imported: boolean;
