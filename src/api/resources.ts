@@ -35,6 +35,7 @@ export type OpenSourceResearchImportResult = {
 };
 export type OpenSourceResearchSearchPage = {
   results: OpenSourceResearchResult[];
+  importedResults: ApiResource[];
   page: number;
   perPage: number;
   hasMore: boolean;
@@ -65,7 +66,7 @@ function queryString(filters: PublicResourceFilters = {}) {
   return query ? `?${query}` : '';
 }
 export const resourcesApi = {
-  searchOpenSource: (query: string, page = 1, perPage = 12) => apiRequest<OpenSourceResearchSearchPage>(`/resources/open-source/search?q=${encodeURIComponent(query)}&page=${page}&perPage=${perPage}`, { method: 'GET' }),
+  searchOpenSource: (filters: { q?: string; author?: string; course?: string; topic?: string }, page = 1, perPage = 12) => { const params = new URLSearchParams({ page: String(page), perPage: String(perPage) }); Object.entries(filters).forEach(([key, value]) => { if (value?.trim()) params.set(key, value.trim()); }); return apiRequest<OpenSourceResearchSearchPage>(`/resources/open-source/search?${params.toString()}`, { method: 'GET' }); },
   importOpenSource: (identifier: string) => apiRequest<OpenSourceResearchImportResult>('/resources/open-source/import', { method: 'POST', body: JSON.stringify({ identifier }) }),
   importOpenSourceBulk: (identifiers: string[]) => apiRequest<OpenSourceResearchBulkImportReport>('/resources/open-source/import/bulk', { method: 'POST', body: JSON.stringify({ identifiers }) }),
   openSourceList: async (filters: PublicResourceFilters = {}) => {
