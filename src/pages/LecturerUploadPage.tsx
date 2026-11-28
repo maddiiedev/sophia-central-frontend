@@ -65,13 +65,14 @@ export function LecturerUploadPage() {
       description: '',
       course: '',
       topic: '',
-      institution: '',
+      institution: user?.institution || '',
       level: '',
       type: 'lecture_notes',
-      license: 'CC-BY-4.0',
+      license: '',
       attribution: '',
       rightsConfirmed: false,
       tags: '',
+      coAuthorHandles: '',
     },
   });
 
@@ -92,10 +93,11 @@ export function LecturerUploadPage() {
       institution: user?.institution || '',
       level: '',
       type: 'lecture_notes',
-      license: 'CC-BY-4.0',
+      license: '',
       attribution: '',
       rightsConfirmed: false,
       tags: '',
+      coAuthorHandles: '',
     });
   };
 
@@ -145,14 +147,14 @@ export function LecturerUploadPage() {
 
       const result = await resourcesApi.create({
         title: values.title.trim(),
-        description: values.description.trim(),
+        ...(values.description.trim() ? { description: values.description.trim() } : {}),
         course: values.course.trim(),
-        topic: values.topic.trim(),
+        ...(values.topic.trim() ? { topic: values.topic.trim() } : {}),
         institution: values.institution.trim() || user.institution || '',
         level: values.level.trim(),
         type: values.type,
-        license: values.license,
-        attribution: values.attribution.trim(),
+        ...(values.license ? { license: values.license } : {}),
+        ...(values.attribution.trim() ? { attribution: values.attribution.trim() } : {}),
         rightsConfirmed: values.rightsConfirmed,
         tags: (values.tags || '').split(',').map(tag => tag.trim()).filter(Boolean),
       });
@@ -203,18 +205,18 @@ export function LecturerUploadPage() {
       }
     }} className="space-y-5" noValidate>
       <div className="grid gap-5 md:grid-cols-2">
-        <div><label htmlFor="lecturer-resource-title" className="mb-2 block text-sm font-semibold text-[#091F5B]">Name / title <span className="text-rose-600">*</span></label><input required id="lecturer-resource-title" disabled={Boolean(pendingUpload)} {...register('title')} className={field} aria-invalid={Boolean(errors.title)} />{errors.title && <p className="mt-1 text-sm text-red-700">{errors.title.message}</p>}</div>
-        <div><label htmlFor="lecturer-resource-type" className="mb-2 block text-sm font-semibold text-[#091F5B]">Resource type <span className="text-rose-600">*</span></label><select id="lecturer-resource-type" required disabled={Boolean(pendingUpload)} {...register('type')} className={field}><option value="lecture_notes">Lecture Notes</option><option value="past_question">Past Question</option><option value="research_paper">Research Paper</option><option value="project">Project</option><option value="slides">Slides</option><option value="other">Other</option></select>{errors.type && <p className="mt-1 text-sm text-red-700">{errors.type.message}</p>}</div>
-        <div><label htmlFor="lecturer-resource-course" className="mb-2 block text-sm font-semibold text-[#091F5B]">Course / subject <span className="text-rose-600">*</span></label><input required id="lecturer-resource-course" disabled={Boolean(pendingUpload)} {...register('course')} placeholder="e.g. CSC 101" className={field} aria-invalid={Boolean(errors.course)} />{errors.course && <p className="mt-1 text-sm text-red-700">{errors.course.message}</p>}</div>
-        <div><label htmlFor="lecturer-resource-topic" className="mb-2 block text-sm font-semibold text-[#091F5B]">Topic <span className="text-rose-600">*</span></label><input required id="lecturer-resource-topic" disabled={Boolean(pendingUpload)} {...register('topic')} className={field} aria-invalid={Boolean(errors.topic)} />{errors.topic && <p className="mt-1 text-sm text-red-700">{errors.topic.message}</p>}</div>
-        <div><label htmlFor="lecturer-resource-institution" className="mb-2 block text-sm font-semibold text-[#091F5B]">Institution <span className="text-rose-600">*</span></label><input id="lecturer-resource-institution" required disabled={Boolean(pendingUpload)} {...register('institution')} placeholder={user?.institution || 'Your institution'} className={field} aria-invalid={Boolean(errors.institution)} />{errors.institution && <p className="mt-1 text-sm text-red-700">{errors.institution.message}</p>}</div>
-        <div><label htmlFor="lecturer-resource-level" className="mb-2 block text-sm font-semibold text-[#091F5B]">Level <span className="text-rose-600">*</span></label><input id="lecturer-resource-level" required disabled={Boolean(pendingUpload)} {...register('level')} placeholder="e.g. 200 level" className={field} aria-invalid={Boolean(errors.level)} />{errors.level && <p className="mt-1 text-sm text-red-700">{errors.level.message}</p>}</div>
-        <div className="md:col-span-2"><label htmlFor="lecturer-resource-description" className="mb-2 block text-sm font-semibold text-[#091F5B]">Description <span className="text-rose-600">*</span></label><textarea id="lecturer-resource-description" required disabled={Boolean(pendingUpload)} {...register('description')} rows={5} className={field} aria-invalid={Boolean(errors.description)} />{errors.description && <p className="mt-1 text-sm text-red-700">{errors.description.message}</p>}</div>
-        <div><label htmlFor="lecturer-resource-license" className="mb-2 block text-sm font-semibold text-[#091F5B]">Licence <span className="text-rose-600">*</span></label><select id="lecturer-resource-license" required disabled={Boolean(pendingUpload)} {...register('license')} className={field}><option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option><option value="CC0-1.0">CC0 1.0</option><option value="ALL-RIGHTS-RESERVED">All rights reserved</option></select>{errors.license && <p className="mt-1 text-sm text-red-700">{errors.license.message}</p>}</div>
-        <div><label htmlFor="lecturer-resource-attribution" className="mb-2 block text-sm font-semibold text-[#091F5B]">Author <span className="text-rose-600">*</span></label><input required id="lecturer-resource-attribution" disabled={Boolean(pendingUpload)} {...register('attribution')} placeholder="Author / source credit" className={field} aria-invalid={Boolean(errors.attribution)} />{errors.attribution && <p className="mt-1 text-sm text-red-700">{errors.attribution.message}</p>}</div>
-        <div className="md:col-span-2"><label htmlFor="lecturer-resource-tags" className="mb-2 block text-sm font-semibold text-[#091F5B]">Keywords <span className="text-rose-600">*</span></label><input required id="lecturer-resource-tags" disabled={Boolean(pendingUpload)} {...register('tags')} placeholder="ai, revision, engineering" className={field} /><p className="mt-1 text-xs text-[#5C6982]">Separate tags with commas.</p></div>
+        <div><label htmlFor="lecturer-resource-title" className="mb-2 block text-sm font-semibold text-[#091F5B]">Resource title <span className="text-[#9CA3AF]">*</span></label><input required id="lecturer-resource-title" disabled={Boolean(pendingUpload)} {...register('title')} placeholder="Enter the title shown on the material" className={field} aria-invalid={Boolean(errors.title)} />{errors.title && <p className="mt-1 text-sm text-red-700">{errors.title.message}</p>}</div>
+        <div><label htmlFor="lecturer-resource-type" className="mb-2 block text-sm font-semibold text-[#091F5B]">Material type <span className="text-[#9CA3AF]">*</span></label><select id="lecturer-resource-type" required disabled={Boolean(pendingUpload)} {...register('type')} className={field}><option value="lecture_notes">Lecture notes</option><option value="past_question">Past question</option><option value="research_paper">Research paper</option><option value="project">Project / thesis</option><option value="slides">Lecture slides</option><option value="other">Other academic material</option></select>{errors.type && <p className="mt-1 text-sm text-red-700">{errors.type.message}</p>}</div>
+        <div><label htmlFor="lecturer-resource-course" className="mb-2 block text-sm font-semibold text-[#091F5B]">Course code / subject <span className="text-[#9CA3AF]">*</span></label><input required id="lecturer-resource-course" disabled={Boolean(pendingUpload)} {...register('course')} placeholder="e.g. CSC 301 — Data Structures" className={field} aria-invalid={Boolean(errors.course)} />{errors.course && <p className="mt-1 text-sm text-red-700">{errors.course.message}</p>}</div>
+        <div><label htmlFor="lecturer-resource-institution" className="mb-2 block text-sm font-semibold text-[#091F5B]">Institution <span className="text-[#9CA3AF]">*</span></label><input id="lecturer-resource-institution" required readOnly disabled={Boolean(pendingUpload)} {...register('institution')} placeholder="Complete your academic profile to set your institution" className={field} aria-invalid={Boolean(errors.institution)} />{errors.institution && <p className="mt-1 text-sm text-red-700">{errors.institution.message}</p>}<p className="mt-1 text-xs text-[#5C6982]">Set from your catalogue-backed academic profile. Update your profile if this institution is incorrect.</p></div>
+        <div><label htmlFor="lecturer-resource-level" className="mb-2 block text-sm font-semibold text-[#091F5B]">Academic level <span className="text-[#9CA3AF]">*</span></label><input id="lecturer-resource-level" required disabled={Boolean(pendingUpload)} {...register('level')} placeholder="e.g. Undergraduate, 300 level or postgraduate" className={field} aria-invalid={Boolean(errors.level)} />{errors.level && <p className="mt-1 text-sm text-red-700">{errors.level.message}</p>}</div>
+        <div><label htmlFor="lecturer-resource-topic" className="mb-2 block text-sm font-semibold text-[#091F5B]">Topic <span className="font-normal text-[#71809A]">(optional)</span></label><input id="lecturer-resource-topic" disabled={Boolean(pendingUpload)} {...register('topic')} placeholder="e.g. data structures, research methods" className={field} aria-invalid={Boolean(errors.topic)} />{errors.topic && <p className="mt-1 text-sm text-red-700">{errors.topic.message}</p>}</div>
+        <div className="md:col-span-2"><label htmlFor="lecturer-resource-description" className="mb-2 block text-sm font-semibold text-[#091F5B]">Description <span className="font-normal text-[#71809A]">(optional)</span></label><textarea id="lecturer-resource-description" disabled={Boolean(pendingUpload)} {...register('description')} rows={5} placeholder="Briefly describe what this teaching or research material covers" className={field} aria-invalid={Boolean(errors.description)} />{errors.description && <p className="mt-1 text-sm text-red-700">{errors.description.message}</p>}</div>
+        <div><label htmlFor="lecturer-resource-attribution" className="mb-2 block text-sm font-semibold text-[#091F5B]">Original author <span className="font-normal text-[#71809A]">(optional)</span></label><input id="lecturer-resource-attribution" disabled={Boolean(pendingUpload)} {...register('attribution')} placeholder="Enter the original author if known" className={field} aria-invalid={Boolean(errors.attribution)} />{errors.attribution && <p className="mt-1 text-sm text-red-700">{errors.attribution.message}</p>}</div>
+        <div><label htmlFor="lecturer-resource-license" className="mb-2 block text-sm font-semibold text-[#091F5B]">Licence <span className="font-normal text-[#71809A]">(optional)</span></label><select id="lecturer-resource-license" disabled={Boolean(pendingUpload)} {...register('license')} className={field}><option value="">Not specified / not known</option><option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option><option value="CC0-1.0">CC0 1.0</option><option value="ALL-RIGHTS-RESERVED">All rights reserved</option></select>{errors.license && <p className="mt-1 text-sm text-red-700">{errors.license.message}</p>}</div>
+        <div className="md:col-span-2"><label htmlFor="lecturer-resource-tags" className="mb-2 block text-sm font-semibold text-[#091F5B]">Keywords <span className="font-normal text-[#71809A]">(optional)</span></label><input id="lecturer-resource-tags" disabled={Boolean(pendingUpload)} {...register('tags')} placeholder="Add keywords separated by commas" className={field} /><p className="mt-1 text-xs text-[#5C6982]">Optional. Separate multiple keywords with commas.</p></div>
         <div className="md:col-span-2"><label htmlFor="lecturer-resource-file" className="mb-2 block text-sm font-semibold text-[#091F5B]">Attach document <span className="font-normal text-[#71809A]">(optional)</span></label><input id="lecturer-resource-file" className={field + ' file:mr-4 file:rounded-lg file:border-0 file:bg-[#004BEC] file:px-3 file:py-2 file:font-semibold file:text-white'} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain" onChange={event => setAttachment(event.target.files?.[0] ?? null)} /><p className="mt-1 text-xs text-[#5C6982]">{pendingUpload ? 'Select the exact same file to resume the pending upload.' : 'PDF, Word, PowerPoint or TXT · Maximum 50 MB. Files are uploaded to private object storage.'}</p>{attachment && <p className="mt-1 text-sm text-[#1F2937]">Selected: {attachment.name} ({(attachment.size / (1024 * 1024)).toFixed(2)} MB)</p>}</div>
-        {!pendingUpload && <label className="md:col-span-2 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><input required type="checkbox" className="mt-1" {...register('rightsConfirmed')} /><span>I confirm I created this work or have permission to share it under the selected licence. I understand it will be reviewed before publication.</span></label>}
+        {!pendingUpload && <label className="md:col-span-2 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><input required type="checkbox" className="mt-1" {...register('rightsConfirmed')} /><span><strong>Sharing rights declaration <span className="font-normal text-[#9CA3AF]">*</span></strong><span className="mt-1 block">I confirm I created this material or have permission to share it. If the original author or licence is unknown, I will not claim ownership or assign a licence I cannot verify.</span></span></label>}
         {!pendingUpload && errors.rightsConfirmed?.message && <p className="md:col-span-2 text-sm text-rose-700">{errors.rightsConfirmed.message}</p>}
       </div>
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}

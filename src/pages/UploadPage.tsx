@@ -62,7 +62,7 @@ export function UploadPage() {
   const [pendingUpload, setPendingUpload] = useState<PendingUpload | null>(() => readPendingUpload());
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<ResourceUploadValues>({
     resolver: zodResolver(resourceUploadSchema),
-    defaultValues: { title: '', description: '', course: '', topic: '', institution: '', level: '', type: 'lecture_notes', license: 'CC-BY-4.0', attribution: '', rightsConfirmed: false, tags: '', coAuthorHandles: '' },
+    defaultValues: { title: '', description: '', course: '', topic: '', institution: user?.institution || '', level: '', type: 'lecture_notes', license: '', attribution: '', rightsConfirmed: false, tags: '', coAuthorHandles: '' },
   });
 
   const clearPendingUpload = () => {
@@ -74,7 +74,7 @@ export function UploadPage() {
     clearPendingUpload();
     setAttachment(null);
     setSuccess('Your contribution has been submitted for moderator review.');
-    reset({ title: '', description: '', course: '', topic: '', institution: user?.institution || '', level: '', type: 'lecture_notes', license: 'CC-BY-4.0', attribution: '', rightsConfirmed: false, tags: '', coAuthorHandles: '' });
+    reset({ title: '', description: '', course: '', topic: '', institution: user?.institution || '', level: '', type: 'lecture_notes', license: '', attribution: '', rightsConfirmed: false, tags: '', coAuthorHandles: '' });
   };
 
   const retryPendingUpload = async () => {
@@ -120,14 +120,14 @@ export function UploadPage() {
 
       const result = await resourcesApi.create({
         title: values.title.trim(),
-        description: values.description.trim(),
+        ...(values.description.trim() ? { description: values.description.trim() } : {}),
         course: values.course.trim(),
-        topic: values.topic.trim(),
+        ...(values.topic.trim() ? { topic: values.topic.trim() } : {}),
         institution: values.institution.trim() || user?.institution || '',
         level: values.level.trim(),
         type: values.type,
-        license: values.license,
-        attribution: values.attribution.trim(),
+        ...(values.license ? { license: values.license } : {}),
+        ...(values.attribution.trim() ? { attribution: values.attribution.trim() } : {}),
         rightsConfirmed: values.rightsConfirmed,
         tags: (values.tags || '').split(',').map(tag => tag.trim()).filter(Boolean),
         coAuthorHandles: (values.coAuthorHandles || '').split(',').map(handle => handle.trim().replace(/^@+/, '').toLowerCase()).filter(Boolean),
@@ -175,23 +175,23 @@ export function UploadPage() {
         void handleSubmit(submit)(event);
       }
     }} className="mt-6 grid gap-4 sm:grid-cols-2">
-      <label className="text-sm font-semibold">Name / title <span className="text-rose-600">*</span><input required className={field} disabled={Boolean(pendingUpload)} {...register('title')} />{errors.title?.message}</label>
-      <label className="text-sm font-semibold">Material type <span className="text-rose-600">*</span><select className={field} required disabled={Boolean(pendingUpload)} {...register('type')}><option value="lecture_notes">Lecture notes</option><option value="past_question">Past question</option><option value="research_paper">Research paper</option><option value="project">Project</option><option value="slides">Slides</option><option value="other">Other</option></select></label>
-      <label className="text-sm font-semibold">Course / subject <span className="text-rose-600">*</span><input required className={field} disabled={Boolean(pendingUpload)} {...register('course')} />{errors.course?.message}</label>
-      <label className="text-sm font-semibold">Topic <span className="text-rose-600">*</span><input required className={field} disabled={Boolean(pendingUpload)} {...register('topic')} />{errors.topic?.message}</label>
-      <label className="text-sm font-semibold">Institution <span className="text-rose-600">*</span><input className={field} required disabled={Boolean(pendingUpload)} {...register('institution')} />{errors.institution?.message}</label>
-      <label className="text-sm font-semibold">Academic level <span className="text-rose-600">*</span><input className={field} required disabled={Boolean(pendingUpload)} {...register('level')} />{errors.level?.message}</label>
-      <label className="sm:col-span-2 text-sm font-semibold">Description <span className="text-rose-600">*</span><textarea rows={4} className={field} required disabled={Boolean(pendingUpload)} {...register('description')} />{errors.description?.message}</label>
-      <label className="text-sm font-semibold">Licence <span className="text-rose-600">*</span><select className={field} required disabled={Boolean(pendingUpload)} {...register('license')}><option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option><option value="CC0-1.0">CC0 1.0</option><option value="ALL-RIGHTS-RESERVED">All rights reserved</option></select></label>
-      <label className="text-sm font-semibold">Author <span className="text-rose-600">*</span><input required className={field} disabled={Boolean(pendingUpload)} placeholder="Author / source credit" {...register('attribution')} />{errors.attribution?.message}</label>
-      <label className="sm:col-span-2 text-sm font-semibold">Keywords <span className="text-rose-600">*</span><input required className={field} disabled={Boolean(pendingUpload)} placeholder="comma-separated" {...register('tags')} /></label>
+      <label className="text-sm font-semibold">Resource title <span className="text-[#9CA3AF]">*</span><input required className={field} disabled={Boolean(pendingUpload)} placeholder="Enter the title shown on the material" {...register('title')} />{errors.title?.message}</label>
+      <label className="text-sm font-semibold">Material type <span className="text-[#9CA3AF]">*</span><select className={field} required disabled={Boolean(pendingUpload)} {...register('type')}><option value="lecture_notes">Lecture notes</option><option value="past_question">Past question</option><option value="research_paper">Research paper</option><option value="project">Project / thesis</option><option value="slides">Lecture slides</option><option value="other">Other academic material</option></select></label>
+      <label className="text-sm font-semibold">Course code / subject <span className="text-[#9CA3AF]">*</span><input required className={field} disabled={Boolean(pendingUpload)} placeholder="e.g. BIO 201 — Human Anatomy" {...register('course')} />{errors.course?.message}</label>
+      <label className="text-sm font-semibold">Institution <span className="text-[#9CA3AF]">*</span><input className={field} required readOnly disabled={Boolean(pendingUpload)} placeholder="Complete your academic profile to set your institution" {...register('institution')} />{errors.institution?.message}<span className="mt-1 block text-xs font-normal text-[#5C6982]">Set from your catalogue-backed academic profile. Update your profile if this institution is incorrect.</span></label>
+      <label className="text-sm font-semibold">Academic level <span className="text-[#9CA3AF]">*</span><input className={field} required disabled={Boolean(pendingUpload)} placeholder="e.g. 200 level, Year 2 or postgraduate" {...register('level')} />{errors.level?.message}</label>
+      <label className="text-sm font-semibold">Topic <span className="font-normal text-[#71809A]">(optional)</span><input className={field} disabled={Boolean(pendingUpload)} placeholder="e.g. skeletal system, cell structure" {...register('topic')} />{errors.topic?.message}</label>
+      <label className="sm:col-span-2 text-sm font-semibold">Description <span className="font-normal text-[#71809A]">(optional)</span><textarea rows={4} className={field} disabled={Boolean(pendingUpload)} placeholder="Briefly describe what this material covers" {...register('description')} />{errors.description?.message}</label>
+      <label className="text-sm font-semibold">Original author <span className="font-normal text-[#71809A]">(optional)</span><input className={field} disabled={Boolean(pendingUpload)} placeholder="Enter the author if known" {...register('attribution')} />{errors.attribution?.message}</label>
+      <label className="text-sm font-semibold">Licence <span className="font-normal text-[#71809A]">(optional)</span><select className={field} disabled={Boolean(pendingUpload)} {...register('license')}><option value="">Not specified / not known</option><option value="CC-BY-4.0">CC BY 4.0</option><option value="CC-BY-SA-4.0">CC BY-SA 4.0</option><option value="CC0-1.0">CC0 1.0</option><option value="ALL-RIGHTS-RESERVED">All rights reserved</option></select></label>
+      <label className="sm:col-span-2 text-sm font-semibold">Keywords <span className="font-normal text-[#71809A]">(optional)</span><input className={field} disabled={Boolean(pendingUpload)} placeholder="Add keywords separated by commas" {...register('tags')} />{errors.tags?.message}</label>
       <label className="sm:col-span-2 text-sm font-semibold">Sophis Central co-author handles <span className="font-normal text-[#71809A]">(optional)</span><input className={field} disabled={Boolean(pendingUpload)} placeholder="@handle1, @handle2" {...register('coAuthorHandles')} /><span className="mt-1 block text-xs font-normal text-[#5C6982]">Add co-authors who have Sophis Central accounts. Their stable account IDs help prevent assignment to a reviewer who contributed to this work.</span>{errors.coAuthorHandles?.message}</label>
       <label className="sm:col-span-2 text-sm font-semibold">Attachment (optional)
         <input className={field + ' mt-2'} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain" onChange={event => setAttachment(event.target.files?.[0] ?? null)} />
         <span className="mt-1 block text-xs font-normal text-[#5C6982]">{pendingUpload ? 'Select the exact same file to resume the pending upload.' : 'PDF, Word, PowerPoint or TXT; maximum 50 MB. The file is uploaded to private object storage after the contribution record is created.'}</span>
         {attachment && <span className="mt-1 block text-xs font-normal">{attachment.name} · {(attachment.size / (1024 * 1024)).toFixed(2)} MB</span>}
       </label>
-      {!pendingUpload && <label className="sm:col-span-2 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><input required type="checkbox" className="mt-1" {...register('rightsConfirmed')} /><span>I confirm I created this work or have permission to share it under the selected licence. I understand it will be reviewed before publication.</span></label>}
+      {!pendingUpload && <label className="sm:col-span-2 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"><input required type="checkbox" className="mt-1" {...register('rightsConfirmed')} /><span><strong>Sharing rights declaration <span className="font-normal text-[#9CA3AF]">*</span></strong><span className="mt-1 block">I confirm I created this material or have permission to share it. If the original author or licence is unknown, I will not claim ownership or assign a licence I cannot verify.</span></span></label>}
       {!pendingUpload && errors.rightsConfirmed?.message && <p className="sm:col-span-2 text-sm text-rose-700">{errors.rightsConfirmed.message}</p>}
       {error && <p role="alert" className="sm:col-span-2 text-sm text-rose-700">{error}</p>}
       <button type="submit" disabled={!isAuthenticated || isSubmitting || (Boolean(pendingUpload) && !attachment)} className="sm:col-span-2 rounded-xl bg-[#6121D0] px-4 py-3 font-semibold text-white disabled:opacity-50">{isSubmitting ? 'Submitting…' : pendingUpload ? 'Retry attachment upload' : 'Submit for review'}</button>
