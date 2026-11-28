@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from './context/AuthContext';
+import { authApi } from './api/auth';
 import { apiRequest } from './lib/api/client';
 import { ThemeProvider } from './context/ThemeContext';
 import { AppShell } from './components/layout/AppShell';
@@ -344,12 +345,17 @@ function AdminMfaChallengePage({ challengeToken, setupRequired, provisioningUri,
 }
 
 function LoginPage() {
-  const { login, startAdminMfaEnrollment, confirmAdminMfaEnrollment, verifyAdminMfa, isAuthenticated, user } = useAuth();
+  const { login, startAdminMfaEnrollment, confirmAdminMfaEnrollment, verifyAdminMfa, refreshSession, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const accountNotice = searchParams.get('account');
   const registrationIntent = searchParams.get('intent');
   const [submitError, setSubmitError] = useState('');
+  const [reactivationIdentifier, setReactivationIdentifier] = useState('');
+  const [reactivationCode, setReactivationCode] = useState('');
+  const [reactivationConfirmationToken, setReactivationConfirmationToken] = useState('');
+  const [reactivationError, setReactivationError] = useState('');
+  const [reactivationBusy, setReactivationBusy] = useState(false);
   const [mfaChallenge, setMfaChallenge] = useState('');
   const [mfaSetupRequired, setMfaSetupRequired] = useState(false);
   const [mfaProvisioningUri, setMfaProvisioningUri] = useState('');
@@ -366,6 +372,13 @@ function LoginPage() {
     setSubmitError('');
     try {
       const result = await login(values.identifier.trim(), values.password);
+      if (result.requiresReactivation) {
+        setReactivationIdentifier(values.identifier.trim());
+        setReactivationCode('');
+        setReactivationConfirmationToken('');
+        setReactivationError('');
+        return;
+      }
       if (result.requiresAdminMfa && result.challengeToken) {
         setMfaChallenge(result.challengeToken);
         setMfaSetupRequired(Boolean(result.setupRequired));
@@ -390,6 +403,26 @@ function LoginPage() {
       setMfaSecret('');
       setSubmitError(error instanceof Error ? error.message : 'Sign in failed. Check your email or username and password, then try again.');
     }
+  };
+
+  const verifyReactivationCode = async () => {
+    setReactivationBusy(true); setReactivationError('');
+    try {
+      const result = await authApi.verifyAccountReactivation(reactivationIdentifier, reactivationCode.trim());
+      setReactivationConfirmationToken(result.confirmationToken);
+    } catch (error) {
+      setReactivationError(error instanceof Error ? error.message : 'Unable to verify the code. Request another code or try again.');
+    } finally { setReactivationBusy(false); }
+  };
+  const confirmReactivation = async () => {
+    setReactivationBusy(true); setReactivationError('');
+    try {
+      const result = await authApi.confirmAccountReactivation(reactivationConfirmationToken);
+      await refreshSession();
+      navigate(destinationForUser(result.user), { replace: true });
+    } catch (error) {
+      setReactivationError(error instanceof Error ? error.message : 'Unable to reactivate this account. Please try again.');
+    } finally { setReactivationBusy(false); }
   };
   const cancelDeletion = async () => {
     setCancellingDeletion(true); setCancelError(''); setCancelMessage('');
@@ -433,9 +466,10 @@ function LoginPage() {
             </div>
 
             {accountNotice === 'deletion-scheduled' && <div role="status" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">Your deletion request has been scheduled. Your account is inaccessible now, and permanent cleanup is due after 30 days. You can cancel during the grace period using your registered email, password and security answer.</div>}
-            {accountNotice === 'deactivated' && <div role="status" className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">Your account has been deactivated. Sign in again with your password when you are ready to reactivate it.</div>}
+            {accountNotice === 'deactivated' && <div role="status" className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">Your account is deactivated. To return, sign in and verify the one-time code sent to your registered email, then confirm reactivation.</div>}
 
-            <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-5" noValidate>
+            {reactivationIdentifier && <section className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-5" aria-live="polite"><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-800">Account security</p><h3 className="mt-2 text-lg font-semibold text-[#091F5B]">Reactivate your account</h3><p className="mt-2 text-sm leading-6 text-blue-950">This account is deactivated. Enter the six-digit code sent to its registered email. The code expires in 10 minutes.</p><label className="mt-4 block"><span className="mb-2 block text-sm font-medium text-[#091F5B]">Email verification code</span><input value={reactivationCode} onChange={(event) => setReactivationCode(event.target.value.replace(/\\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" className="brand-input text-center text-lg tracking-[0.25em]" /></label>{reactivationError && <p role="alert" className="mt-3 text-sm text-rose-700">{reactivationError}</p>}{reactivationConfirmationToken ? <button type="button" onClick={() => void confirmReactivation()} disabled={reactivationBusy} className="brand-button mt-4 w-full px-4 py-3 font-semibold disabled:opacity-60">{reactivationBusy ? 'Reactivating…' : 'Confirm and reactivate account'}</button> : <button type="button" onClick={() => void verifyReactivationCode()} disabled={reactivationBusy || reactivationCode.length !== 6} className="brand-button mt-4 w-full px-4 py-3 font-semibold disabled:opacity-60">{reactivationBusy ? 'Verifying…' : 'Verify email code'}</button>}<button type="button" onClick={() => { setReactivationIdentifier(''); setReactivationConfirmationToken(''); setReactivationCode(''); setReactivationError(''); }} className="mt-3 w-full text-sm font-medium text-slate-600">Back to sign in</button></section>}
+            <form hidden={Boolean(reactivationIdentifier)} onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-5" noValidate>
               {submitError && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{submitError}</div>}
               {submitError.toLowerCase().includes('pending deletion') && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">

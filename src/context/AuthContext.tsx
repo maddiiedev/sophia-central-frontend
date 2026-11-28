@@ -13,7 +13,7 @@ type RegisterPayload = {
   [key: string]: unknown;
 };
 type OnboardingPayload = Parameters<typeof academicApi.completeOnboarding>[0];
-type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<{ requiresOnboarding: boolean; requiresAdminMfa?: boolean; setupRequired?: boolean; challengeToken?: string }>; startAdminMfaEnrollment: (challengeToken: string) => Promise<{ provisioningUri: string; secret: string }>; confirmAdminMfaEnrollment: (challengeToken: string, code: string) => Promise<string[]>; verifyAdminMfa: (challengeToken: string, code: string) => Promise<void>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
+type AuthContextValue = { user: User | null; isAuthenticated: boolean; isLoading: boolean; login: (identifier: string, password: string, _role?: UserRole) => Promise<{ requiresOnboarding: boolean; requiresAdminMfa?: boolean; requiresReactivation?: boolean; setupRequired?: boolean; challengeToken?: string }>; startAdminMfaEnrollment: (challengeToken: string) => Promise<{ provisioningUri: string; secret: string }>; confirmAdminMfaEnrollment: (challengeToken: string, code: string) => Promise<string[]>; verifyAdminMfa: (challengeToken: string, code: string) => Promise<void>; register: (payload: RegisterPayload) => Promise<{ emailSent: boolean; message: string }>; completeOnboarding: (payload: OnboardingPayload) => Promise<void>; completePreAccountOnboarding: (token: string, payload: OnboardingPayload) => Promise<void>; logout: () => Promise<void>; refreshSession: () => Promise<void> };
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const SESSION_USER_CACHE_KEY = 'sophis-central-session-user';
 
@@ -90,6 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (identifier: string, password: string, _role?: UserRole) => {
     await initializeCsrf();
     const response = await authApi.login({ identifier, password });
+    if ('reactivationRequired' in response) {
+      setUser(null);
+      cacheUser(null);
+      return { requiresOnboarding: false, requiresReactivation: true };
+    }
     if ('adminMfaRequired' in response) {
       setUser(null);
       cacheUser(null);
